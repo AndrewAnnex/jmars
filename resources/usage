@@ -1,0 +1,82 @@
+#!/bin/csh
+###############################################################################
+##
+## This file has the same #define conventions as the jmars.config file.
+##
+###############################################################################
+cpp -C -P -traditional $* <<EOF
+#if PUBLIC
+===============================================================================
+
+JMARS command-line argument combinations:
+
+	<longitude> <latitude>
+	<Previously saved *.jmars filename>
+
+The longitude is east-leading. Both longitude and latitude are in
+degrees. A JMARS save file can be created from the File menu with the
+"Save As" command.
+
+If started with no arguments, longitude and latitude default to zero.
+
+JMARS flags, allowed anywhere on the command-line:
+
+	:
+	:<display>
+	clean
+
+The single-colon invocation prints a list of available displays. The
+colon WITH a display argument specifies a particular alternate display
+for multi-head mode. The clean flag forces a fresh start with regard
+to the saved layers and the map image cache.
+
+Invoke with "-version" for some useful JMARS version info.
+
+===============================================================================
+#else
+===============================================================================
+
+JMARS command-line argument combinations:
+
+	<longitude> <latitude>
+	<Previously saved *.jmars filename>
+
+Longitude is east-leading, and both longitude and latitude are in degrees.
+
+A JMARS save file can be created from the File menu with the "Save As"
+command, and then loaded by naming it on the command-line as above.
+
+If started with no arguments, longitude and latitude default to zero.
+
+JMARS flags, allowed anywhere on the command-line:
+
+	:
+	:<display>
+	clean
+	generate
+	slideshow
+
+The single-colon invocation prints a list of available displays. The
+colon WITH a display argument specifies a particular alternate display
+for multi-head mode. The clean flag forces a fresh start with regard
+to the map image cache. The generate argument is for creating cached
+map data for CD distribution.
+
+The slideshow flag enables slideshow mode, which allows JMARS to be
+driven from stdin. Slideshow commands are read one-by-one, without
+stopping, one command per line. Currently the only command available
+is:
+    center <tolerance> <longitude> <latitude>
+
+The arguments should all be whitespace-separated. The tolerance field
+indicates how many degrees off-axis is allowed for a pan before a
+reproject is triggered. A tolerance of 0 causes reprojects to always
+happen, a tolerance of 90 causes them to never happen. A value of
+30-60 is generally reasonable. The longitude and latitude are in
+east-leading degrees.
+
+Invoke with "-version" for some useful JMARS version info.
+
+===============================================================================
+#endif
+EOF

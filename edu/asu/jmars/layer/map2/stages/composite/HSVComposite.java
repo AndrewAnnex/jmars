@@ -1,0 +1,223 @@
+// Copyright 2008, Arizona Board of Regents
+// on behalf of Arizona State University
+// 
+// Prepared by the Mars Space Flight Facility, Arizona State University,
+// Tempe, AZ.
+// 
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+package edu.asu.jmars.layer.map2.stages.composite;
+
+import java.awt.Color;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Area;
+import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.DataBuffer;
+import java.awt.image.Raster;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+
+import edu.asu.jmars.layer.map2.AlphaCombinerOp;
+import edu.asu.jmars.layer.map2.MapAttr;
+import edu.asu.jmars.layer.map2.MapData;
+import edu.asu.jmars.layer.map2.StageUtil;
+import edu.asu.jmars.util.PolyArea;
+import edu.asu.jmars.util.Util;
+
+public class HSVComposite extends CompositeStage implements Cloneable, Serializable {
+	private static final long serialVersionUID = 2L;
+	
+	public static final String[] inputNames = new String[] {"Hue", "Saturation", "Value"};
+	transient private Extractor[] extractor;
+
+	// This field is used to keep track of the total number of instances of this stage that have been created
+	private static int layerCnt=0;
+	// This field is used to keep track of this stage's number, to allow for the display of a unique layer name
+	private int myCnt=0;
+	
+	public HSVComposite(HSVCompositeSettings settings) {
+		super(settings);
+		reset();
+		myCnt=layerCnt++;
+	}
+	
+	// This method returns this stage's number, to allow for the creation of a unique layer name when more than
+	// one exist.
+	public int getLayerCount() {
+		return myCnt;
+	}
+	
+	private void reset() {
+		extractor = new Extractor[3];
+	}
+	
+	public MapData process(int input, MapData inputData, Area changedArea) {
+		MapData data = super.process(input, inputData, changedArea);
+		BufferedImage output = data.getImage();
+		extractor[input] = Extractor.create(inputData.getImage());
+		
+		if (output.getWidth() != inputData.getImage().getWidth()
+		||  output.getHeight() != inputData.getImage().getHeight())
+			throw new IllegalArgumentException("Invalid image sizes, huh?");
+		
+		// narrow changed area down to the valid area
+		changedArea.intersect(data.getValidArea());
+		
+		AffineTransform at = StageUtil.getExtentTransform(output.getWidth(), output.getHeight(), data.getRequest().getExtent());
+		float[] alphas = new float[3];
+		for (Rectangle2D region: new PolyArea(changedArea).getRectangles()) {
+			region = at.createTransformedShape(region).getBounds2D();
+			final int x1 = (int)region.getMinX();
+			final int y1 = (int)region.getMinY();
+			final int x2 = x1 + (int)Math.ceil(region.getWidth());
+			final int y2 = y1 + (int)Math.ceil(region.getHeight());
+			for (int i = x1; i < x2; i++) {
+				for (int j = y1; j < y2; j++) {
+					
+					// convert HSB values to RGB for this output location
+					// and always enable alpha on pixels we set here
+					for(int k=0; k<3; k++)
+						alphas[k] = extractor[k].getAlpha(i, j);
+
+					int outAlpha = (int)AlphaCombinerOp.alphaCombine(alphas) * 255;
+					
+					output.setRGB(i, j, (outAlpha << 24) | 
+							(Color.HSBtoRGB(
+									extractor[0].getHue(i, j),
+									extractor[1].getSat(i, j),
+									extractor[2].getVal(i, j)) & 0x00FFFFFF)
+						);
+				}
+			}
+		}
+		
+		return data;
+	}
+	
+	public BufferedImage makeBufferedImage(int width, int height) {
+		reset();
+		return Util.newBufferedImage(width, height);
+	}
+	
+	public MapAttr[] consumes(int inputNumber){
+		return new MapAttr[]{ MapAttr.COLOR, MapAttr.GRAY };
+	}
+	
+	public MapAttr produces(){
+		return MapAttr.COLOR;
+	}
+	
+	public String getStageName(){
+		return getSettings().getStageName();
+	}
+	
+	public int getInputCount(){
+		return inputNames.length;
+	}
+	
+	public String getInputName(int inputNumber){
+		return inputNames[inputNumber];
+	}
+	
+	public String[] getInputNames(){
+		return (String[])inputNames.clone();
+	}
+	
+	public Object clone() throws CloneNotSupportedException {
+		HSVComposite stage = (HSVComposite)super.clone();
+		stage.reset();
+		return stage;
+	}
+	
+	private void writeObject(ObjectOutputStream out) throws IOException {
+		out.defaultWriteObject();
+	}
+	
+	private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+		in.defaultReadObject();
+		reset();
+	}
+}
+
+abstract class Extractor {
+	protected final BufferedImage input;
+	protected final float[] hsb = new float[3];
+	public Extractor(BufferedImage input) {
+		this.input = input;
+	}
+	public static Extractor create(BufferedImage bi) {
+		int bands = bi.getColorModel().getNumColorComponents();
+		int type = bi.getRaster().getTransferType();
+		if (type == DataBuffer.TYPE_BYTE && bands == 1)
+			return new GrayByteExtractor(bi);
+		return new ColorExtractor(bi);
+	}
+	public abstract float getHue(int i, int j);
+	public abstract float getSat(int i, int j);
+	public abstract float getVal(int i, int j);
+	public abstract float getAlpha(int i, int j);
+}
+
+final class GrayByteExtractor extends Extractor {
+	final Raster raster;
+	public GrayByteExtractor(BufferedImage input) {
+		super(input);
+		raster = input.getRaster();
+	}
+	public float getHue(int i, int j) {
+		return (float)raster.getSample(i, j, 0) / 255.0f;
+	}
+	public float getSat(int i, int j) {
+		return (float)raster.getSample(i, j, 0) / 255.0f;
+	}
+	public float getVal(int i, int j) {
+		return (float)raster.getSample(i, j, 0) / 255.0f;
+	}
+	public float getAlpha(int i, int j) {
+		if (raster.getNumBands() == 2)
+			return raster.getSampleFloat(i, j, 1) / 255.0f;
+		return 1.0f;
+	}
+}
+
+final class ColorExtractor extends Extractor {
+	int rgb;
+	public ColorExtractor (BufferedImage input) {
+		super(input);
+	}
+	public float getHue(int i, int j) {
+		rgb = input.getRGB(i, j);
+		Color.RGBtoHSB((rgb & 0xff0000) >> 16, (rgb & 0xff00) >> 8, (rgb & 0xff), hsb);
+		return hsb[0];
+	}
+	public float getSat(int i, int j) {
+		rgb = input.getRGB(i, j);
+		Color.RGBtoHSB((rgb & 0xff0000) >> 16, (rgb & 0xff00) >> 8, (rgb & 0xff), hsb);
+		return hsb[1];
+	}
+	public float getVal(int i, int j) {
+		rgb = input.getRGB(i, j);
+		Color.RGBtoHSB((rgb & 0xff0000) >> 16, (rgb & 0xff00) >> 8, (rgb & 0xff), hsb);
+		return hsb[2];
+	}
+	public float getAlpha(int i, int j) {
+		return ColorModel.getRGBdefault().getAlpha(input.getRGB(i, j)) / 255.0f;
+	}
+}
+

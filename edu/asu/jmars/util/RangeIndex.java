@@ -1,0 +1,245 @@
+// Copyright 2008, Arizona Board of Regents
+// on behalf of Arizona State University
+// 
+// Prepared by the Mars Space Flight Facility, Arizona State University,
+// Tempe, AZ.
+// 
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+package edu.asu.jmars.util;
+
+import java.util.*;
+
+/**
+ * Provides a one dimensional range index in the 'double' coordinate space. Each
+ * range is associated with an Object, and to the extent that the bin size
+ * ideally suites the dataset, all operations are constant-time. Sparse and
+ * packed datasets have the same memory.
+ */
+public class RangeIndex {
+	private double binSize;
+	private boolean useHashMap;
+	private Map bins = new HashMap ();
+	private Map values;
+
+	/**
+	 * Constructs a new empty index.
+	 * 
+	 * @param binSize
+	 *            Indicates the size of each cell bin. This value is the major
+	 *            way to control the performance of the index.
+	 * @param useHashMap
+	 *            If true, the index will use a HashMap internally. If false,
+	 *            the index will use an IdentityHashMap internally. Hashing is
+	 *            used to ensure near-optimal lookups. If the values inserted
+	 *            into the index do not implement hashCode and equals as defined
+	 *            by the Java API, then this argument must be false, and
+	 *            remove() must be called with the same object reference that
+	 *            was passed to add().
+	 */
+	public RangeIndex (double binSize, boolean useHashMap) {
+		this.binSize = binSize;
+		this.useHashMap = useHashMap;
+		this.values = makeMap();
+	}
+
+	/**
+	 * Inserts the given value into all cells under the given extent.
+	 * 
+	 * @param min
+	 *            Beginning of this value's extent.
+	 * @param max
+	 *            End of this value's extent.
+	 * @param value
+	 *            Value to insert into the index.
+	 */
+	public void add (double min, double max, Object value) {
+		Tuple t = new Tuple (min, max, value);
+		int start = getBin(t.min, false);
+		int end = getBin(t.max, true);
+
+		values.put(value, t);
+
+		for (int i = start; i <= end; i++) {
+			Integer binNum = new Integer (i);
+			Map bin = (Map)bins.get(binNum);
+			if (bin == null)
+				bins.put(binNum, bin = makeMap());
+			bin.put(value,t);
+		}
+	}
+
+	/**
+	 * Removes the given reference from the index. If 'false' was passed to the
+	 * useHashMap argument of the constructor, then this must be the same
+	 * reference that was passed to add().
+	 * 
+	 * @param value
+	 *            The reference to remove.
+	 */
+	public void remove (Object value) {
+		Tuple t = (Tuple)values.get(value);
+		if (t == null)
+			return;
+		int start = getBin(t.min, false);
+		int end = getBin(t.max, true);
+		for (int i = start; i <= end; i++) {
+			Integer bin = new Integer(i);
+			Map contents = (Map)bins.get(bin);
+			if (contents.size() > 1)
+				contents.remove(value);
+			else
+				bins.remove(bin);
+		}
+		values.remove(value);
+	}
+
+	/**
+	 * Searches only the bins in the index that might contain data for the
+	 * requested region and returns the results.
+	 * 
+	 * @param min
+	 *            Minimum extent of the query region.
+	 * @param max
+	 *            Maximum extent of the query region.
+	 * @return A set of all values in the queried extent, in no particular
+	 *         order.
+	 */
+	public Set query (double min, double max) {
+		Map results = makeMap();
+		int start = getBin(min, false);
+		int end = getBin(max, true);
+		for (int i = start; i <= end; i++) {
+			Map bin = (Map)bins.get(new Integer(i));
+			if (bin == null)
+				continue;
+			for (Iterator it=bin.values().iterator(); it.hasNext(); ) {
+				Tuple t = (Tuple) it.next();
+				if (t.max >= min && t.min <= max)
+					results.put(t.value,null);
+			}
+		}
+		return results.keySet();
+	}
+
+	/**
+	 * @return Returns the number of elements that have been inserted into the
+	 *         index.
+	 */
+	public int size () {
+		return values.size();
+	}
+
+	/**
+	 * Clears the index of all previously-inserted values.
+	 */
+	public void clear () {
+		bins.clear();
+		values.clear();
+	}
+
+	/**
+	 * Maps a position to an int bin, rounding up iff up==true.
+	 */
+	private int getBin (double pos, boolean up) {
+		return (int)(up ? Math.ceil(pos / binSize) : Math.floor(pos / binSize));
+	}
+
+	/**
+	 * Returns a Map suitable for hashing the caller's values.
+	 */
+	private Map makeMap () {
+		if (useHashMap)
+			return new HashMap();
+		else
+			return new IdentityHashMap();
+	}
+
+	/**
+	 * Simple container for the extent and value.
+	 */
+	class Tuple {
+		public Tuple(double min, double max, Object value) {
+			this.min = min; this.max = max; this.value = value;
+		}
+		double min;
+		double max;
+		Object value;
+	}
+
+	static class Test {
+		public static void main (String[] args) {
+			testResults();
+			testStats();
+		}
+		private static void testResults() {
+			RangeIndex index = new RangeIndex (10, true);
+			index.add(0, 5, "A");
+			index.add(3, 7, "B");
+			index.add(5, 10, "C");
+			index.add(7, 15, "D");
+			dump ("Size: " + index.size(), null);
+			dump ("AB", index.query(-2,4));
+			dump ("ABC", index.query(5,5));
+			dump ("BC", index.query(6,6));
+			dump ("D", index.query(15,20));
+			index.remove ("B");
+			dump ("Size: " + index.size(), null);
+			dump ("A", index.query(-2,4));
+			dump ("AC", index.query(5,5));
+			dump ("C", index.query(6,6));
+			dump ("D", index.query(15,20));
+			index.remove ("C");
+			index.remove ("D");
+			dump ("A", index.query(-2,4));
+			dump ("A", index.query(5,5));
+			dump ("was C, now empty", index.query(6,6));
+			dump ("was D, now empty", index.query(15,20));
+		}
+		private static void testStats() {
+			Integer[] values = new Integer[100000];
+			for (int i = 0; i < values.length; i++)
+				values[i] = new Integer(i);
+			double baseWidth = 50;
+			RangeIndex index = new RangeIndex(baseWidth*1.5, false);
+			int expectedCellSizeAvg = 10;
+			double maxPos = values.length/expectedCellSizeAvg*baseWidth;
+			for (int i = 0; i < values.length; i++) {
+				double pos = Math.random()*maxPos;
+				double a = pos + Math.random()*baseWidth - baseWidth/2;
+				double b = pos + Math.random()*baseWidth - baseWidth/2;
+				index.add(Math.min(a,b), Math.max(a,b), values[i]);
+			}
+			Set distinctItems = new HashSet();
+			int count = 0;
+			int sum = 0;
+			for (double pos = 0; pos <= maxPos; pos += baseWidth) {
+				Set contents = index.query(pos, pos+baseWidth);
+				distinctItems.addAll(contents);
+				count ++;
+				sum += contents.size();
+			}
+			dump(count + " queries results in " + sum + " items, " + distinctItems.size() + " distinct", null);
+		}
+		private static void dump (String msg, Set set) {
+			if (set != null) {
+				msg += ": ";
+				for (Iterator it=set.iterator(); it.hasNext(); )
+					msg += it.next();
+			}
+			System.out.println(msg);
+		}
+	}
+}

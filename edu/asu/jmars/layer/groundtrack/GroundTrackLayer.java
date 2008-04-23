@@ -1,0 +1,349 @@
+// Copyright 2008, Arizona Board of Regents
+// on behalf of Arizona State University
+// 
+// Prepared by the Mars Space Flight Facility, Arizona State University,
+// Tempe, AZ.
+// 
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+package edu.asu.jmars.layer.groundtrack;
+
+import edu.asu.jmars.*;
+import edu.asu.jmars.layer.*;
+import edu.asu.jmars.util.*;
+import java.awt.*;
+import java.awt.geom.*;
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+public class GroundTrackLayer
+ extends Layer
+ {
+	private static final DebugLog log = DebugLog.instance();
+
+	private static final String server =
+		Config.get("groundtrack") + "format=c&";
+
+	private HashMap sections = new HashMap();
+	private static final int sectionSize = Integer.parseInt(
+		Config.get("groundtrack.chunksize"));
+
+	private int instrumentId;
+
+	public GroundTrackLayer(int instrumentId, SerializedParameters sp)
+	 {
+		this.instrumentId = instrumentId;
+		this.initialLayerData = sp;
+	 }
+
+	public synchronized void receiveRequest(Object layerRequest,
+											DataReceiver requester)
+	 {
+		if(layerRequest == null)
+			return;
+
+		if(!(layerRequest instanceof Request))
+		 {
+			log.aprintln("UNKNOWN REQUEST TYPE RECEIVED: " +
+						 layerRequest.getClass().getName());
+			log.aprintStack(-1);
+			return;
+		 }
+
+		Request req = (Request) layerRequest;
+		requester.receiveData(getTrack(req.begET,
+									   req.endET,
+									   req.delta)
+			);
+	 }
+
+	/**
+	 ** Returns an array of groundtrack line segments satisfying the
+	 ** given time range, each of delta seconds in length in time. The
+	 ** actual size of the array will be ceil((endET - begET) / delta).
+	 **/
+	private synchronized Line2D[] getTrack(long begET,
+										  long endET,
+										  int delta)
+	 {
+		setStatus(Color.red);
+
+		int sectionSecs = sectionSize * delta;
+		long begSect = begET / sectionSecs;
+		long endSect = endET / sectionSecs;
+		int begIdx = (int) (begET % sectionSecs) / delta;
+		int endIdx = (int) (endET % sectionSecs) / delta;
+		int count = (int) (endET/delta*delta - begET/delta*delta) / delta;
+
+		Line2D[] segs = new Line2D[count];
+		int segsIdx = 0;
+
+		for(long s=begSect; s<=endSect; s++)
+		 {
+			Line2D[] sect = getSection(s, delta);
+
+			// We may only need part of the data from the
+			// starting/ending sections. We'll need all of the data
+			// from any middle sections.
+			int sectIdx = (s == begSect ? begIdx : 0);
+			int copyCount = (s == endSect ? endIdx : sectionSize) - sectIdx;
+
+			try
+			 {
+				System.arraycopy(sect, sectIdx,
+								 segs, segsIdx,
+								 copyCount);
+			 }
+			catch(ArrayIndexOutOfBoundsException e)
+			 {
+				log.aprintln("begET = " + begET);
+				log.aprintln("endET = " + endET);
+				log.aprintln("delta = " + delta);
+				log.aprintln("sectionSecs = " + sectionSecs);
+				log.aprintln("begSect = " + begSect);
+				log.aprintln("endSect = " + endSect);
+				log.aprintln("begIdx = " + begIdx);
+				log.aprintln("endIdx = " + endIdx);
+				log.aprintln("count = " + count);
+				log.aprintln("s = " + s);
+				log.aprintln("sect.length = " + sect.length);
+				log.aprintln("segs.length = " + segs.length);
+				log.aprintln("sectIdx = " + sectIdx);
+				log.aprintln("segsIdx = " + segsIdx);
+				log.aprintln("copyCount = " + copyCount);
+				log.aprintln(e);
+				setStatus(Color.blue);
+				throw  e;
+			 }
+			segsIdx += copyCount;
+		 }
+
+		if(segsIdx != count)
+			log.aprintln("WRONG NUMBER OF SEGMENTS!!!!!!!!!!!!!!!!!!!!!!!!!!");
+
+		return  segs;
+	 }
+
+	/**
+	 ** Returns an array of {@link #sectionSize} groundtrack line
+	 ** segments, each of which is <code>delta</code> seconds in
+	 ** length in time.
+	 **/
+	private Line2D[] getSection(long sect, int delta)
+	 {
+		SectionKey key = new SectionKey(sect, delta);
+		Line2D[] section = (Line2D[]) sections.get(key);
+
+		if(section == null)
+		 {
+			URL url =
+				Main.isStudentApplication()
+				? getLocalUrl(key)
+				: getRemoteUrl(key);
+
+			if(url == null)
+				throw  new Error("CAN'T FORM PROPER GROUNDTRACK URL");
+
+			sections.put(key, section = readSection(url));
+		 }
+
+		return  section;
+	 }
+
+	/**
+	 ** Returns a url to a local file containing {@link
+	 ** #sectionSize}+1 grid points for constructing groundtrack
+	 ** segments.
+	 **/
+	private static URL getLocalUrl(SectionKey key)
+	 {
+		String fname = "GRIDS/t_" + key.section + "_" + key.delta;
+
+		try
+		 {
+			return new File(fname).toURL();
+		 }
+		catch(MalformedURLException e)
+		 {
+			log.aprintln("Java didn't like this filename: " + fname);
+			return  null;
+		 }
+	 }
+
+	/**
+	 ** Returns a url to a server cgi that will supply {@link
+	 ** #sectionSize}+1 grid points for constructing groundtrack
+	 ** segments.
+	 **/
+	private URL getRemoteUrl(SectionKey key)
+	 {
+		String query =
+			"xmin=" + key.section * sectionSize * key.delta +
+			"&xcount=" + (sectionSize+1) +
+			"&xdelta=" + key.delta +
+			"&ymin=" + 0 +
+			"&ycount=" + 1 +
+			"&ydelta=" + 1 + // doesn't matter
+			"&ship=" + instrumentId +
+			"&key=" + Main.KEY;
+
+		try
+		 {
+			return  new URL(server + query);
+		 }
+		catch(MalformedURLException e)
+		 {
+			log.aprintln("Java didn't like this URL: " + server + query);
+			return  null;
+		 }
+	 }
+
+	/**
+	 ** Used in {@link #newZeroSection} below.
+	 **/
+	private static Line2D[] zeroSection;
+	static
+	 {
+		Line2D zeroSegment = new Line2D.Double();
+		zeroSection = new Line2D.Double[sectionSize];
+		for(int i=0; i<sectionSize; i++)
+			zeroSection[i] = null;
+	 }
+
+	/**
+	 ** Returns an array of {@link #sectionSize} line segments, all of
+	 ** which refer to the same { (0,0) (0,0) } line segment.
+	 **/
+	private static Line2D[] newZeroSection()
+	 {
+		return  (Line2D[]) zeroSection.clone();
+	 }
+
+	/**
+	 ** Returns an array of {@link #sectionSize} line segments, read
+	 ** from the given url location. Returns null on error.
+	 **/
+	private synchronized Line2D[] readSection(URL url)
+	 {
+		log.println("Using url " + url);
+
+		// Create a connection to that url
+		BufferedReader fin;
+		try
+		 {
+			fin = new BufferedReader(new InputStreamReader(url.openStream()));
+		 }
+		catch(IOException e)
+		 {
+			log.aprintln("ERROR OPENING URL " + url);
+			log.print(e);
+			return  null;
+		 }
+
+		Line2D[] segs = newZeroSection();
+
+		Point2D.Double lastPt = new Point2D.Double();
+
+		// Read the data
+		HVector v = HVector.read(fin);
+		if(v == null)
+		 {
+			log.aprintln("DIDN'T RECEIVE ANY DATA FROM URL " + url);
+			return  null;
+		 }
+		v.toLonLat(lastPt);
+		for(int i=0; i<sectionSize; i++)
+		 {
+			v = HVector.read(fin);
+			if(v == null)
+			 {
+				log.aprintln("RECEIVED SOME BAD DATA FROM URL " + url);
+				return  null;
+			 }
+
+			// Java args are evaluated left-to-right (JLS 15.7.4)
+			segs[i] = new Line2D.Double(lastPt.x,
+										lastPt.y,
+										lastPt.x = v.lon(),
+										lastPt.y = v.lat());
+		 }
+
+		return  segs;
+	 }
+
+	final static class Request
+	 {
+		final long begET;
+		final long endET;
+		final int delta;
+
+		Request(double begET, double endET, int delta)
+		 {
+			if(endET < begET)
+				throw  new Error("Illegal groundtrack request parameters");
+			this.begET = (long) Math.floor(begET / delta) * delta;
+			this.endET = (long) Math.ceil(endET / delta) * delta;
+			this.delta = delta;
+		 }
+
+		public boolean equals(Object obj)
+		 {
+			if(obj != null  &&  obj instanceof Request)
+			 {
+				Request req = (Request) obj;
+				return  req.begET == begET
+					&&  req.endET == endET
+					&&  req.delta == delta;
+			 }
+			else
+				return  false;
+		 }
+
+		public int hashCode()
+		 {
+			return  (int) (begET ^ endET ^ delta);
+		 }
+	 }
+
+	private static class SectionKey
+	 {
+		final long section;
+		final int delta;
+
+		SectionKey(long section, int delta)
+		 {
+			this.section = section;
+			this.delta = delta;
+		 }
+
+		public int hashCode()
+		 {
+			return  (int) section ^ delta;
+		 }
+
+		public boolean equals(Object obj)
+		 {
+			if(obj != null  &&  obj instanceof SectionKey)
+			 {
+				SectionKey key = (SectionKey) obj;
+				return  key.section == section
+					&&  key.delta == delta;
+			 }
+
+			return  false;
+		 }
+	 }
+ }

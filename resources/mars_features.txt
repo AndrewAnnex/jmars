@@ -1,0 +1,1491 @@
+Albedo	Aeolis	-4.9	145.0	0.0	Floating island where winds were kept in a cave.
+Albedo	Aeria	9.9	50.0	0.0	Greek name for Egypt; "far land of mist".
+Albedo	Aetheria	39.7	130.0	0.0	Upper world; land of living.
+Albedo	Aethiopis	9.9	130.0	0.0	Countries of the Ethiopians on southern edge of the Earth.
+Albedo	Amazonis	0.0	220.0	0.0	Land of the Amazons; on the island Hesperia.
+Albedo	Amenthes	4.9	110.0	0.0	Egyptian name for place where souls of the dead go.
+Albedo	Aonium Sinus	-44.7	255.0	0.0	Named for Aonides, or Muses.
+Albedo	Arabia	19.8	30.0	0.0	Country bordering on Aeria (Egypt).
+Albedo	Arcadia	44.7	260.0	0.0	Mountainous region in southern Greece.
+Albedo	Argyre	-44.7	335.0	0.0	"Silver" Island at mouth of Ganges River; present-day Arakan, Burma.
+Albedo	Arnon	47.7	25.0	0.0	Classical name for present El-Mojib River, Jordan.
+Albedo	Aurorae Sinus	-14.8	310.0	0.0	"Bay of Rosy Dawn"; Aurora held back the dawn.
+Albedo	Ausonia	-39.7	110.0	0.0	Country of the Aruncii (Ausones in Greek).
+Albedo	Baltia	59.7	310.0	0.0	Name of large island in northern Europe where amber was found.
+Albedo	Boreosyrtis	54.7	70.0	0.0	Northern continuation of Nilosyrtis; "Syrtis of the north."
+Albedo	Candor	3.0	285.0	0.0	Means "Blaze" or "White" in Latin.
+Albedo	Casius	39.7	100.0	0.0	Epithet of Zeus; for his two sanctuaries in Egypt/Arabia and Syria.
+Albedo	Cebrenia	49.7	150.0	0.0	Main country of the Trojan Plain.
+Albedo	Cecropia	59.7	40.0	0.0	Old name for Acropolis; used to mean Athens.
+Albedo	Ceraunius	19.8	267.0	0.0	"Thunderclap"; named for Ceraunii Mountains on coast of Epirus, Greece.
+Albedo	Cerberus	14.8	155.0	0.0	Hound who had 3 heads; guarded gates of hell.
+Albedo	Chalce	-49.7	0.0	0.0	Old name of island of Khalki, west of Rhodes.
+Albedo	Chersonesus	-49.7	100.0	0.0	Gallipoli Peninsula.
+Albedo	Chryse	9.9	330.0	0.0	Island rich in gold; region of Thailand/Malacca.
+Albedo	Chrysokeras	-49.7	250.0	0.0	"Golden Horn"; Byzantine Peninsula (now Turkey), or its inlet.
+Albedo	Claritas	-34.7	250.0	0.0	Latin, meaning "bright."
+Albedo	Copais Palus	54.7	80.0	0.0	Named for marsh north of Mt. Helicon in Boeotia, Greece.
+Albedo	Coprates	-14.8	295.0	0.0	Old name for Persian River Ab-I-Diz.
+Albedo	Cyclopia	-4.9	130.0	0.0	Land where cyclops dwelt.
+Albedo	Cydonia	39.7	0.0	0.0	Poetic term for Crete.
+Albedo	Deltoton Sinus	-4	55.0	0.0	"Bay of the triangle"; makes triangle with Iapygia and Oenotria.
+Albedo	Depressio Hellespontica	-59.7	20.0	0.0	Depression southwest of Hellespontus.
+Albedo	Deucalionis Regio	-14.8	20.0	0.0	"Deucalion's region;" Deucalion was King of Thessaly who saved himself from flood.
+Albedo	Deuteronilus	34.7	0.0	0.0	Designation of 2nd part of old feature "Nilus."
+Albedo	Diacria	49.7	180.0	0.0	Highland area in northern Attica, Greece.
+Albedo	Dioscuria	49.7	40.0	0.0	"Home of Dioscuri," Polydeuces and Pollux; symbolic name for Sparta.
+Albedo	Edom	0.0	15.0	0.0	Biblical country of Edomites, south of Judea.
+Albedo	Electris	-44.7	170.0	0.0	Electra's island near River Eridanus; famous for amber formed from tears shed by Phaethon's sisters.
+Albedo	Elysium	24.8	150.0	0.0	Home of the blessed on western edge of world.
+Albedo	Eridania	-44.7	140.0	0.0	Region on the Po River, Italy.
+Albedo	Eunostos	21.8	240.0	0.0	"Lucky journey or lucky return"; i.e., infernal regions beyond Elysium.
+Albedo	Euphrates	19.8	25.0	0.0	Biblical fourth River of Paradise.
+Albedo	Gehon	14.8	0.0	0.0	Biblical second River of Paradise; bordering Eden.
+Albedo	Hellas	-39.7	70.0	0.0	Greece.
+Albedo	Hellespontus	-49.7	35.0	0.0	The Dardanelles.
+Albedo	Hesperia	-19.8	120.0	0.0	"The Occiden"; name for Italy (Greek); or Spain (Roman) or West area of Ethiopians where sun sank.
+Albedo	Hiddekel	14.8	15.0	0.0	Tigris River, Babylonia; Biblical third River of Paradise.
+Albedo	Hyperboreus (Lacus)	74.8	300.0	0.0	Far northern lake.
+Albedo	Iapygia (Iapigia)	-19.8	65.0	0.0	Classically, Iapygia was all of Apulia, or just the Salentine Peninsula.
+Albedo	Icaria	-39.7	230.0	0.0	Land where Icarus lived (Crete).
+Albedo	II Thyle I	-69.8	180.0	0.0	Named for Thule; may be middle Norway; used to indicate far northern lands.
+Albedo	[Isidis Regio]	19.8	85.0	0.0	Isis' Region; Isis was Egyptian goddess of heaven and fertility.
+Albedo	Ismenius Lacus	39.7	30.0	0.0	"Ismenian Lake"; Ismenia is poetic term for Thebes.
+Albedo	Jamuna	9.9	320.0	0.0	Present Jumna River, India.
+Albedo	Juventae Fons	-4.9	297.0	0.0	The "Fountain of Youth;" a fountain in India.
+Albedo	Laestrygon (Laestrigon)	0.0	160.0	0.0	Man-eating giants who lived in the west.
+Albedo	Lemuria	69.8	160.0	0.0	Designation of purported drowned continent south of India; also relates to lemur monkeys found on Madagascar and Sunda Islands.
+Albedo	Libya	0.0	90.0	0.0	Area from W. Egypt to greater Syrtis.
+Albedo	Lunae Palus	14.8	295.0	0.0	Roman Moon goddess Luna; "Luna's Swamp," or African Lunae Mountains where Nile was thought to originate.
+Albedo	Mare Acidalium	44.7	330.0	0.0	Name for Acidalian (Venusian) fountain in Boeotia where the Graces bathed.
+Albedo	Mare Australe	-59.7	350.0	0.0	"South Sea"
+Albedo	Mare Boreum	59.7	180.0	0.0	"North Sea"
+Albedo	Mare Chronium	-57.7	150.0	0.0	"Cronian Sea", northern part of World Sea where eternal dead calm, dangerous to ships, prevailed.
+Albedo	Mare Cimmerium	-19.8	140.0	0.0	Cimmerians were ancient Thracian seafarers; "far western sea" (Homer).
+Albedo	Mare Erythraeum	-24.8	320.0	0.0	Indian Ocean.
+Albedo	Mare Hadriacum	-39.7	90.0	0.0	Adriatic Sea.
+Albedo	Mare Serpentis	-29.7	40.0	0.0	Named for Constellation Serpens (the snake).
+Albedo	Mare Sirenum	-29.7	205.0	0.0	"Sea of the Sirens."
+Albedo	Mare Tyrrhenum	-19.8	105.0	0.0	Tyrrhenian Sea, between Italy and Sicily.
+Albedo	Margaritifer Sinus	-9.9	335.0	0.0	"Pearl Bay," after Pearl Coast, South India.
+Albedo	Memnonia	-19.8	210.0	0.0	Land of Memnon, King of Ethiopia.
+Albedo	Meroe	34.7	75.0	0.0	Ethiopian island on Nile; now Atbar.
+Albedo	Moab	19.8	10.0	0.0	Biblical town bordering Edom.
+Albedo	Moeris Lacus	7.9	90.0	0.0	"Moeris Lake;" Moeris was Egyptian lake in Libyan Desert.
+Albedo	Nectar	-27.7	288.0	0.0	Named for the drink of the gods.
+Albedo	Neith Regio	37.7	88.0	0.0	Lower world in Egyptian mythology.
+Albedo	Nepenthes	19.8	100.0	0.0	Egyptian drug of forgetfulness.
+Albedo	Nereidum Fretum	-44.7	305.0	0.0	"Straits of the Nereids", who were sea nymphs.
+Albedo	Niliacus Lacus	29.7	330.0	0.0	"Lake of the Nile."
+Albedo	Nilokeras	29.7	305.0	0.0	"Horn of the Nile;" part of "Nulus" Canal.
+Albedo	Nilosyrtis	41.7	70.0	0.0	Syrtis of the Nile; part of Nilus (Nile) Canal.
+Albedo	Nix Olympica	19.8	230.0	0.0	"Snows of Olympus;" Olympus was mountain home of gods in Greece.
+Albedo	Noachis	-44.7	30.0	0.0	Biblical; "Noah's (Region)."
+Albedo	Ogygis Regio	-44.7	295.0	0.0	"Region of Ogygos;" Ogygos was ancient King of Thebes or Athens, Greece.
+Albedo	Olympia	79.9	160.0	0.0	Ancient and modern Greek city.
+Albedo	Ophir	-9.9	295.0	0.0	Biblical land to which King Solomon sent naval expedition; probably India.
+Albedo	Ortygia	59.7	0.0	0.0	Floating island (present Delos) where Leto bore Apollo and Artemis.
+Albedo	Oxia Palus	7.9	180.0	0.0	Lake (swamp into which Oxus River flows; i.e. Sea of Aral).
+Albedo	Oxus	19.8	348.0	0.0	Present Amoo-Darya River.
+Albedo	Panchaia	59.7	160.0	0.0	Situated near Heliopolis, Egypt; or island in Red Sea rich in frankincense, gold, silver, thus Utopia.
+Albedo	Pandorae Fretum	-24.8	44.0	0.0	Woman who let loose evils of world when she opened a box.
+Albedo	Phaethontis	-49.7	205.0	0.0	"Of Phaethon;" who recklessly drove Chariot of Sun.
+Albedo	Phison	19.8	40.0	0.0	Biblical first river of Paradise.
+Albedo	Phlegra	31.0	172.2	134.0	"Burning plain;" in Chalcidian Peninsula of Greece where Zeus hurled thunderbolts at Titans to support Hercules.
+Albedo	Phoenicis Lacus	-11.9	250.0	0.0	"Lake of the Phoenix;" Arabia or India.
+Albedo	Phrixi Regio	-39.7	290.0	0.0	"Phrixus' Region;" Phrixus and sister Helle escaped sacrifice in Boeotia on back of ram with golden fleece.
+Albedo	Promethei Sinus	-64.8	80.0	0.0	Prometheus' Bay; Greek mythological character.
+Albedo	Propontis	44.7	175.0	0.0	The Sea of Marmora, Asia Minor.
+Albedo	Protei Regio	-22.8	310.0	0.0	"Proteus' Region;" Proteus was a sea god with a gift of prophecy.
+Albedo	Protonilus	41.7	45.0	0.0	Designation of first (Eastern) part of "Nilus" or Nile Canal.
+Albedo	Pyrrhae Regio	-14.8	322.0	0.0	"Pyrrha's Region;" named for Pyrrha, wife of Deucalion.
+Albedo	Scandia	60.2	212.1	0.0	Southern Scandinavia.
+Albedo	Sinai	-19.8	290.0	0.0	Biblical; named for area next to Mare Erythraeum (Indian Ocean).
+Albedo	Sinus Meridiani	-4.9	0.0	0.0	"Middle Bay," from Flammarion map.
+Albedo	Sinus Sabaeus	-7.9	20.0	0.0	Today's Red Sea; Saba was part of southern Arabian Peninsula.
+Albedo	Sithonius Lacus	44.7	115.0	0.0	Region inhabited by Sithonii; synonym of Thrace.
+Albedo	Solis Lacus	-27.7	270.0	0.0	"Lake of the Sun"; the so-called "Eye of Mars," connecting East with West.
+Albedo	Styx	29.7	160.0	0.0	Great river around nether region, which souls must cross on journey from Earth.
+Albedo	Syria	-19.8	260.0	0.0	Province in Near East including Phoenicia; or one of the Cyclades (Homer).
+Albedo	Syrtis Major	9.9	70.0	0.0	Libyan Gulf, now Gulf of Sirte.
+Albedo	Tanais	49.7	290.0	0.0	Present River Don, Russia.
+Albedo	Tempe	39.7	290.0	0.0	Greek valley south of Mt. Olympus noted for its beauty.
+Albedo	Tharsis	0.0	0.0	0.0	Connecting link between East and West; ancient Spanish town Tartessus.
+Albedo	Thaumasia	-34.7	275.0	0.0	Named for Thaumas, god of clouds; Arabia.
+Albedo	Thoth	29.7	105.0	0.0	Egyptian messenger god.
+Albedo	Thymiamata	9.9	350.0	0.0	"Land of sweet-scented perfumes"; South Yemen or India.
+Albedo	Tithonius Lacus	-4.9	275.0	0.0	"Tithonian Lake"; Tithonus received from his wife Eos eternal life but not eternal youth.
+Albedo	Tractus Albus	29.7	280.0	0.0	"White Tract" in Latin.
+Albedo	Trinacria	-24.8	92.0	0.0	Classical name for Sicily.
+Albedo	Trivium Charontis	19.8	162.0	0.0	"Crossroad of Charon"; meeting place of several netherworld Canals.
+Albedo	Uchronia	69.8	100.0	0.0	"Land of Agelessness."
+Albedo	Umbra	49.7	70.0	0.0	Means "Shadow" in Latin.
+Albedo	Utopia	49.7	110.0	0.0	Greek, meaning "nowhere"; ideal state.
+Albedo	Vulcani Pelagus	-34.7	345.0	0.0	Named for Vulcan, Roman god of fire.
+Albedo	Xanthe	9.9	310.0	0.0	"Golden-Yellow Land."
+Albedo	Yaonis Regio	-39.7	40.0	0.0	Named for Chinese Emperor Yao; flood occurred during his reign.
+Albedo	Zephyria	0.0	165.0	0.0	Land of the west wind.
+Catena	Acheron Catena	37.3	259.0	491.0	Named for classical albedo feature at 35N, 140W.
+Catena	Alba Catena	35.0	245.3	144.0	Classical albedo name.
+Catena	[Apodis Catena]	-26.9	103.2	0.0	Classical albedo name.
+Catena	Artynia Catena	47.6	240.4	263.0	Named for classical albedo feature at 54N, 137W.
+Catena	Baphyras Catena	38.8	275.7	95.0	Classical river.
+Catena	Ceraunius Catena	37.1	251.8	50.0	Named for classical albedo feature at 35N 96W.
+Catena	Coprates Catena	-15	297.8	511.0	Classical albedo feature name.
+Catena	Cyane Catena	36.3	241.6	203.0	Classical albedo feature Cyane Fons.
+Catena	Elysium Catena	17.6	149.6	47.7	Albedo feature name.
+Catena	Ganges Catena	-2.8	291.3	284.0	Classical albedo feature name.
+Catena	Hyblaeus Catena	21.6	140.5	10.1	Albedo feature name.
+Catena	Labeatis Catenae	19.5	266.7	214.0	Classical albedo feature name.
+Catena	Phlegethon Catena	38.9	256.7	391.0	From albedo feature at 38N, 125W.
+Catena	Stygis Catena	23.2	150.5	66.0	From albedo feature at 30N, 200W.
+Catena	[Tithoniae Catena]	-5.4	278.0	380.0	Classical albedo feature name. Name dropped because in the database twice.
+Catena	Tithoniae Catenae	-5.3	277.6	567.0	Classical albedo feature name.
+Catena	Tractus Catena	27.8	257.3	897.0	Classical albedo feature name.
+Cavus	[Anseris Cavus]	-29.7	95.5	35.0	Named for albedo feature Anseris Fons. Same feature as Peraea Cavus.
+Cavus	Argyre Cavi	-48.4	319.7	60.0	Albedo name.
+Cavus	Ausonia Cavus	-31.9	96.4	50.0	Albedo feature Ausonia.
+Cavus	Avernus Cavi	-3.6	172.5	93.4	Named for albedo feature at 10S, 195W.
+Cavus	Cavi Angusti	-78.5	283.2	675.0	Classical albedo feature name.
+Cavus	Cavi Frigor\-es	-78.9	300.1	228.0	From classical albedo feature Polus Frigoris, at 84S, 30W.
+Cavus	[Cavi Novi]	-67.3	30.0	535.0	Classical albedo feature name; (dropped 1984).
+Cavus	Hyperborei Cavi	79.9	309.7	75.0	Classical albedo feature name.
+Cavus	Octantis Cavi	-52.7	313.9	65.0	Albedo name.
+Cavus	Peraea Cavus	-29.6	95.2	55.2	Albedo feature name.
+Cavus	Scandia Cavi	77.2	209.7	425.0	Named for classical albedo feature at 65N, 150W.
+Cavus	Sisyphi Cavi	-72.9	353.8	430.0	Classical albedo feature name.
+Cavus	[Ultimi Cavi]	-74.3	155.5	320.0	See Thyles Rupes; name dropped 1984.
+Chaos	Aram Chaos	2.6	338.5	277.0	Classical albedo feature name.
+Chaos	Aromatum Chaos	-1.1	317.0	91.5	Classical albedo feature name.
+Chaos	Arsinoes Chaos	-7.7	332.0	230.0	Daughter of Ptolomy Lagun and Bernice.
+Chaos	Atlantis Chaos	-34.4	182.4	162.0	From albedo feature at 30N, 173W.
+Chaos	Aureum Chaos	-4.4	333.0	368.0	Classical albedo feature name.
+Chaos	Aurorae Chaos	-8.9	324.7	750.0	Classical albedo name.
+Chaos	Candor Chaos	-6.9	287.4	97.0	From albedo feature at 5N, 75W.
+Chaos	Echus Chaos	10.8	285.2	473.0	From albedo feature Echus Lacus at 1N, 90W.
+Chaos	Eos Chaos	-16.6	313.1	490.0	Greek name of Aurora; albedo feature.
+Chaos	Galaxias Chaos	33.8	146.4	234.0	Albedo feature name.
+Chaos	Gorgonum Chaos	-37.2	189.1	149.0	From albedo feature at 24S, 154W.
+Chaos	Hellas Chaos	-47.5	64.0	595.0	Named for albedo feature Hellas.
+Chaos	Hydaspis Chaos	3.1	332.9	355.0	Classical albedo feature name.
+Chaos	Hydraotes Chaos	0.8	324.6	417.5	Classical albedo feature name.
+Chaos	Iani Chaos	-2.8	342.5	434.0	Classical albedo feature name.
+Chaos	Ister Chaos	12.9	303.6	103.4	From classical albedo feature at 10N, 56W.
+Chaos	Margaritifer Chaos	-8.6	338.4	390.0	Classical albedo feature name.
+Chaos	Nilus Chaos	25.3	282.8	283.0	Named for albedo feature at 20N, 65W.
+Chaos	Pyrrhae Chaos	-10.3	331.5	189.0	Albedo feature name.
+Chasma	Arsia Chasmata	-7.5	240.6	81.0	Albedo name.
+Chasma	Ascraeus Chasmata	8.7	254.3	110.0	Classical albedo name.
+Chasma	Baetis Chasma	-4.3	295.0	93.0	From classical albedo feature at 5S, 60W; changed from Iamunae Chasma.
+Chasma	Candor Chasma	-6.5	289.1	813.0	Classical albedo feature name.
+Chasma	Capri Chasma	-9.8	316.7	1275.0	Classical albedo feature name.
+Chasma	Ceti Chasma	-5	291.6	49.0	From albedo feature at 10S, 74W.
+Chasma	Chasma Australe	-82.2	94.4	380.0	Classical albedo feature name.
+Chasma	Chasma Boreale	82.9	312.9	560.0	Classical albedo feature name.
+Chasma	Coprates Chasma	-13.2	298.6	966.0	Classical albedo feature name.
+Chasma	Echus Chasma	2.6	279.9	413.0	Classical albedo feature name.
+Chasma	Elysium Chasma	22.3	141.5	129.0	Albedo feature name.
+Chasma	Eos Chasma	-12	320.3	1413.0	Classical albedo feature name.
+Chasma	Ganges Chasma	-7.9	311.9	584.0	Classical albedo feature name.
+Chasma	Hebes Chasma	-1.1	283.8	319.0	Classical albedo feature name.
+Chasma	Hyblaeus Chasma	22.0	141.2	58.5	Albedo feature name.
+Chasma	Hydrae Chasma	-6.8	297.9	59.0	Classical albedo feature name.
+Chasma	Ius Chasma	-6.9	274.2	938.0	Classical albedo feature name.
+Chasma	Juventae Chasma	-3.5	298.6	320.0	Classical albedo feature name.
+Chasma	Melas Chasma	-10.3	287.3	547.0	Classical albedo feature name.
+Chasma	Ophir Chasma	-4	287.5	317.0	Classical albedo feature name.
+Chasma	Pavonis Chasma	2.7	248.8	45.0	Albedo name.
+Chasma	[Thyles Chasma]	-70.8	127.5	235.0	Classical albedo feature; name changed to Thyles Rupes.
+Chasma	Tithonium Chasma	-4.6	275.3	810.0	Classical albedo feature name.
+Colles	Abalos Colles	76.9	288.0	245.0	Named for classical albedo feature at 72N, 70W.
+Colles	Acidalia Colles	50.5	336.9	360.0	From classical albedo feature name.
+Colles	Alpheus Colles	-39.7	59.7	628.0	From albedo feature at 45S, 292W.
+Colles	Arena Colles	25.2	82.5	580.0	Classical albedo feature at 13N, 294W.
+Colles	Ariadnes Colles	-34.5	172.4	182.0	Classical albedo feature name.
+Colles	Astapus Colles	35.2	87.7	580.0	From albedo feature at 35N, 269W.
+Colles	Avernus Colles	-1.6	171.0	244.0	Named for albedo feature at 10S, 195W.
+Colles	Colles Nili	38.7	62.9	645.0	From classical albedo feature Portus Nili, at 38N, 295W.
+Colles	Cydonia Colles	39.1	347.8	365.0	Named for classical albedo feature at 50N, 355W.
+Colles	Deuteronilus Colles	42.0	21.7	62.0	Classical albedo feature name.
+Colles	Galaxias Colles	36.9	145.7	613.0	Albedo feature name.
+Colles	Ortygia Colles	53.8	350.4	268.0	Named for classical albedo feature at 65N, 350W.
+Colles	Oxia Colles	21.5	333.3	569.0	From albedo feature at 25N, 24W.
+Colles	Scandia Colles	66.2	222.8	1365.0	From albedo feature name.
+Colles	Tartarus Colles	19.8	173.0	1750.0	From albedo feature at 2N, 183W.
+Colles	Tempe Colles	33.7	277.2	36.0	Classical albedo name.
+Crater	Aban	15.9	111.0	4.2	Town in Russia.
+Crater	Achar	45.4	123.1	5.5	Town in Uruguay.
+Crater	Adams	30.8	163.0	94.9	Walter S.; American astronomer (1876-1956).
+Crater	Agassiz	-69.9	271.0	117.7	Jean L.; American naturalist (1807-1873).
+Crater	Airy-0	-5.1	0.0	0.5	Small crater within crater Airy that defines zero degrees longitude on Mars.
+Crater	Ajon	16.5	103.1	8.4	Town in Russia.
+Crater	Aki	-35.5	299.7	8.1	Town in Japan.
+Crater	Aktaj	20.4	313.4	4.9	Town in Russia.
+Crater	Albany	23.0	310.9	2.0	American colonial town (New York).
+Crater	Albi	-41.5	324.9	8.5	Town in France.
+Crater	Alexey Tolstoy	-47.5	125.2	95.0	Aleksey; Soviet writer (1882-1945).
+Crater	Alga	-24.3	333.3	19.2	Town in Kazakhstan.
+Crater	Alitus	-34.9	321.8	50.0	Town in Lithuania.
+Crater	[Amet]	23.5	302.6	0.0	Town in India.
+Crater	Amsterdam	23.0	312.9	1.3	Dutch port.
+Crater	Angu	20.0	105.6	1.8	Town in Zaire.
+Crater	Aniak	-31.9	290.4	51.0	Town in Alaska, USA.
+Crater	Annapolis	23.2	312.2	0.4	American colonial town (Maryland).
+Crater	Antoniadi	21.3	60.8	394.0	Eugene M.; Greco-French astronomer (1870-1944).
+Crater	Apia	-37.3	88.9	10.5	Town in American Samoa.
+Crater	Apt	39.9	350.5	10.0	Town in France.
+Crater	Arago	10.1	29.8	154.0	Dominique F.; French astronomer (1786-1853).
+Crater	Arandas	42.4	344.9	25.1	Town in Mexico.
+Crater	Argas	23.3	309.7	3.7	Town in Russia.
+Crater	Arica	-23.8	110.1	15.5	Town in Colombia.
+Crater	Arkhangelsky	-41.1	335.2	125.0	A.D.; Russian geologist.
+Crater	Arrhenius	-40	122.6	129.0	Svante; Swedish physical chemist (1859-1927).
+Crater	Arta	21.4	305.6	4.0	Town in Russia.
+Crater	Aspen	-21.4	336.8	20.3	Town in Colorado, USA.
+Crater	Aveiro	21.3	280.9	9.5	Town in Portugal.
+Crater	Ayacucho	38.2	267.9	2.5	Town in Bolivia.
+Crater	Ayr	-39	91.5	13.0	Town in Queensland, Australia.
+Crater	Azul	-42.1	317.4	19.7	Town in Argentina.
+Crater	Azusa	-5.5	319.6	41.1	Town in California, USA.
+Crater	Babakin	-36.1	288.5	78.0	Soviet builder of unmanned space stations (1914-1970).
+Crater	Bacht	18.7	102.6	8.0	Town in Uzbekistan.
+Crater	Bada	20.3	309.2	2.1	Town in Russia.
+Crater	Bahn	-3.5	316.6	12.3	Town in Liberia.
+Crater	Bak	18.1	103.7	3.2	Town in Hungary.
+Crater	Bakhuysen	-23	15.6	161.0	Henricus G.; Dutch astronomer (1838-1923).
+Crater	Balboa	-3.8	326.0	23.3	Town in the Panama Canal zone.
+Crater	Baldet	22.7	65.4	180.0	Ferdnand; French astronomer (1885-1964).
+Crater	Balta	-23.8	333.4	18.2	Town in Ukraine.
+Crater	Baltisk	-42.3	305.3	52.0	Town in Russia.
+Crater	Balvicar	16.2	306.7	20.5	Town in Scotland.
+Crater	Bamba	-3.4	318.4	23.0	Town in Zaire.
+Crater	Bamberg	39.7	356.8	58.3	Town in Germany.
+Crater	Banff	17.5	329.2	5.0	Town in Alberta, Canada.
+Crater	Banh	19.4	304.4	15.0	Town in Burkina Faso (formerly Upper Volta).
+Crater	Bar	-25.2	340.5	1.9	Town in Ukraine.
+Crater	Barabashov	47.4	291.2	125.6	Nilolay P.; Russian astronomer (1894-1971).
+Crater	Barnard	-61.1	61.6	125.0	Edward E.; American astronomer (1857-1923).
+Crater	Baro	-24.8	110.6	16.7	Town in Iceland.
+Crater	Barsukov	8.0	330.9	71.7	Valery L.; Soviet geochemist and planetologist (1928-1992).
+Crater	Basin	17.8	106.9	15.7	Town in Wyoming, USA.
+Crater	Batoka	-7.6	323.2	15.5	Town in Zambia.
+Crater	Bato\,s	21.5	330.5	17.2	Town in Romania.
+Crater	Baykonyr	46.4	132.6	4.0	Soviet launch site.
+Crater	Bazas	-27.8	93.3	16.7	Town in France.
+Crater	Becquerel	22.1	352.0	171.2	Antoine H.; French physicist (1852-1908).
+Crater	Beer	-14.5	351.8	89.8	Wilhelm; German astronomer (1797-1850).
+Crater	Beltra	18.0	102.3	7.4	Town in Ireland.
+Crater	Belz	21.6	316.7	10.2	Town in Ukraine.
+Crater	Bend	-22.4	332.2	3.6	Town in Oregon, USA.
+Crater	Bentham	-55.8	319.4	11.5	Town in England.
+Crater	Bentong	-22.3	340.9	10.2	Town in Malaysia.
+Crater	Bernard	-23.3	205.7	131.0	P.; French atmospheric scientist.
+Crater	Berseba	-4.4	322.3	37.5	Town in Namibia.
+Crater	Bhor	41.7	134.4	6.0	Town in India.
+Crater	Bianchini	-63.9	264.6	76.0	Francesco; Italian astronomer (1662-1729).
+Crater	Bigbee	-24.8	325.2	20.5	Town in Mississippi, USA.
+Crater	Bira	25.1	314.4	2.9	Town in Russia.
+Crater	Bise	20.2	303.1	9.8	Town in Okinawa.
+Crater	Bison	-26.3	330.8	16.0	Town in Kansas, USA.
+Crater	Bjerknes	-43.1	171.4	94.0	Vilhelm F.; Norwegian physicist (1862-1951).
+Crater	Bland	18.3	108.7	7.1	Town in Missouri, USA.
+Crater	Bled	21.6	328.5	7.8	Town in Yugoslavia.
+Crater	Blitta	-25.9	339.0	13.6	Town in Togo.
+Crater	Blois	23.6	304.0	12.5	Town in France.
+Crater	Bluff	23.5	110.0	6.6	Town in New Zealand.
+Crater	Boeddicker	-14.9	162.3	109.0	Otto; German astronomer (1853-1937).
+Crater	Bogra	-24.2	331.1	21.3	Town in Bangladesh.
+Crater	Bok	20.6	328.3	7.1	Town in New Guinea.
+Crater	Bole	25.3	305.9	8.3	Town in Ghana.
+Crater	Bombala	-27.6	106.0	38.1	Town in New S. Wales, Australia.
+Crater	Bond	-32.9	324.0	110.6	George P.; American astronomer (1825-1865).
+Crater	Bonestell	42.0	329.5	42.4	Chesley; American space artist (1888-1986).
+Crater	Bor	18.2	326.2	4.3	Town in Russia.
+Crater	Bordeaux	23.1	311.0	1.8	French port.
+Crater	Boru	-24.3	332.1	10.9	Town in Russia.
+Crater	Bouguer	-18.5	27.2	107.0	Pierre; French physicist-hydrographer (1698-1758).
+Crater	Boulia	-22.9	111.2	10.5	Town in Queensland, Australia.
+Crater	Bozkir	-44.2	327.8	84.0	Town in Turkey.
+Crater	Brashear	-53.9	240.8	79.0	John A.; American physicist (1840-1920).
+Crater	Bremerhaven	23.7	311.3	2.5	German port.
+Crater	Briault	-10.1	89.6	96.6	P.; French astronomer (d. 1922).
+Crater	Bridgetown	21.9	312.8	1.3	Port of Barbados.
+Crater	Bristol	22.1	313.0	3.0	English port.
+Crater	Broach	23.5	303.0	12.0	Town in India.
+Crater	Brush	21.7	111.3	6.4	Town in Colorado, USA.
+Crater	Bulhar	50.4	134.4	18.7	Town in Somalia.
+Crater	Bunge	-33.9	311.3	73.7	Andrey Aleksandrovich; Russian zoologist, permafrost investigator (Late 19th century), and Nicolai A.; Russian chemist.
+Crater	Burroughs	-72.2	117.0	125.7	Edgar R.; American novelist (1875-1950).
+Crater	Burton	-14	203.6	123.0	Charles E.; British astronomer (1846-1882).
+Crater	Buta	-23.2	327.5	11.0	Town in Zaire.
+Crater	Butte	-5.1	321.0	13.0	Town in Montana, USA.
+Crater	Byrd	-65.3	127.8	126.8	Richard E.; American aviator-explorer (1888-1975).
+Crater	Byske	-5	326.0	13.5	Town in Sweden.
+Crater	C\-adiz	23.1	310.9	1.5	Spanish port.
+Crater	Cairns	23.6	312.5	8.6	Town in Australia.
+Crater	Calahorra	26.4	321.3	35.2	Town in Spain.
+Crater	Calamar	18.3	305.0	7.2	Town in Colombia.
+Crater	Calbe	-25.1	331.1	13.3	Town in Germany.
+Crater	Camargo	17.7	109.6	4.7	Town in Bolivia.
+Crater	Camiling	-0.8	321.9	22.5	Town in the Philippines.
+Crater	Camiri	-44.7	317.8	26.4	Town in Bolivia.
+Crater	Campbell	-54.4	165.4	129.0	John W.; Canadian physicist (1889-1955). William W.; American astronomer (1862-1938).
+Crater	Campos	-21.8	332.1	8.1	Town in Brazil.
+Crater	Can	48.2	345.3	8.4	Town in Turkey.
+Crater	Ca\~nas	-31.2	89.7	42.0	Town in Puerto Rico.
+Crater	Canaveral	46.8	135.8	3.3	American launch site.
+Crater	Canberra	47.2	132.6	3.0	Australian tracking site.
+Crater	Cangwu	41.8	270.3	14.0	Town in China.
+Crater	Canso	21.3	299.3	27.4	Town in Nova Scotia, Canada.
+Crater	Cantoura	14.8	308.2	51.4	Town in Venezuela.
+Crater	Cartago	-23.3	342.0	37.5	Town in Costa Rica.
+Crater	Cassini	23.6	31.8	412.0	Giovanni; Italian astronomer (1625-1712).
+Crater	Cave	21.6	324.3	8.4	Town in New Zealand.
+Crater	Caxias	-29	259.2	25.4	Town in Brazil.
+Crater	Cerulli	32.2	22.1	130.0	Vicenzo; Italian astronomer (1859-1927).
+Crater	Chafe	15.1	102.3	4.8	Town in Nigeria.
+Crater	Chamberlin	-65.8	235.5	120.4	Thomas C.; American geologist (1843-1928).
+Crater	Changs\vong	23.5	302.6	35.0	Town in the Republic of Korea.
+Crater	Chapais	-22.4	339.4	37.4	Town in Quebec, Canada.
+Crater	Charleston	22.6	312.1	1.5	American colonial town (South Carolina).
+Crater	Charlier	-68.4	191.3	113.1	Carl V.; Swedish astronomer (1862-1934).
+Crater	Charlieu	38.1	275.9	19.1	Town in France.
+Crater	Chatturat	35.4	264.9	8.2	Town in Thailand.
+Crater	Chauk	23.3	304.0	10.0	Town in Burma.
+Crater	Cheb	-24.2	340.5	8.3	Town in Czechoslovakia.
+Crater	Chefu	-22.9	112.2	11.5	Town in Mozambique.
+Crater	Chekalin	-24.3	333.1	89.3	Town in Turkmenistan.
+Crater	Chia	1.5	300.2	96.0	Town in Spain.
+Crater	Chimbote	-1.4	320.2	67.2	Town in Peru.
+Crater	Chincoteague	41.2	124.0	37.0	Town in Virginia, USA.
+Crater	Chinju	-4.5	317.8	66.6	Town in the Republic of Korea.
+Crater	Chinook	22.5	304.5	20.0	Town in Alberta, Canada.
+Crater	Chive	21.7	303.9	9.0	Town in Bolivia.
+Crater	Choctaw	-41.2	322.7	23.8	Town in Ohio, USA.
+Crater	Chom	38.6	357.4	5.5	Town in China (Tibet).
+Crater	Chur	16.9	330.6	4.3	Town in Russia.
+Crater	Circle	-22.2	334.4	11.5	Town in Montana, USA.
+Crater	Clark	-55.3	226.6	98.0	Alvan; American optician-astronomer (1804-1887).
+Crater	Clogh	20.6	312.2	11.1	Town in Ireland.
+Crater	Clova	21.5	307.9	7.7	Town in Quebec, Canada.
+Crater	Cluny	-23.9	332.6	14.8	Town in France.
+Crater	Cobalt	-25.8	332.9	11.5	Town in Connecticut, USA.
+Crater	Coblentz	-55	269.7	112.0	William W.; American physicist (1873-1962).
+Crater	Cobres	-11.7	206.2	94.0	Village in Argentina.
+Crater	Col\-on	22.7	312.9	2.0	Port of Panama.
+Crater	Columbus	-29.5	193.9	119.0	Christopher; Italian explorer (1451-1506).
+Crater	Comas Sola	-19.7	201.5	127.0	Jose; Spanish astronomer (1868-1937).
+Crater	Conches	-4.2	325.7	21.2	Town in France.
+Crater	Concord	16.5	325.9	20.7	Town in Massachusetts, USA.
+Crater	Cooma	-23.7	251.6	17.3	Town in New South Wales, Australia.
+Crater	Copernicus	-48.8	190.8	294.0	Nicolaus; Polish astronomer (1473-1543).
+Crater	Corby	42.9	137.5	6.7	Town in England.
+Crater	Cost	15.0	103.9	11.6	Town in Texas, USA.
+Crater	Cray	44.1	343.8	7.2	Town in England.
+Crater	Creel	-6	321.1	9.3	Town in Mexico.
+Crater	Crewe	-24.8	340.4	3.6	Town in England.
+Crater	Crivitz	-14.5	174.7	6.1	Town in Germany.
+Crater	Crommelin	5.0	349.8	113.9	Andrew C.; British astronomer (1865-1939).
+Crater	Cruls	-42.9	162.9	88.0	Luiz; Brazilian astronomer (1848-1908).
+Crater	Cruz	38.5	357.9	5.4	Town in Venezuela.
+Crater	Cue	-35.8	93.1	10.7	Town in Western Australia.
+Crater	Curie	28.8	355.1	114.1	Pierre; French physicist-chemist (1859-1906).
+Crater	Cypress	-47.3	312.6	14.2	Town in Illinois, USA.
+Crater	Da Vinci	1.4	320.6	100.2	Leonardo; Italian artist-scientist (1452-1519).
+Crater	Daan	-40.5	91.5	12.5	Town in China.
+Crater	Daet	-7.3	318.1	10.5	Town in the Philippines.
+Crater	Daly	-66.3	336.9	90.5	Reginald A.; Canadian geologist (1871-1975).
+Crater	Dana	-72.6	327.2	91.7	James D.; American geologist (1813-1895).
+Crater	Dank	22.0	106.9	8.7	Town in Oman.
+Crater	Darvel	17.8	308.9	22.0	Town in Scotland.
+Crater	Darwin	-57	340.5	178.0	Charles R.; British naturalist (1809-1882) and George H.; British astronomer (1845-1912).
+Crater	Dawes	-9.2	38.0	191.0	William R.; British astronomer (1799-1868).
+Crater	de Vaucouleurs	-13.4	170.9	293.0	Gerard Henri; American astronomer (1918-1995).
+Crater	Deba	-23.9	342.6	10.3	Town in Nigeria.
+Crater	Dein	38.2	357.4	26.0	Town in New Guinea.
+Crater	Dejnev	-25.2	195.2	156.0	Semen Ivanovich; Russian geographer, explorer, and navigator (1605-1673).
+Crater	Delta	-46	320.8	8.1	Town in Louisiana, USA.
+Crater	Denning	-17.5	33.4	165.0	William F.; British astronomer (1848-1931).
+Crater	Dersu	22.6	308.0	6.6	Town in Russia.
+Crater	Dese	-45.4	329.3	13.7	Town in Ethiopa.
+Crater	Dessau	-42.8	306.8	10.2	Town in Germany.
+Crater	Dia-Cau	-0.4	317.3	29.7	Town in the Socialist Republic of Vietnam.
+Crater	Dingo	-23.7	342.5	16.0	Town in Australia.
+Crater	Dinorwic	-30.1	258.5	55.8	Town in Ontario, Canada.
+Crater	Dison	-25	343.5	21.0	Town in Belgium.
+Crater	Dixie	17.8	304.0	28.7	Town in Georgia, USA.
+Crater	Dokuchaev	-60.7	232.8	78.0	Vasily Vasil'evich; Russian soil scientist; founded modern genetical soil science (1840-1903).
+Crater	Doon	23.5	109.4	3.7	Town in Ontario, Canada.
+Crater	Douglass	-51.5	289.4	94.0	Andrew E.; American astronomer (1867-1962).
+Crater	Downe	-15.9	175.7	28.0	Town in England.
+Crater	Dromore	19.9	310.3	14.8	Town in Northern Ireland.
+Crater	Du Martheray	5.5	93.5	102.0	Maurice; Swiss astronomer (1892-1955).
+Crater	Du Toit	-71.6	310.4	83.0	Alexander L.; South African geologist (1878-1948).
+Crater	Dubki	-35	304.7	9.0	Town in Russia.
+Crater	Dunhuang	-80.9	311.5	12.1	Town in China.
+Crater	Dush	22.5	305.9	2.5	Town in Egypt.
+Crater	Dzeng	-80.5	289.6	10.6	Town in Cameroon.
+Crater	Eads	-28.5	330.0	2.3	Town in Colorado, USA.
+Crater	Eagle	43.8	351.8	13.0	Town in Idaho, USA.
+Crater	Echt	-22	331.8	1.1	Town in Scotland.
+Crater	Edam	-26.3	339.9	20.2	Town in the Netherlands.
+Crater	Eddie	12.3	142.1	89.0	Lindsay A.; South African astronomer (1845-1913).
+Crater	Eger	-48.3	308.1	13.0	Town in Hungary.
+Crater	Eil	41.8	350.2	5.7	Town in Somalia.
+Crater	Ejriksson	-19.2	186.1	49.0	Leif; Norse explorer (c. 1000).
+Crater	Elath	45.9	346.3	13.2	Town in Israel.
+Crater	Ellsley	36.3	276.6	11.1	Town in England.
+Crater	Ely	-23.6	332.6	10.3	Town in Nevada, USA.
+Crater	Escalante	0.2	115.3	79.3	F.; Mexican astronomer (c. 1930).
+Crater	Escorial	76.9	304.6	22.7	Town in Spain.
+Crater	Esk	45.2	352.9	3.9	Town in Australia.
+Crater	Espino	-19.7	110.2	12.0	Town in Venezuela.
+Crater	Eudoxus	-44.5	212.5	98.0	Greek astronomer (c. 408-355 B.C.).
+Crater	Evpatoriya	46.9	134.4	1.0	Soviet tracking site (Soviet spelling used).
+Crater	Faith	42.9	348.1	5.8	Town in North Dakota, USA.
+Crater	Falun	-24	335.3	10.2	Town in Sweden.
+Crater	Faqu	-24.5	106.2	12.4	Town in Jordan.
+Crater	Fastov	-25	339.6	10.3	Town in Ukraine.
+Crater	Fenagh	34.3	144.3	6.3	Town in Ireland.
+Crater	Fesenkov	21.6	273.3	87.0	Vasilii G.; Russian astronomer (1889-1972).
+Crater	Flammarion	25.2	48.2	173.0	Camille; French astronomer (1842-1925).
+Crater	Flat	-25.4	340.4	2.5	Town in Alabama, USA.
+Crater	Flaugergues	-16.8	19.2	245.0	Honore; French astronomer (1755-1835).
+Crater	Floq	15.0	107.1	2.2	Town in Albania.
+Crater	Flora	-44.7	308.5	19.0	Town in Mississippi, USA.
+Crater	Focas	33.6	12.7	76.5	Jean H.; Greco-French astronomer (1909-1969).
+Crater	Fontana	-62.9	287.9	80.0	Francesco; Italian astronomer (1585-1685).
+Crater	Foros	-33.4	332.1	24.5	Town in Ukraine.
+Crater	Fournier	-4.3	72.6	118.0	Georges; French astronomer (1881-1954).
+Crater	Freedom	43.4	351.0	12.9	Town in Oklahoma, USA.
+Crater	Funchal	23.0	310.5	1.7	Port of Madeira Islands.
+Crater	Gaan	38.7	356.5	2.8	Town in Somalia.
+Crater	Gagra	-20.6	337.8	13.3	Town in the Republic of Georgia.
+Crater	Gah	-44.7	327.3	2.7	Town in Indonesia.
+Crater	Galdakao	-13.4	176.5	35.0	Town in Spain.
+Crater	Gale	-5.4	137.7	155.3	Walter F.; Australian astronomer (1865-1945).
+Crater	Gali	-43.8	322.8	26.4	Town in the Republic of Georgia.
+Crater	Galilaei	5.6	333.0	137.3	Galileo; Italian astronomer and physicist (1564-1642).
+Crater	Galle	-50.9	329.1	230.0	Johann G.; German astronomer (1812-1910).
+Crater	Galu	-22.1	338.3	12.5	Town in Zaire.
+Crater	Gander	-31.3	94.1	38.0	Town in Newfoundland, Canada.
+Crater	Gandu	-45.4	312.7	8.8	Town in Brazil.
+Crater	Gandzani	34.2	269.0	54.8	Town in the Republic of Georgia.
+Crater	Gardo	-26.7	335.2	17.2	Town in Somalia.
+Crater	Gari	-35.9	288.7	9.4	Town in Russia.
+Crater	Garm	48.3	350.9	5.0	Town in Tadzhikistan.
+Crater	Gastre	24.6	112.5	7.0	Town in Argentina.
+Crater	Gatico	-21	339.1	18.0	Town in Chile.
+Crater	Gilbert	-68	86.3	126.4	Grove K.; American geologist (1843-1918).
+Crater	Gill	15.8	5.4	83.0	David; British astronomer (1843-1914).
+Crater	Glazov	-20.6	333.4	24.7	Town in Russia.
+Crater	Gledhill	-53.2	87.0	82.5	Joseph; British astronomer (1836-1906).
+Crater	Glendore	18.3	308.2	8.0	Town in Ireland.
+Crater	Glide	-8.1	316.8	10.5	Town in Oregon, USA.
+Crater	Globe	-23.7	332.6	51.7	Town in Arizona, USA.
+Crater	Goba	-23.2	338.9	10.8	Town in Ethiopia.
+Crater	Goff	23.3	104.8	7.9	Town in Somalia.
+Crater	Gol	47.2	349.3	9.6	Town in Norway.
+Crater	Gold	20.0	328.7	9.0	Town in Pennsylvania, USA.
+Crater	Golden	-22	326.5	20.2	Town in Illinois, USA.
+Crater	Goldstone	47.7	134.5	1.0	American tracking site.
+Crater	Gori	-22.9	331.1	6.2	town in the Republic of Georgia.
+Crater	Graff	-21.2	153.7	158.0	Kasimir; German astronomer (1878-1950).
+Crater	Green	-52.3	351.6	184.0	Nathan E.; British astronomer (1823-1899).
+Crater	Gr\'ojec	-21.5	329.1	38.5	Town in Poland.
+Crater	Groves	-4.1	315.4	11.2	Town in Texas, USA.
+Crater	Guaymas	25.7	314.9	20.0	Town in Mexico.
+Crater	Guir	-21.5	339.5	18.9	Town in Mali.
+Crater	Gulch	15.9	108.9	8.2	Town in Ethiopia.
+Crater	Gunnison	-43.7	102.8	40.8	Town in Colorado, USA.
+Crater	Gusev	-14.6	175.4	166.0	Matwei M.; Russian astronomer (1826-1866).
+Crater	Gwash	39.0	356.8	4.7	Town in Pakistan.
+Crater	Hadley	-19.3	156.9	119.0	George; British meteorologist (1685-1768).
+Crater	Haldane	-52.8	129.1	78.7	John B.; British physiologist-geneticist (1892-1964).
+Crater	Hale	-35.8	323.5	149.0	George E.; American astronomer (1868-1938).
+Crater	Halley	-48.4	300.7	84.5	Edmund; British astronomer (1656-1742).
+Crater	Ham	-44.7	327.4	1.8	Town in France.
+Crater	Hamaguir	48.7	132.4	0.5	Algerian launch site.
+Crater	Hamelin	20.2	327.2	9.6	Old German town referred to in the Pied Piper fairy tale.
+Crater	Handlov\'a	37.7	271.3	4.6	Town in Czechoslovakia.
+Crater	Hara\,d	-27.5	331.9	8.0	Town in Saudi Arabia.
+Crater	Hartwig	-38.7	344.0	105.0	Ernst; German astronomer (1851-1923).
+Crater	Heaviside	-70.5	264.7	87.4	Oliver; British physicist (1850-1925).
+Crater	Heinlein	-64.5	116.2	88.0	Robert A.; American author (1907-1988).
+Crater	Helmholtz	-45.5	338.7	111.5	Hermann von; German physicist (1821-1894).
+Crater	Henry	10.8	23.3	171.0	Paul; French astronomer (1848-1905).  Prosper; French astronomer (1849-1903).
+Crater	Herculaneum	19.3	301.3	35.4	Town in Italy.
+Crater	Herschel	-14.7	129.7	304.5	John F.; British astronomer (1792-1871; William H.; British astronomer (1738-1822).
+Crater	[Hilo]	-44.5	324.5	20.0	Town in Hawaii, USA. Name dropped because crater cannot be located on imagery.
+Crater	Hipparchus	-44.5	208.6	93.0	Greek astronomer (c. 160-125 B.C.).
+Crater	H\-it	47.1	138.3	7.3	Town in Iraq.
+Crater	Holden	-26.1	326.0	153.8	Edward S.; American astronomer (1846-1914).
+Crater	Holmes	-74.8	66.8	122.0	Arthur; British geologist (1890-1965).
+Crater	Honda	-22.4	343.6	9.1	Town in Colombia.
+Crater	Hooke	-44.9	315.6	139.0	Robert; British physicist-astronomer (1635-1703).
+Crater	Hope	44.9	349.7	7.3	Town in British Columbia, Canada.
+Crater	Houston	48.2	135.9	1.6	American mission control site.
+Crater	Hs\-uanch'eng	46.7	132.6	2.0	Chinese launch site.
+Crater	Huancayo	-3.6	320.1	25.1	Town in Peru.
+Crater	Huggins	-49.1	155.6	90.0	William; British astronomer (1824-1910).
+Crater	Hussey	-53.5	233.3	99.0	William J.; American astronomer (1862-1926).
+Crater	Hutton	-71.6	104.6	99.0	James; British geologist (1726-1797).
+Crater	Huxley	-62.7	100.8	107.0	Thomas H.; British biologist (1825-1895).
+Crater	Huygens	-14.1	55.4	470.0	Christian; Dutch physicist-astronomer (1629-1695).
+Crater	Ibragimov	-25.5	300.3	86.0	Nadir Baba Ogly; Soviet astronomer (1932-1977).
+Crater	Igol	-20.1	110.8	8.6	Town in Hungary.
+Crater	Ikej	21.0	112.4	4.7	Town in Russia.
+Crater	Imgr	19.1	111.1	3.0	Town in Russia.
+Crater	Innsbruck	-6.4	320.0	61.1	Town in Austria.
+Crater	Ins	24.5	108.8	2.8	Town in Switzerland.
+Crater	Inta	-24.3	334.8	16.2	Town in Russia.
+Crater	Inuvik	78.6	331.4	20.5	Town in Northwest Territories, Canada.
+Crater	Irbit	-24.3	335.0	13.3	Town in Russia.
+Crater	Irharen	34.5	140.8	6.5	Town in Algeria.
+Crater	Isil	-27	87.8	82.0	Town in Spain.
+Crater	Izendy	-28.9	258.5	23.5	Town in Russia.
+Crater	Jal	-26.2	331.2	5.0	Town in New Mexico, USA.
+Crater	Jama	21.4	306.7	2.9	Town in Tunisia.
+Crater	Jampur	38.7	278.3	29.0	Town in Pakistan.
+Crater	Janssen	2.6	37.5	158.0	Pierre J.; French astronomer (1824-1907).
+Crater	Jarry-Desloges	-9.4	83.7	92.0	Rene; French astronomer (1868-1951).
+Crater	Jeans	-69.6	154.1	80.2	James H.; British physicist, astronomer (1877-1946).
+Crater	[Jeki]	23.7	307.7	0.0	Town in Ethiopia.
+Crater	Jen	39.9	349.4	9.0	Town in Nigeria.
+Crater	Jez\vza	-48.4	322.0	9.1	Town in Russia.
+Crater	Jijiga	25.1	306.0	17.3	Town in Ethiopia.
+Crater	Jodrell	47.5	132.2	3.0	United Kingdom tracking site.
+Crater	Johannesburg	47.9	133.2	1.0	Republic of South Africa tracking site.
+Crater	Joly	-74.5	317.3	79.9	John; Irish geologist (1857-1933).
+Crater	Jones	-18.9	340.1	94.0	Harold S.; British astronomer (1890-1960).
+Crater	Kachug	18.2	107.5	4.7	Town in Russia.
+Crater	Kagoshima	47.3	135.6	1.5	Japanese launch site.
+Crater	Kagul	-23.7	340.9	8.5	Town in Moldova.
+Crater	K\-aid	-4.5	315.2	8.5	Town in Iraq.
+Crater	Kaiser	-46.3	19.1	207.0	Frederick; Dutch astronomer (1808-1872).
+Crater	Kaj	-27	330.6	1.8	Town in Russia.
+Crater	Kakori	-41.5	330.1	29.7	Town in India.
+Crater	Kaliningrad	48.5	134.9	1.2	Soviet mission control site.
+Crater	Kamativi	-20.5	99.9	59.0	Town in Zimbabwe.
+Crater	Kamloops	-53.5	327.4	65.0	Town in Canada.
+Crater	Kampot	-41.8	314.3	13.0	Town in Democratic Kampuchea (Cambodia).
+Crater	Kanab	-27.2	341.0	15.0	Town in Utah, USA.
+Crater	Kansk	-20.5	342.7	34.3	Town in Russia.
+Crater	Kantang	-24.4	342.4	54.8	Town in Thailand.
+Crater	Karpinsk	-45.6	327.8	29.8	Town in Russia.
+Crater	Karshi	-23.3	340.6	22.3	town in Uzbekhistan.
+Crater	Kartabo	-40.9	307.5	20.0	Town in Guyana.
+Crater	Kasabi	-27.8	89.0	43.0	Town in Zambia.
+Crater	Kashira	-27.1	341.6	68.5	Town in Russia.
+Crater	Kasimov	-24.7	337.0	91.3	Town in Russia.
+Crater	Kasra	22.0	103.6	3.6	Town in Tunisia.
+Crater	Kaup	22.6	326.8	3.3	Town in New Guinea.
+Crater	Kaw	16.4	104.2	11.2	Town in French Guiana.
+Crater	Kayne	-15.5	173.4	34.9	Town in Botswana.
+Crater	Keeler	-60.8	208.7	95.0	James E.; American astronomer (1857-1900).
+Crater	Kem'	-44.9	327.0	3.3	Town in Russia.
+Crater	Kepler	-46.8	140.9	233.0	Johannes; German astronomer (1571-1630).
+Crater	Keul'	46.0	122.2	5.9	Town in Russia.
+Crater	Khanpur	20.7	101.9	2.5	Town in Pakistan.
+Crater	Kholm	-7.2	317.9	11.6	Town in Russia.
+Crater	Khurli	-20.9	112.9	8.9	Town in Pakistan.
+Crater	Kifr\-i	-45.7	305.6	15.0	Town in Iraq.
+Crater	Kimry	-20.1	343.6	21.6	Town in Russia.
+Crater	Kin	20.2	326.5	8.3	Town in Japan.
+Crater	Kinda	-25.7	254.8	14.0	Town in Zaire.
+Crater	Kingston	22.1	312.9	0.7	Jamaican port.
+Crater	Kinkora	-24.9	112.8	54.3	Town in Prince Edward Island, Canada.
+Crater	Kipini	25.9	328.4	73.6	Town in Kenya.
+Crater	Kirs	-26.3	340.5	3.0	Town in Russia.
+Crater	Kirsanov	-22.2	334.8	15.5	Town in Russia.
+Crater	Kisambo	34.1	271.0	15.8	Town in Zaire.
+Crater	Kita	-22.8	342.8	10.2	Town in Mali.
+Crater	Knobel	-6.6	133.2	128.6	Edward B.; British astronomer (1841-1930).
+Crater	Koga	-29	256.2	19.3	Town in Tanzania.
+Crater	Kok	15.6	331.9	6.3	Town in Malaysia (Sarawak).
+Crater	Kong	-5.4	321.4	11.8	Town in Ivory Coast.
+Crater	Korolev	72.8	164.5	84.2	Sergey P.; Russian engineer (1906-1966).
+Crater	Korph	19.4	105.4	7.5	Town in Russia.
+Crater	Kourou	46.8	132.7	2.0	French Guianan launch site.
+Crater	Koval'sky	-29.9	218.5	309.0	M. A.; Russian astronomer (1821-1884).
+Crater	Koy	21.5	309.5	7.1	Town in Russia.
+Crater	Krasnoye	35.8	143.8	6.5	Town in Russia.
+Crater	Kribi	-43	316.4	13.7	Town in the United Republic of Cameroon.
+Crater	Krishtofovich	-48.2	97.2	112.0	Afrikan Nikolaevich; Soviet paleobotanist (1885-1953).
+Crater	Kuba	-25.3	340.3	26.8	Town in Azerbaijan.
+Crater	Kufra	40.4	120.3	37.5	Town in Libya.
+Crater	Kuiper	-57.1	202.7	87.0	Gerard P.; American astronomer (1905-1973).
+Crater	Kular	16.4	108.1	8.1	Town in Russia.
+Crater	Kumak	-35.5	291.9	15.0	Town in Russia.
+Crater	Kumara	43.0	128.5	12.0	Town in New Zealand.
+Crater	Kunes	-25.2	107.8	15.1	Town in Norway.
+Crater	Kunowsky	56.8	350.3	67.4	George K.; German astronomer (1786-1846).
+Crater	Kushva	-44	324.4	38.3	Town in Russia.
+Crater	La Paz	21.0	310.9	0.6	Mexican port.
+Crater	Labria	-35	311.9	54.0	Town in Brazil.
+Crater	Lachute	-4.3	320.2	16.1	Town in Canada.
+Crater	Laf	48.0	354.0	3.2	Town in the United Republic of Cameroon.
+Crater	Lagarto	49.9	351.6	19.5	Town in Brazil.
+Crater	Lamas	-27	339.3	23.2	Town in Peru.
+Crater	Lambert	-20	25.3	92.0	Johann H.; German physicist (1728-1777).
+Crater	Lamont	-58.3	246.4	76.0	Johann von; German astronomer (1805-1879).
+Crater	Lampland	-35.6	280.4	79.0	Carl O.; American astronomer (1873-1951).
+Crater	Land	48.3	351.2	5.4	Town in Alabama, USA.
+Crater	Lapri	20.3	107.4	3.1	Town in Russia.
+Crater	Lar	-25.8	330.9	7.0	Town in Iran.
+Crater	Lassell	-20.7	297.5	92.0	William; British astronomer (1799-1880).
+Crater	Lasswitz	-9.3	138.2	111.0	Kurd; German author (1848-1910).
+Crater	Lau	-74.3	252.2	104.9	Hans E.; Danish astronomer (1879-1918).
+Crater	Le Verrier	-37.7	17.1	140.0	Urbain J.; French astronomer (1811-1877).
+Crater	Lebu	-20.3	340.5	20.0	Town in Chile.
+Crater	Leleque	36.5	138.1	8.4	Town in Argentina.
+Crater	Lemgo	-42.5	325.2	16.6	Town in Germany.
+Crater	Lenya	-26.7	253.1	15.5	Town in Burma.
+Crater	Leuk	23.9	304.9	3.6	Town in Switzerland.
+Crater	Lexington	21.8	311.3	5.0	American colonial town (Massachusetts).
+Crater	Li Fan	-46.9	206.8	104.8	Chinese astronomer (c. A.D. 85).
+Crater	Liais	-75.3	107.2	132.0	Emmanuel; French astronomer (1826-1900).
+Crater	Libertad	23.0	330.5	31.0	Town in Venezuela.
+Crater	Linpu	18.2	113.1	18.5	Town in China (Chekiang).
+Crater	Lins	15.7	330.1	6.2	Town in Brazil.
+Crater	Lisboa	21.2	312.3	0.7	Portuguese port.
+Crater	Littleton	15.7	107.1	7.2	Town in Maine, USA.
+Crater	Liu Hsin	-53.3	188.4	137.0	Chinese astronomer (d. A.D. 22).
+Crater	Livny	-27.2	330.8	9.2	Town in Russia.
+Crater	Llanesco	-28.3	258.8	27.0	Town in Spain.
+Crater	Locana	-3.4	321.8	6.6	Town in Italy.
+Crater	Lockyer	27.7	160.5	71.0	Joseph N.; British astronomer (1836-1920).
+Crater	Lod	21.0	328.4	7.5	Town in Israel.
+Crater	Lodwar	-55.1	316.6	16.0	Town in Kenya.
+Crater	Lohse	-43.3	343.2	155.5	Oswald; German astronomer (1845-1915).
+Crater	Loja	41.2	136.1	10.4	Town in Ecuador.
+Crater	Lomela	-81.7	303.9	11.2	Town in Zaire.
+Crater	Lomonosov	64.9	350.8	153.0	Mikhail V.; Russian chemist (1711-1765).
+Crater	Longa	-20.7	334.0	10.4	Town in Angola.
+Crater	Loon	-18.8	113.4	7.6	Town in Ontario, Canada.
+Crater	Lorica	-19.8	331.6	67.6	Town in Colombia.
+Crater	Los	-35.1	283.7	7.9	Town in Sweden.
+Crater	Lota	46.3	348.1	15.4	Town in Chile.
+Crater	Loto	-21.9	337.5	22.4	Town in Zaire.
+Crater	Lowbury	42.4	266.9	17.9	Town in New Zealand.
+Crater	Lowell	-52	278.6	203.0	Percival; American astronomer (1855-1916).
+Crater	Luck	17.2	323.0	7.7	Town in Wisconsin, USA.
+Crater	Luga	-44.3	312.5	45.0	Town in Russia.
+Crater	Luki	-29.5	322.6	21.2	Town in Ukraine.
+Crater	Lutsk	38.7	356.8	5.0	Town in Ukraine.
+Crater	Luzin	27.1	31.2	97.0	N. N.; Russian mathematician (1883-1950).
+Crater	Lydda	24.4	328.0	36.5	Town in Israel.
+Crater	Lyell	-69.9	344.4	131.0	Charles; British geologist (1797-1875).
+Crater	Lyot	50.5	29.3	236.0	Bernard; French astronomer (1897-1952).
+Crater	M\:adler	-10.7	2.7	125.0	Johann H. von; German astronomer (1794-1874).
+Crater	Madrid	48.4	135.4	3.5	Spanish tracking site.
+Crater	Mafra	-44.1	306.8	13.0	Town in Brazil.
+Crater	Magadi	-34.6	313.9	53.0	Town in Kenya.
+Crater	Magelhaens	-32.4	185.2	105.0	Fernao de; Portuguese navigator (1480-1521).
+Crater	Maggini	27.7	9.4	143.0	Mentore; Italian astronomer (1890-1941).
+Crater	Mago	15.9	105.3	2.8	Town in Russia.
+Crater	Maidstone	-41.6	305.7	10.0	Town in England.
+Crater	Main	-76.5	49.1	109.0	Robert; British astronomer (1808-1878).
+Crater	Manah	-4.7	326.3	11.2	Town in Oman.
+Crater	Mandora	12.2	306.3	59.4	Town in Australia.
+Crater	Manti	-3.6	322.3	16.2	Town in Utah, USA.
+Crater	Manz\-i	-22.1	332.5	7.2	Town in Burma.
+Crater	Maraldi	-62	328.0	124.0	Giacomo F.; French astronomer (1665-1729).
+Crater	Marbach	17.7	111.0	25.8	Town in Switzerland.
+Crater	Marca	-10	201.7	81.0	Village in Peru.
+Crater	Mari	-52.1	314.1	41.6	Ruined city in Syria.
+Crater	Mariner	-34.8	195.5	170.0	Named for Mariner IV spacecraft.
+Crater	Marth	12.9	356.5	98.4	Albert; British astronomer (1828-1897).
+Crater	Martz	-35	144.1	97.0	Edwin P.; American physicist (1916-1967).
+Crater	Masursky	12.0	327.6	117.9	Harold; American astrogeologist (1922-1990).
+Crater	Maunder	-49.7	1.5	107.5	Edward W.; British astronomer (1851-1928).
+Crater	McLaughlin	21.9	337.5	96.2	Dean B.; American astronomer (1901-1965).
+Crater	McMurdo	-84.4	0.9	30.3	American station in Antarctica.
+Crater	Medrissa	18.6	303.3	21.2	Town in Algeria.
+Crater	Mega	-1.5	323.0	18.0	Town in Ethiopia.
+Crater	Meget	18.9	107.2	4.6	Town in Russia.
+Crater	Mellish	-72.6	336.0	101.7	John E.; American amateur astronomer (1886-1970).
+Crater	Mena	-32.1	341.2	32.5	Town in Russia.
+Crater	Mendel	-58.8	161.0	78.6	Gregor J.; Austrian biologist (1822-1884).
+Crater	Mendota	35.8	138.3	8.9	town in Illinois, USA.
+Crater	Mie	48.1	139.6	104.0	Gustav; German physicist (1868-1957).
+Crater	Mila	-27.2	339.2	10.6	Town in Algeria.
+Crater	Milankovi\vc	54.4	213.3	118.4	Milutin; Yugoslav geophysicist, astrophysicist (1879-1958).
+Crater	Milford	-52.4	318.5	27.3	Town in Utah, USA.
+Crater	Millman	-54	210.2	75.0	Peter; Canadian astronomer (1906-1990).
+Crater	Millochau	-21.2	84.9	115.0	Gaston; French astronomer (b. 1866).
+Crater	Mirtos	22.1	308.1	5.8	Town in Greece (Crete).
+Crater	[Misk]	-0.9	324.5	10.0	Town in Turkey. Name dropped because crater cannot be located on imagery.
+Crater	Mistretta	-24.7	250.8	14.8	Town in Sicily.
+Crater	Mitchel	-67.5	76.1	138.4	Ormsby M.; American astronomer (1809-1862).
+Crater	Mliba	-39.6	87.9	13.5	Town in Swaziland.
+Crater	Mohawk	42.9	354.6	17.5	Town in New York, USA.
+Crater	Molesworth	-27.5	149.1	181.0	Percy B.; British astronomer (1867-1908).
+Crater	Montevallo	15.2	305.6	51.9	Town in Alabama, USA.
+Crater	Moreux	41.8	44.4	138.0	Theophile; French astronomer and meteorologist (1867-1954).
+Crater	Moss	19.3	109.4	9.1	Town in Norway.
+Crater	M\:uller	-25.7	127.7	129.0	Hermann J.; American geneticist (1890-1967), and Carl H.; German astronomer (1851-1925).
+Crater	Murgoo	-23.6	337.5	24.5	Town in Australia.
+Crater	[Musmar]	24.6	304.3	0.0	Small town in Sudan.
+Crater	Mut	22.4	324.2	6.6	Town in Turkey.
+Crater	Mutch	0.5	304.7	211.0	Dr. Thomas A.; American geologist, Viking Lander Imaging Team leader (1931-1980).
+Crater	Naar	22.9	317.8	11.4	Town in Egypt.
+Crater	Naic	24.5	107.4	8.3	Town in the Philippines.
+Crater	Nain	41.5	126.8	6.8	Town in Newfoundland, Canada.
+Crater	Naju	45.0	122.8	8.1	Town in the Republic of Korea.
+Crater	Nan	-26.7	340.0	1.9	Town in Thailand.
+Crater	Nansen	-50	219.4	81.0	Fridtjof; Norwegian explorer (1861-1930).
+Crater	Nardo	-27.5	327.1	26.6	Town in Italy.
+Crater	Naukan	21.2	329.3	8.4	Town in Russia.
+Crater	Navan	-25.9	336.4	26.5	Town in Ireland.
+Crater	Nazca	-31.6	93.6	15.5	Town in Peru.
+Crater	Negele	-35.8	95.9	37.8	Town in Ethiopia.
+Crater	Neive	23.2	107.0	2.9	Town in Italy.
+Crater	Nema	20.7	307.8	15.8	Town in Russia.
+Crater	Nepa	-25	340.3	15.5	Town in Russia.
+Crater	Never	23.5	105.7	2.9	Town in Russia.
+Crater	New Bern	21.5	310.8	0.9	American colonial town (North Carolina).
+Crater	New Haven	22.1	310.7	1.0	American colonial town (Connecticut).
+Crater	New Plymouth	-15.7	175.8	33.3	Town in Idaho, USA.
+Crater	Newcomb	-24.2	1.0	252.0	Simon; American astronomer (1835-1909).
+Crater	Newport	22.2	311.0	1.8	American colonial town (Rhode Island).
+Crater	Newton	-40.5	201.9	298.0	Isaac; British physicist (1643-1727).
+Crater	Nhill	-28.7	256.6	22.0	Town in Victoria, Australia.
+Crater	Nicholson	0.2	195.4	102.5	dSeth B.; American astronomer (1891-1963).
+Crater	Nier	42.8	106.0	47.0	Alfred O.C.; American physicist (1911-1994).
+Crater	Niesten	-28	57.7	115.0	Louis; Belgian astronomer (1844-1920).
+Crater	Nif	19.9	303.7	8.7	Town in the Caroline Islands (Yap).
+Crater	Nipigon	33.7	278.1	9.3	Town in Canada.
+Crater	Nitro	-21.3	336.0	28.7	Town in West Virginia, USA.
+Crater	Njesko	-35.2	85.0	28.0	Town in Czechoslovakia.
+Crater	Noma	-25.4	335.6	42.1	Town in Namibia.
+Crater	Nordenski\:old	-52.4	201.1	89.0	Nils Adolf Erik; Swedish geologist and geographer, arctic researcher (1832-1901).
+Crater	Northport	18.5	305.4	19.5	Town in Alabama, USA.
+Crater	Novara	-24.9	349.3	86.9	Town in Italy.
+Crater	Nune	17.6	321.2	8.6	Town in Mozambique.
+Crater	Nutak	17.4	329.7	11.2	Town in Nefoundland, Canada.
+Crater	Ocampo	32.7	138.2	7.1	Town in Mexico.
+Crater	Ochakov	-42.1	328.1	33.3	Town in Ukraine.
+Crater	Oglala	-3.1	321.8	18.2	Town in South Dakota, USA.
+Crater	Okhotsk	23.0	312.6	1.2	Russian port.
+Crater	Olenek	19.9	305.7	3.0	Town in Russia.
+Crater	Olom	22.9	302.2	6.0	Town in Russia.
+Crater	Ome	20.6	103.9	2.9	Town in Japan.
+Crater	\-Omura	-25.4	334.7	8.4	Town in Japan.
+Crater	Onon	16.2	102.4	3.5	Town in Mongolia.
+Crater	Oodnadatta	-52.4	325.8	27.0	Town in Australia.
+Crater	Oraibi	17.2	327.6	33.0	Town in Arizona, USA.
+Crater	Ore	16.8	326.0	7.0	Town in Nigeria.
+Crater	Orinda	45.4	126.9	9.8	Town in California, USA.
+Crater	Orson Welles	-0.2	314.1	124.5	George Orson; American radio and motion picture actor and director (1915-1985).
+Crater	Ostrov	-26.6	331.8	73.0	Town in Russia.
+Crater	Ottumwa	24.6	304.1	53.2	Town in Iowa, USA.
+Crater	Oudemans	-9.9	268.1	124.0	Jean A.; Dutch astronomer (1827-1906).
+Crater	Pabo	-26.9	336.9	8.9	Town in Uganda.
+Crater	Paks	-7.7	317.9	6.8	Town in Hungary.
+Crater	Palana	21.1	101.9	5.1	Town in Kamchatka, Russia.
+Crater	Palos	-2.7	110.8	55.1	Town in Spain.
+Crater	Paros	21.9	261.8	34.1	Famous in antiquity for its marble quarries.
+Crater	Pasteur	19.2	24.5	113.0	Louis; French chemist (1822-1895).
+Crater	Peixe	20.3	312.3	10.3	Town in Brazil.
+Crater	Perepelkin	52.5	295.4	112.0	Evgenii J.; Russian astronomer (1906-1940).
+Crater	Peridier	25.5	83.8	100.0	Julien; French astronomer (1882-1967).
+Crater	Perrotin	-2.8	282.0	84.0	Henri A.; French astronomer, studied dark lineations on Mars (1845-1904).
+Crater	Peta	-21.2	350.8	80.5	Town in Greece.
+Crater	Pettit	12.2	186.0	98.1	Edison; American astronomer (1890-1962).
+Crater	Philadelphia	21.8	311.9	1.6	American colonial town (Pennsylvania).
+Crater	Phillips	-66.4	314.9	190.2	John; British geologist (1800-1874).  Theodore E.; British astronomer (1868-1942).
+Crater	Phon	15.6	102.7	9.7	Town in Thailand.
+Crater	Pica	19.8	306.7	2.2	Town in Chile.
+Crater	Pickering	-33.6	227.2	115.0	Edward C.; American astronomer (1846-1919). William H.; American astronomer (1858-1938).
+Crater	Pina	18.4	111.7	5.1	Town in Panama.
+Crater	Pinglo	-2.9	323.1	17.4	Town in China (Ningsia).
+Crater	Piyi	-22.8	106.5	11.4	Town in Cyprus.
+Crater	Platte	16.0	113.1	3.3	Town in South Dakota, USA.
+Crater	Playfair	-77.9	233.8	64.2	John; British geologist and mathematician (1748-1819).
+Crater	Plum	-26.1	340.9	2.5	Town in Wisconsin, USA.
+Crater	Podor	-44.1	316.8	24.0	Town in Senegal.
+Crater	Pollack	-7.8	25.2	96.0	James B.; American physicist (1938-1994).
+Crater	Polotsk	-19.9	333.6	31.5	Town in Beloruss.
+Crater	Pompeii	19.0	300.8	32.4	Ruined town in Italy.
+Crater	Poona	23.8	307.6	20.0	Town in India.
+Crater	Port-Au-Prince	21.1	311.7	0.5	Port of Hispaniola Island, Haiti.
+Crater	Porter	-50.5	246.1	105.0	Russell W.; American astronomer (1871-1949).
+Crater	Porth	21.2	104.1	9.3	Town in Wales.
+Crater	Portsmouth	22.5	310.9	0.9	American colonial town (New Hampshire).
+Crater	Porvoo	-43.3	319.1	9.8	Town in Finland.
+Crater	Poti	-36.3	86.4	31.0	Town in Armenia.
+Crater	Poynting	8.3	247.1	74.0	J.H.; English astrophysicist (1852-1914).
+Crater	Priestley	-54.1	130.6	41.9	Joseph; British chemist (1733-1804).
+Crater	Princeton	21.7	310.8	1.8	American colonial town (New Jersey).
+Crater	Proctor	-47.7	29.5	168.2	Richard A.; British astronomer (1837-1888).
+Crater	Ptolemaeus	-45.9	202.4	185.0	Claudius; Greco-Egyptian astronomer (c. A.D. 90-160).
+Crater	Pulawy	-36.4	283.3	51.5	Town in Poland.
+Crater	P\'unsk	20.6	318.8	11.6	Town in Poland.
+Crater	Pylos	16.8	329.8	19.1	Town in Greece.
+Crater	Qib\-a	17.1	103.0	3.9	Town in Saudi Arabia.
+Crater	Quenisset	34.3	40.6	138.0	Ferdinand J.; French astronomer (1872-1951).
+Crater	Quick	18.2	310.7	13.4	Town in British Columbia, Canada.
+Crater	Quines	-41.8	89.2	10.9	Town in Argentina.
+Crater	Quorn	-5.5	326.3	5.9	Town in Australia.
+Crater	Rabe	-43.6	34.9	108.0	Wilhelm F.; German astronomer (1893-1958).
+Crater	Radau	16.9	355.2	114.5	Rodolphe; French astronomer (1835-1911).
+Crater	Rahe	25.0	262.4	34.1	Jurgen; American astonomer and NASA program director (1940-1997).
+Crater	Rakke	-4.6	316.6	19.2	Town in Estonia.
+Crater	Rana	-25.6	338.1	12.2	Town in Norway.
+Crater	Raub	42.4	135.0	7.1	Town in Malaysia.
+Crater	Rauch	21.5	301.8	34.1	Town in Argentina.
+Crater	Rayadurg	-18.4	102.3	21.8	Town in India.
+Crater	Rayleigh	-75.5	119.1	148.7	Strutt, John W., third Baron Rayleigh; British physicist (1842-1919).
+Crater	Redi	-60.4	92.7	62.0	Francesco; Italian physicist (1626-1697).
+Crater	Renaudot	42.0	62.6	64.0	Gabrielle; French astronomer (1877-1962).
+Crater	Rengo	-43.5	316.3	13.0	Town in Chile.
+Crater	Reuyl	-9.6	166.8	85.9	Dirk; American physicist (1906-1972).
+Crater	Revda	-24.3	331.5	27.0	Town in Russia.
+Crater	Reykholt	40.4	273.7	53.2	Town in Iceland.
+Crater	Reynolds	-75	202.1	97.5	Osborne; British physicist (1842-1912).
+Crater	Ribe	16.5	330.8	11.0	Town in Denmark.
+Crater	Richardson	-72.4	179.6	95.9	Lewis F.; British meteorologist, chemist (1881-1953).
+Crater	Rimac	45.0	136.0	7.6	Town in Peru.
+Crater	Rincon	-8	316.9	13.6	Town in Netherlands. Antilles (Bonaire Is).
+Crater	Ritchey	-28.5	309.0	79.0	George W.; American astronomer (1864-1945).
+Crater	Roddenberry	-49.5	355.4	141.0	Gene; American engineer, television producer (1921-1991).
+Crater	Romny	-25.4	341.8	5.3	Town in Russia.
+Crater	Rong	22.5	314.6	8.8	Town in China (Tibet).
+Crater	Rongxar	26.3	304.5	22.0	Small village in Tibet, near Mt. Everest.
+Crater	Ross	-57.5	252.0	85.0	Frank E.; American astronomer (1874-1966).
+Crater	Rossby	-47.6	167.8	82.5	Carl G.; Swedish-American meteorologist (1898-1957).
+Crater	Ruby	-25.2	342.9	27.3	Town in South Carolina, USA.
+Crater	Rudaux	38.0	50.9	107.0	Lucien; French astronomer (1874-1947).
+Crater	Russell	-54.6	12.4	139.7	Henry N.; American astronomer (1877-1957).
+Crater	Rutherford	19.0	349.3	110.5	Ernest; British physicist (1871-1937).
+Crater	Ruza	-34	307.2	22.0	Town in Russia.
+Crater	Rynok	44.1	121.7	9.0	Town in Russia.
+Crater	Rypin	-1.3	319.0	18.4	Town in Poland.
+Crater	Sabo	25.2	311.0	4.2	Town in Russia.
+Crater	Sagan	10.7	329.3	98.1	Carl E.; American astronomer (1934-1996).
+Crater	Salaga	-47.2	308.9	27.1	Town in Ghana.
+Crater	San Juan	22.9	311.9	0.3	Puerto Rican port.
+Crater	Sandila	-25.6	329.6	13.9	Town in India.
+Crater	Sangar	-27.5	335.6	30.9	Town in Russia.
+Crater	Santa Cruz	21.2	312.6	0.9	Port of Canary Islands.
+Crater	Santa Fe	19.3	312.0	20.5	Town in New Mexico, USA.
+Crater	Santaca	-41	87.3	16.0	Town in Mozambique.
+Crater	Sarn	-77.4	305.3	11.9	Town in Wales.
+Crater	Sarno	-44.4	305.8	23.2	Town in Italy.
+Crater	Satka	-42.7	323.0	18.7	Town in Russia.
+Crater	Sauk	-44.7	327.4	3.1	Town in Wisconsin, USA.
+Crater	Savannah	22.0	312.1	0.7	American colonial town (Georgia).
+Crater	Savich	-27.5	95.9	188.3	A.M. Savich; Russian astronomer.
+Crater	Say	-28.1	330.3	13.3	Town in Niger.
+Crater	Schaeberle	-24.5	50.1	160.0	John M.; American astronomer (1853-1924).
+Crater	Schiaparelli	-2.7	16.7	471.0	Giovanni V.; Italian astronomer (1835-1910).
+Crater	Schmidt	-72.1	281.9	212.5	Johann F.; German astronomer (1825-1884); Otto Y.; Russian geophysicist (1891-1956).
+Crater	Sch\:oner	19.9	50.5	195.0	Johannes; German geographer (1477-1547).
+Crater	Schroeter	-1.9	55.6	292.0	Johann H.; German astronomer (1745-1816).
+Crater	Sebec	-39.5	99.3	64.0	Town in Maine , USA.
+Crater	Secchi	-58	101.9	234.0	Angelo; Italian astronomer (1818-1878).
+Crater	Semeykin	41.5	8.6	76.0	Boris Evgen'evich; Soviet astronomer (1900-1937).
+Crater	Seminole	-24.2	340.8	20.6	Town in Florida, USA.
+Crater	Sevel	79.2	323.2	2.0	Town in Denmark.
+Crater	Sevi	18.9	103.0	3.2	Town in Russia.
+Crater	Sfax	-7.7	316.5	7.0	Town in Tunisia.
+Crater	Shambe	-20.6	329.2	34.2	Town in Sudan.
+Crater	Sharonov	27.0	301.4	102.0	Vsevolod V.; Russian astronomer (1901-1964).
+Crater	Shatskiy	-32.4	345.1	72.5	N. S.; Russian geologist.
+Crater	Shawnee	22.5	328.4	17.0	Town in Ohio, USA.
+Crater	Sian	20.0	311.9	3.8	Town in Russia.
+Crater	Sibu	-23	340.2	18.2	Town in Malaysia.
+Crater	Sigli	-20.3	329.1	31.4	Town in Indonesia.
+Crater	Sinda	15.8	111.2	6.6	Town in Russia.
+Crater	Singa	-22.4	342.6	12.8	Town in Sudan.
+Crater	Sinop	-23.3	110.5	15.4	Town in Turkey.
+Crater	Sitka	-4.3	320.7	17.5	Town in Alaska, USA.
+Crater	Sklodowska	33.4	357.1	124.0	Marie; Polish-born French chemist (Mme P. Curie) (1867-1934).
+Crater	Slipher	-47.5	275.4	127.0	Vesto M.; American astronomer (1875-1969).
+Crater	Smith	-65.8	257.1	75.5	William; British geologist-engineer (1769-1839).
+Crater	S\:ogel	21.4	304.8	30.0	Town in Germany.
+Crater	Sokol	-42.4	319.3	22.4	Town in Russia.
+Crater	Solano	-26.7	108.8	8.7	Town in Phillipines.
+Crater	Soochow	16.7	331.1	31.8	Town in China (Kiangsu).
+Crater	Souris	19.5	113.2	2.8	Town in Manitoba, Canada.
+Crater	South	-77	22.0	107.1	James; British astronomer (1785-1867).
+Crater	Spallanzani	-58	86.3	72.5	Lazzaro; Italian biologist (1729-1799).
+Crater	Spry	-3.7	321.5	7.8	Town in Utah, USA.
+Crater	Spur	22.0	307.7	8.4	Town in Texas, USA.
+Crater	Sr\-ipur	-30.8	259.2	23.4	Town in Bangladesh.
+Crater	Stege	3.7	300.4	77.5	Town in Denmark.
+Crater	Steno	-67.8	244.4	106.9	Nicolaus; Danish geologist (1638-1686).
+Crater	Stobs	-5	321.6	12.5	Town in Scotland.
+Crater	Stokes	55.6	171.2	66.0	George G.; British physicist (1819-1903).
+Crater	Ston	46.9	122.6	6.9	Town in Yugoslavia.
+Crater	Stoney	-69.6	221.4	171.0	George J.; Irish physicist (1826-1911).
+Crater	Suata	-18.9	106.6	24.3	Town in Venezuela.
+Crater	Sucre	23.7	305.3	13.4	Town in Colombia.
+Crater	Suess	-66.8	181.4	79.2	Eduard; Austrian geologist, engineer (1831-1914).
+Crater	S\-uf	16.3	321.7	9.9	Town in Jordan.
+Crater	Sulak	18.1	281.3	25.7	Town in Russia.
+Crater	Sumgin	-36.6	311.2	85.0	M. I.; Russian cryopedologist.
+Crater	Surt	16.8	329.3	9.8	Town in Libya.
+Crater	Suzhi	-27.4	86.0	25.0	Town in China.
+Crater	Swanage	26.5	326.2	18.7	Town in England.
+Crater	Sytinskaya	42.4	306.9	93.2	Nadezhda Nikolaevna; Soviet astronomer (1906-1974).
+Crater	Tabor	-35.5	301.6	19.5	Town in Czechoslovakia.
+Crater	Tabou	-45.1	324.9	8.3	Town in Ivory Coast.
+Crater	Taejin	-35.2	85.6	28.0	Town in Korea.
+Crater	Tak	-26	331.3	5.1	Town in Thailand.
+Crater	Tala	-20.3	112.7	9.0	Town in Tunisia.
+Crater	Talsi	-41.5	310.6	10.0	Town in Latvia.
+Crater	Tame	-22.7	251.9	13.5	Town in Colombia.
+Crater	Tara	-44	307.1	34.0	Town in Ireland.
+Crater	Tarakan	-41.2	329.5	39.8	Town in Indonesia (Borneo).
+Crater	Tarata	-3.8	318.7	12.3	Town in Bolivia.
+Crater	Tarma	16.6	109.8	8.9	Town in Peru.
+Crater	Tarsus	23.1	319.6	19.0	Town in Turkey.
+Crater	Taxco	20.7	319.8	17.5	Town in Mexico.
+Crater	Taza	-43.6	314.6	24.0	Town in Morocco.
+Crater	Tecolote	-24.6	253.1	51.0	Town in New Mexico, USA.
+Crater	Teisserenc de Bort	0.4	45.0	119.0	Leon P.; French meteorologist (1855-1913).
+Crater	Tejn	15.4	106.3	3.6	Town in Denmark.
+Crater	Telz	21.2	111.1	2.6	Town in Germany.
+Crater	Tem'	41.9	350.5	5.9	Town in Russia.
+Crater	Tepko	15.2	103.4	3.8	Town in Australia.
+Crater	Terby	-28	74.1	174.0	Francois J.; Belgian astronomer (1846-1911).
+Crater	Thermia	19.7	109.1	2.9	Town in Greece.
+Crater	Thira	-14.5	175.9	22.5	Town on Santorini Island in the Aegean Sea.
+Crater	Thom	-41.1	92.2	24.0	Town in Thailand.
+Crater	Thule	-23.4	334.2	13.3	Town in Greenland.
+Crater	Tibrikot	12.5	305.0	61.9	Town in Nepal.
+Crater	Tignish	-30.7	86.9	22.0	Town in Prince Edward Island, Canada.
+Crater	Tikhonravov	13.4	35.8	386.0	M. K.; Russian rocket scientist (1851-1916).
+Crater	Tikhov	-50.8	105.7	111.0	Gavril A.; Russian astronomer (1875-1960).
+Crater	Tile	17.7	331.3	7.4	Town in Somalia.
+Crater	Timaru	-25.3	337.6	17.9	Town in New Zealand.
+Crater	Timbuktu	-5.6	322.4	73.0	Town in Mali.
+Crater	Timoshenko	41.7	296.0	88.5	Ivan Fedorovich; Soviet astronomer (1918-1941).
+Crater	Tiwi	-27.6	335.2	21.4	Town in Oman.
+Crater	Tokko	22.6	109.4	2.1	Town in Russia.
+Crater	Tokma	21.3	108.5	3.2	Town in Russia.
+Crater	Tolon	18.2	104.9	2.7	Town in Russia.
+Crater	Tomari	20.0	113.7	5.9	Town in Russia.
+Crater	Tombe	-42.4	315.5	11.6	Town in Sudan.
+Crater	[T\-ono]	-44.9	307.8	10.0	Town in Japan. Name dropped because crater cannot be located on imagery.
+Crater	Torbay	17.9	114.0	6.5	Town in Australia.
+Crater	Tors\:o	-44.3	308.8	16.0	Town in Sweden.
+Crater	Torup	-27.9	97.7	45.5	Town in Sweden.
+Crater	Trinidad	-23.4	109.0	28.0	Town in Peru.
+Crater	Troika	16.8	105.1	13.5	Town in Russia.
+Crater	Trouvelot	16.0	347.0	154.7	Etienne L.; Franco-American astronomer (1827-1895).
+Crater	Troy	23.2	307.3	9.9	Town in Idaho, USA.
+Crater	Trud	17.7	328.3	2.1	Town in Russia.
+Crater	Trumpler	-61.5	209.2	78.0	Robert J.; American astronomer (1886-1956).
+Crater	Tsau	49.5	121.0	6.5	Town in Botswana.
+Crater	Tsukuba	48.6	133.9	1.8	Japanese mission control site.
+Crater	Tuapi	17.0	104.3	4.6	Town in Nicaragua.
+Crater	Tugaske	-31.8	258.8	31.3	Town in Saskatchewan.
+Crater	Tumul	14.7	104.5	8.8	Town in Russia.
+Crater	Tungla	-40.7	89.5	17.0	Town in Nicaragua.
+Crater	Tura	-26.6	338.0	16.4	Town in Russia.
+Crater	Turbi	-40.6	308.5	31.3	Town in Kenya.
+Crater	Turma	17.3	108.0	6.8	Town in Russia.
+Crater	Tuscaloosa	0.0	28.7	60.0	Town in Alabama, USA.
+Crater	Tuskegee	-2.8	323.8	66.7	Town in Alabama, USA.
+Crater	Tycho Brahe	-49.4	146.1	106.0	Danish astronomer (1546-1601).
+Crater	Tyndall	39.7	169.9	86.8	John; British physicist (1820-1893).
+Crater	Ulu	22.5	107.3	3.4	Town in Russia.
+Crater	Ulya	-17.9	111.6	8.6	Town in Russia.
+Crater	Umatac	42.5	137.2	17.5	Town in Guam, USA.
+Crater	Urk	23.1	111.4	2.8	Town in Netherlands.
+Crater	Utan	24.3	113.7	4.6	Town in Russia.
+Crater	Vaals	-4	327.0	10.6	Town in the Netherlands.
+Crater	Valga	-44.3	323.3	17.0	Town in Estonia.
+Crater	Valverde	20.1	304.1	36.3	Town in the Dominican Republic.
+Crater	V\:at\:o	-43.6	306.3	20.0	Town in Sweden.
+Crater	Vaux	17.9	327.1	6.3	Town in France.
+Crater	Verlaine	-9.2	64.0	43.0	Town in France.
+Crater	Very	-49.3	182.9	114.0	Frank W.; American astronomer (1852-1927).
+Crater	Viana	19.2	104.7	30.0	Town in Brazil.
+Crater	Vik	-36.1	296.0	23.0	Town in Iceland.
+Crater	Vils	39.0	348.2	6.9	Town in Austria.
+Crater	Vinogradov	-20	322.3	223.5	Aleksander P.; Soviet geochemist (1895-1975).
+Crater	Vinogradsky	-56.2	143.8	64.0	Sergei N.; Russian microbiologist (1856-1953).
+Crater	Virrat	-30.8	257.0	53.6	Town in Sweden.
+Crater	Vishniac	-76.5	83.9	86.1	Wolf V.; American microbiologist (1922-1974).
+Crater	Vivero	49.0	118.8	27.5	Town in Spain.
+Crater	Voeykov	-32.1	283.8	76.0	A. I.; Russian climatologist and geographer (1842-1916).
+Crater	Vogel	-36.8	346.6	121.0	Hermann; German astronomer (1841-1907).
+Crater	Volgograd	48.1	135.1	1.6	Soviet launch site.
+Crater	Vol'sk	23.0	308.7	8.4	Town in Russia.
+Crater	Von K\'arm\'an	-64.3	301.5	90.0	Theodore; Hugarian-American aeronautical engineer (1881-1963).
+Crater	Voo	-26.9	340.0	1.5	Town in Kenya.
+Crater	Voza	23.3	306.4	2.6	Town in Solomon Islands.
+Crater	Wabash	21.3	326.3	42.0	Town in Indiana, USA.
+Crater	Wahoo	23.2	326.2	67.2	Town in Nebraska, USA.
+Crater	Wajir	-27	105.4	12.0	Town in Kenya.
+Crater	Wallace	-52.6	110.6	173.0	Alfred R.; British biologist (1823-1913).
+Crater	Wallops	46.6	132.7	2.0	American launch site.
+Crater	Warra	20.7	322.3	10.3	Town in Australia.
+Crater	Waspam	20.4	303.3	41.8	Town in Nicaragua.
+Crater	Wassamu	25.6	306.7	17.5	Town in Japan.
+Crater	Wau	-44.9	317.3	6.0	Town in New Guinea.
+Crater	Weer	19.7	308.2	10.0	Town in the Netherlands.
+Crater	Wegener	-64.3	356.0	76.8	Alfred L.; German geophysicist (1880-1930).
+Crater	Weinbaum	-65.5	114.5	89.4	Stanley G.; American novelist (1902-1935).
+Crater	Wells	-59.9	122.1	103.0	Herbert G.; British novelist (1866-1946).
+Crater	Wer	45.7	353.8	3.1	Town in India.
+Crater	Wicklow	-2	319.4	22.4	Town in Ireland.
+Crater	Wien	-10.7	139.6	120.4	Wilhelm; German physicist (1864-1928).
+Crater	Williams	-18.5	195.7	126.0	Arthur S.; British astronomer (1861-1938).
+Crater	Wilmington	21.6	312.5	0.5	American colonial town (Delaware).
+Crater	Windfall	-2.1	316.6	17.9	Town in Alberta, Canada.
+Crater	Wink	-6.5	318.6	10.5	Town in Texas, USA.
+Crater	Wirtz	-48.3	334.0	129.0	Carl Wilhelm; German astronomer (1876-1939).
+Crater	Wislicenus	-18.2	11.4	139.0	Walter; German astronomer (1859-1905).
+Crater	Woolgar	34.6	274.4	15.5	Town in Australia.
+Crater	Woomera	48.1	132.6	2.5	Australian launch site.
+Crater	Worcester	26.6	309.5	24.0	Town in New York, USA.
+Crater	Wright	-58.6	209.0	115.0	William H.; American astronomer (1871-1959).
+Crater	Wukari	-31.8	257.1	38.4	Town in Nigeria.
+Crater	[Wum]	15.9	113.8	0.0	Town in Cameroon. Name dropped because crater cannot be located on imagery.
+Crater	Xui	15.1	112.6	2.7	Town in Brazil.
+Crater	Yakima	43.0	356.8	13.0	Town in Washington, USA.
+Crater	Yala	17.4	321.3	19.8	Town in Thailand.
+Crater	Yalata	21.8	106.1	4.8	Town in Australia.
+Crater	Yar	22.3	320.8	6.4	Town in Russia.
+Crater	Yat	18.1	330.9	7.6	Town in Niger.
+Crater	Yebra	20.8	105.6	4.4	Town in Spain.
+Crater	Yegros	-22.3	336.3	14.5	Town in Paraguay.
+Crater	Yorktown	22.9	311.3	8.1	American colonial town (Virginia).
+Crater	Yoro	22.8	331.9	9.8	Town in Honduras.
+Crater	Yungay	-43.9	315.2	21.0	Town in Peru.
+Crater	Yuty	22.2	325.8	19.9	Town in Paraguay.
+Crater	Zhigou	-29.1	257.3	22.0	Town in China.
+Crater	Zilair	-31.8	327.0	48.0	Town in Russia.
+Crater	Zir	18.5	323.4	6.2	Town in Turkey.
+Crater	Zongo	-33.8	318.2	46.9	Town in Zaire.
+Crater	\vZulanka	-2.3	317.7	47.1	Town in Russia.
+Crater	Zuni	19.2	330.4	25.1	Town in New Mexico, USA.
+Crater	Zutphen	-13.8	174.2	38.0	Town in The Netherlands.
+Dorsum	Aesacus Dorsum	36.9	153.1	264.0	From albedo feature at 45N, 205W.
+Dorsum	Arcadia Dorsa	54.7	220.0	1900.0	Named for classical albedo feature at 45N, 120W.
+Dorsum	Arena Dorsum	12.7	68.8	360.0	Classical albedo feature name.
+Dorsum	Atrax Dorsum	38.2	270.9	32.7	Classical town.
+Dorsum	Auxo Dorsum	-55.7	318.2	70.0	One of the Graces.
+Dorsum	Avernus Dorsa	-6.8	170.7	383.0	From albedo feature at 4S, 190W.
+Dorsum	Cerberus Dorsa	-13.6	105.4	604.0	Classical albedo feature name.
+Dorsum	Charis Dorsum	-55.9	318.4	230.0	One of the Graces.
+Dorsum	Cleia Dorsum	-55.1	314.3	78.0	One of the Graces.
+Dorsum	Dorsa Argentea	-77.8	326.8	360.0	Classical albedo feature name.
+Dorsum	Dorsa Brevia	-71.1	62.9	670.0	Classical albedo feature name.
+Dorsum	Eumenides Dorsum	4.4	203.5	566.0	Classical albedo feature name.
+Dorsum	Felis Dorsa	-21.9	294.1	783.0	Classical albedo feature name.
+Dorsum	Gordii Dorsum	4.4	215.9	493.5	Classical albedo feature name.
+Dorsum	Hegemone Dorsum	-54.8	314.8	155.0	One of the Graces.
+Dorsum	Hesperia Dorsa	-23.1	113.1	817.2	Albedo feature name.
+Dorsum	Hyblaeus Dorsa	10.9	129.0	875.0	Named for albedo feature.
+Dorsum	Iamuna Dorsa	20.9	309.6	48.9	From classical albedo feature Iamunae Sinus.
+Dorsum	Isidis Dorsa	12.1	88.2	1100.0	Named for classical albedo feature at 25N, 270W.
+Dorsum	Juventae Dorsa	-0.1	288.6	519.0	From albedo feature at 4S, 63W.
+Dorsum	Melas Dorsa	-18.3	288.3	560.0	Classical albedo feature name.
+Dorsum	Nilus Dorsa	20.2	280.7	272.0	Named for albedo feature at 20N, 65W.
+Dorsum	Pasithea Dorsum	-55.2	318.1	250.0	One of the Graces.
+Dorsum	Phaenna Dorsum	-54	316.9	151.0	One of the Graces.
+Dorsum	Phlegra Dorsa	22.8	176.0	3250.0	Named for classical albedo feature at 35N, 195W.
+Dorsum	[Pityusa Dorsa]	-64.2	29.5	397.0	From albedo feature; name changed to Pityusa Rupes.
+Dorsum	Sacra Dorsa	9.7	293.7	1630.0	From albedo feature at 20N, 67W.
+Dorsum	Sinai Dorsa	-13.5	280.4	473.0	Classical albedo feature name.
+Dorsum	Solis Dorsa	-23	280.2	878.0	Classical albedo feature name.
+Dorsum	Styx Dorsum	30.9	151.8	83.0	Albedo feature name.
+Dorsum	Tyrrhena Dorsa	-23.8	115.6	762.7	Albedo feature name.
+Dorsum	Uranius Dorsum	23.9	285.0	503.0	Named for albedo feature.
+Dorsum	Xanthe Dorsa	29.7	325.0	2700.0	Classical albedo feature name.
+Dorsum	Zea Dorsa	-48.6	80.5	265.0	Classical albedo feature name.
+Fluctus	Galaxias Fluct\-us	30.9	143.4	600.0	Albedo feature name.
+Fluctus	Tantalus Fluctus	35.7	264.0	860.0	Albedo feature name.
+Fossa	Acheron Fossae	37.3	224.2	718.0	From classical albedo feature at 35N, 140W.
+Fossa	Aganippe Fossa	-8.2	233.8	532.0	Classical albedo feature name.
+Fossa	Alba Fossae	53.9	255.2	2080.0	Classical albedo name.
+Fossa	Albor Fossae	18.1	150.7	131.0	From albedo feature at 20N, 205W.
+Fossa	Amenthes Fossae	8.7	101.8	889.0	Classical albedo feature name.
+Fossa	Calydon Fossa	-7.4	271.9	352.0	The son of Ares and Astynome.
+Fossa	Ceraunius Fossae	29.2	251.0	1137.0	Classical albedo feature name
+Fossa	Cerberus Fossae	8.4	164.0	1215.0	From albedo feature at 10n, 212W. Changed from Cerberus Rupes.
+Fossa	Chalce Fossa	-51.7	320.3	40.0	Albedo name.
+Fossa	Claritas Fossae	-31.2	255.9	2050.0	Classical albedo feature name.
+Fossa	Coloe Fossae	36.2	57.1	590.0	Classical albedo feature name.
+Fossa	Coracis Fossae	-35.6	279.4	780.0	From albedo feature at 46S, 87W.
+Fossa	Cyane Fossae	32.2	239.9	938.0	Classical albedo feature name.
+Fossa	Echus Fossae	2.8	283.1	400.0	Classical albedo feature name.
+Fossa	Elysium Fossae	24.6	146.3	1175.0	Classical albedo feature name.
+Fossa	Erythraea Fossa	-27.3	329.0	152.0	Classical albedo feature name.
+Fossa	Fortuna Fossae	4.2	266.9	330.0	Classical albedo feature name.
+Fossa	Galaxias Fossae	36.2	141.8	532.0	Albedo feature name.
+Fossa	Gigas Fossae	3.2	230.2	191.0	Albedo feature name.
+Fossa	Gordii Fossae	14.8	232.4	339.0	From classical albedo feature name.
+Fossa	Halex Fossae	27.1	233.6	137.0	From albedo feature at 40N, 110W.
+Fossa	Hephaestus Fossae	20.9	122.5	604.0	Classical albedo feature name.
+Fossa	Hyblaeus Fossae	21.2	137.3	400.0	Albedo feature name.
+Fossa	Icaria Fossae	-46	236.2	2280.0	From albedo feature at 44S, 130W.
+Fossa	Ismeniae Fossae	41.3	37.7	270.0	From albedo feature at 40N, 333W.
+Fossa	Jovis Fossae	19.7	243.4	332.0	From albedo feature at 16N, 111W.
+Fossa	Labeatis Fossae	25.3	275.9	1560.0	Previously named feature at 30N, 75W; expanded coordinates.
+Fossa	[Labeatis Fossae]	20.7	265.0	616.0	Previously named feature at 30N, 75W; expanded coordinates. Name dropped because in the database twice.
+Fossa	Mangala Fossa	-17.4	214.0	688.0	Named for nearby valles.
+Fossa	Mareotis Fossae	43.7	284.6	1860.0	From albedo feature at 32N, 96W.
+Fossa	Medusae Fossae	-3.2	197.0	333.0	Classical albedo feature name.
+Fossa	Melas Fossae	-26.5	287.7	600.0	Classical albedo feature name.
+Fossa	Memnonia Fossae	-23.4	205.6	1597.0	Classical albedo feature name.
+Fossa	Nectaris Fossae	-24.3	302.6	650.0	Classical albedo feature name.
+Fossa	Nia Fossae	-14.7	287.7	384.0	Classical name for river Gambia, West Africa.
+Fossa	Nili Fossae	22.6	76.8	667.0	Classical albedo feature name.
+Fossa	Nilokeras Fossa	24.7	302.2	265.0	Classical albedo feature name.
+Fossa	Noctis Fossae	-2.8	261.3	725.0	Classical albedo feature at 10S, 96W.
+Fossa	Oceanidum Fossa	-61.7	330.6	153.0	Classical albedo feature name.
+Fossa	Olympica Fossae	24.8	245.9	420.0	From albedo feature at 17N, 134W.
+Fossa	Oti Fossae	-9.2	243.2	370.0	Classical albedo feature.
+Fossa	Pavonis Fossae	4.1	248.5	168.0	Albedo name.
+Fossa	Pyramus Fossae	50.7	65.8	270.0	From albedo feature at 65N, 300W.
+Fossa	Sacra Fossae	21.5	291.5	950.0	Classical albedo feature name.
+Fossa	Sirenum Fossae	-34.6	199.1	2735.0	Classical albedo feature name.
+Fossa	Stygis Fossae	26.6	149.7	370.0	Albedo feature name.
+Fossa	Tanais Fossae	38.9	273.4	165.5	Classical albedo name.
+Fossa	Tantalus Fossae	50.6	262.5	2400.0	From albedo feature at 35N, 110W.
+Fossa	Tempe Fossae	39.9	288.6	2000.0	From albedo feature at 40N, 70W.
+Fossa	Thaumasia Fossae	-47.1	267.3	1028.0	Classical albedo feature name.
+Fossa	Tithoniae Fossae	-3.5	278.0	820.0	Classical albedo name.
+Fossa	[Tithoniae Fossae]	-6.3	277.5	492.0	Classical albedo feature name. Name dropped because in the database twice.
+Fossa	Tractus Fossae	25.7	258.6	390.0	Classical albedo feature name.
+Fossa	Tyrrhena Fossae	-22.2	105.7	287.0	Classical albedo name.
+Fossa	Ulysses Fossae	10.1	236.6	851.4	From albedo feature name.
+Fossa	Uranius Fossae	25.4	269.9	394.0	Classical albedo feature name.
+Fossa	Zephyrus Fossae	24.0	143.7	295.0	Albedo feature name.
+Labes	Candor Labes	-4.7	283.8	130.0	From classical albedo feature at 5N, 75W.
+Labes	Coprates Labes	-11.8	292.1	39.0	From albedo feature at 14S, 65W.
+Labes	Ius Labes	-7.5	281.4	53.0	Classical albedo feature name.
+Labes	Melas Labes	-8.5	288.3	90.0	From albedo feature at 10S, 74W.
+Labes	Ophir Labes	-11	291.5	89.0	From albedo feature at 10S, 65W.
+Labyrinthus	Adamas Labyrinthus	35.4	105.7	750.0	Classical albedo feature name; "A River of Diamonds"; today's River Sarbarnarekha in India.
+Labyrinthus	Cydonia Labyrinthus	41.2	348.0	356.0	Named for classical albedo feature at 50N, 355W.
+Labyrinthus	Hyperboreus Labyrinthus	80.0	299.8	115.0	Classical albedo feature name.
+Labyrinthus	Noctis Labyrinthus	-6.9	257.8	1263.0	Classical albedo feature name.
+Mensa	Acidalia Mensa	46.7	334.6	233.0	From classical albedo feature name.
+Mensa	Aeolis Mensae	-2.9	140.4	820.0	Classical albedo feature name.
+Mensa	Amazonis Mensa	-2	212.5	500.0	Classical albedo feature name.
+Mensa	Ascraeus Mensa	11.7	252.0	31.6	Classical albedo name.
+Mensa	Ausonia Mensa	-30	97.7	103.0	Albedo feature name.
+Mensa	Baetis Mensa	-5.2	287.4	187.0	From albedo feature at 7S, 63W.
+Mensa	Candor Mensa	-6.2	286.4	120.0	Classical albedo feature.
+Mensa	Capri Mensa	-13.8	312.6	275.0	Classical albedo feature name.
+Mensa	Ceti Mensa	-5.8	283.7	44.0	Albedo feature Ceti Lacus.
+Mensa	Cydonia Mensae	33.7	347.0	800.0	From albedo feature at 50N, 355W.
+Mensa	Deuteronilus Mensae	43.6	22.6	937.0	From albedo feature at 35N, 355W.
+Mensa	Eos Mensa	-10.9	317.8	390.0	Classical albedo feature name.
+Mensa	[Galaxias Mensae]	36.2	147.3	327.0	Albedo feature name. (Named dropped. Feature is part of Galaxias Colles.)
+Mensa	Hebes Mensa	-1.1	283.2	109.0	Classical albedo feature; name of goddess of youth.
+Mensa	Labeatis Mensa	25.5	285.4	120.8	Classical albedo feature name.
+Mensa	Lunae Mensa	23.9	297.4	117.0	Albedo feature name.
+Mensa	Nepenthes Mensae	8.7	119.1	2170.0	Classical albedo feature name.
+Mensa	Nilokeras Mensae	31.1	308.0	463.0	Albedo feature name.
+Mensa	Nilosyrtis Mensae	34.7	67.9	705.0	Classical albedo feature name.
+Mensa	Nilus Mensae	22.3	287.9	210.0	Named for albedo feature at 20N, 65W.
+Mensa	Protonilus Mensae	43.9	49.4	1050.0	From albedo feature at 42N, 315W.
+Mensa	Sacra Mensa	24.4	291.9	580.0	Albedo feature name.
+Mensa	Tempe Mensa	27.9	288.3	58.0	From albedo feature at 40N, 70W.
+Mensa	Zephyria Mensae	-11.4	172.1	330.0	Albedo feature name.
+Mons	Anseris Mons	-29.8	86.6	58.0	From albedo feature Anseris Fons.
+Mons	Arsia Mons	-8.4	238.9	475.0	Arsia Silva-classical albedo feature name.
+Mons	Ascraeus Mons	11.8	255.5	460.0	Ascraeus Lacus-classical albedo feature name.
+Mons	Ausonia Montes	-27.5	98.8	158.0	Albedo feature name.
+Mons	Australe Montes	-80.2	14.1	387.0	Classical albedo feature name.
+Mons	Centauri Montes	-38.6	95.2	270.0	Albedo feature Centauri Lacus.
+Mons	Chalce Montes	-53.7	322.1	95.0	Albedo name.
+Mons	Charitum Montes	-58	319.8	850.0	Classical albedo feature name.
+Mons	Coronae Montes	-34.6	86.4	236.0	Albedo feature name.
+Mons	Echus Montes	8.1	282.0	395.0	Albedo feature name.
+Mons	Elysium Mons	24.8	146.9	410.0	Classical albedo feature name.
+Mons	Erebus Montes	35.7	185.0	785.0	From albedo feature at 26N, 182W.
+Mons	Euripus Mons	-44.8	105.0	91.0	Albedo feature name.
+Mons	Galaxius Mons	34.8	142.2	22.0	Classical albedo name.
+Mons	Geryon Montes	-7.7	278.0	359.0	Classical albedo feature.
+Mons	Gonnus Mons	41.2	269.0	57.0	Classical town.
+Mons	Hellas Montes	-37.5	97.7	153.0	Albedo feature Hellas.
+Mons	Hellespontus Montes	-44.4	42.8	729.6	Classical albedo feature name.
+Mons	Hibes Montes	3.7	171.3	137.0	From albedo feature at 17N, 186W.
+Mons	Horarum Mons	-51.1	323.4	20.0	Albedo name.
+Mons	Labeatis Mons	37.5	283.8	22.5	Named for albedo feature Labeatis Lacus.
+Mons	Libya Montes	2.7	88.9	1170.0	Classical albedo feature name.
+Mons	Nereidum Montes	-38.6	316.0	1130.0	Classical albedo feature name.
+Mons	Oceanidum Mons	-54.9	318.7	33.0	Name change from Charitum Tholus.
+Mons	Octantis Mons	-55.3	317.1	17.8	Albedo name.
+Mons	Olympus Mons	18.4	226.0	648.0	Classical albedo feature name.
+Mons	Pavonis Mons	0.8	246.6	375.0	Classical albedo feature name.
+Mons	[Peneus Mons]	-30.9	86.1	0.0	Albedo feature name. Same feature as Peraea Mons.
+Mons	Peraea Mons	-31.1	86.1	21.5	Albedo feature name.
+Mons	Phlegra Montes	40.8	165.2	1352.0	Classical albedo feature name.
+Mons	Pindus Mons	39.5	271.3	16.5	Mountains near Vale of Tempe.
+Mons	Sisyphi Montes	-69.7	13.9	200.0	From albedo feature at 67S, 348W.
+Mons	Tanaica Montes	39.5	268.9	177.0	Classical albedo name.
+Mons	Tartarus Montes	15.8	167.0	1070.0	Classical albedo feature name.
+Mons	Tharsis Montes	1.2	247.5	1840.0	Classical albedo feature name.
+Mons	Tyrrhena Mons	-24.1	101.2	107.1	Classical albedo name.
+Patera	Alba Patera	40.4	250.4	530.0	Classical albedo name.
+Patera	Amphitrites Patera	-58.7	60.9	135.0	Mare Amphitrites; classical albedo feature name.
+Patera	Angusta Patera	-80.6	280.5	15.4	Classical albedo name.
+Patera	Apollinaris Patera	-9.3	174.4	296.0	Classical albedo feature name.
+Patera	Australis Patera	-80.1	308.3	12.7	Classical albedo name.
+Patera	Biblis Patera	2.6	235.4	171.5	Classical albedo feature name.
+Patera	Diacria Patera	34.6	227.4	65.5	From albedo feature at 48N, 170W.
+Patera	Hadriaca Patera	-32.1	91.8	575.0	Classical albedo feature name.
+Patera	Issedon Paterae	38.3	269.5	58.0	Classical albedo name.
+Patera	Malea Patera	-63.4	51.8	242.0	Classical albedo feature name.
+Patera	Meroe Patera	6.9	68.6	50.0	Classical albedo feature name.
+Patera	[Nepenthes Patera]	11.9	89.0	25.0	Classical albedo feature name; dropped 1979.
+Patera	Nili Patera	8.9	67.0	70.0	Classical albedo feature name.
+Patera	Orcus Patera	14.1	178.5	375.0	Classical albedo feature name.
+Patera	Peneus Patera	-57.8	52.5	133.6	From albedo feature at 48S, 290W.
+Patera	Pityusa Patera	-66.8	36.9	230.0	Classical albedo feature name.
+Patera	Tyrrhena Patera	-21.4	106.5	473.4	Classical albedo feature name.
+Patera	Ulysses Patera	2.9	238.4	101.7	Classical albedo feature name.
+Patera	Uranius Patera	26.8	267.8	274.0	Classical albedo feature name.
+Planum	Aonia Planum	-57.7	281.0	650.0	Classical albedo feature name.
+Planum	Argentea Planum	-69.8	292.0	1500.0	Classical albedo feature name.
+Planum	Ascuris Planum	40.4	279.2	500.0	Classical albedo name.
+Planum	Aurorae Planum	-10.4	310.8	600.0	Classical albedo feature name.
+Planum	[Bathys Planum]	-42.7	254.0	626.0	Classical albedo feature; name changed to Icaria Planum.
+Planum	Bosporos Planum	-34.2	295.1	700.0	Classical albedo feature name.
+Planum	Daedalia Planum	-21.8	232.0	1800.0	Classical albedo feature name.
+Planum	[Erythraeum Planum]	-34.2	295.0	1750.0	Name changed to Bosporos Planum.
+Planum	Hesperia Planum	-22.3	110.0	1700.0	Classical albedo feature name.
+Planum	Icaria Planum	-43.2	253.5	650.0	Classical albedo feature name.
+Planum	Lucus Planum	-4	182.0	864.0	Albedo feature name.
+Planum	Lunae Planum	10.4	294.0	1800.0	Classical albedo feature name.
+Planum	Malea Planum	-64.8	65.0	900.0	From albedo feature at 60S, 290W.
+Planum	Meridiani Planum	0.2	357.5	1100.0	Classical albedo feature name.
+Planum	Ophir Planum	-8.7	302.5	650.0	Classical albedo feature name.
+Planum	Parva Planum	-75.8	257.0	750.0	Classical albedo feature name.
+Planum	Planum Angustum	-79.7	276.5	200.0	Classical albedo feature name.
+Planum	Planum Australe	-83.9	160.0	1450.0	Classical albedo feature.
+Planum	Planum Boreum	88.0	15.0	1100.0	Classical albedo feature name.
+Planum	Planum Chronium	-59.7	140.0	550.0	From albedo feature at 58S, 90W.
+Planum	Promethei Planum	-78.9	90.0	850.0	Classical albedo feature name.
+Planum	Sinai Planum	-13.4	272.0	900.0	Classical albedo feature name.
+Planum	Sisyphi Planum	-69.8	5.0	1100.0	Classical albedo feature name.
+Planum	Solis Planum	-25.2	273.5	1700.0	Classical albedo feature name.
+Planum	Syria Planum	-13.1	256.1	740.0	Classical albedo feature name.
+Planum	Syrtis Major Planum	8.4	69.5	1350.0	Albedo feature name; changed from Planitia to Planum.
+Planum	Thaumasia Planum	-24.5	295.7	650.0	Albedo feature at 30S, 75W.
+Planitia	Acidalia Planitia	46.7	338.0	2300.0	From classical albedo feature at 44N, 21W.
+Planitia	Amazonis Planitia	24.8	196.0	2800.0	Classical albedo feature name; home of the Amazons.
+Planitia	Arcadia Planitia	46.7	192.0	2200.0	From classical albedo feature at 45N, 120W.
+Planitia	Argyre Planitia	-49.7	316.0	800.0	Classical albedo feature name.
+Planitia	Chryse Planitia	26.7	320.0	1700.0	Classical albedo feature name.
+Planitia	Elysium Planitia	2.0	155.0	3000.0	Classical albedo feature name.
+Planitia	Hellas Planitia	-42.7	70.0	2200.0	Classical albedo feature name.
+Planitia	Isidis Planitia	12.9	87.0	1200.0	Classical albedo feature name.
+Planitia	[Olympia Planitia]	81.4	180.0	1100.0	Classical albedo feature name. Name changed to Oylmpia Undae.
+Planitia	[Syrtis Major Planitia]	9.4	69.5	1262.0	Classical albedo feature name; changed from Planitia to Planum 1982.
+Planitia	Utopia Planitia	49.7	118.0	3200.0	Classical albedo feature name.
+Rupes	Amenthes Rupes	1.6	110.5	331.0	Classical albedo feature name.
+Rupes	[Ammonii Rupes]	-6.5	175.8	100.0	Named for albedo feature at 6S, 183W.
+Rupes	[Arena Rupes]	13.4	70.5	375.0	Name changed in 1982 to Arnus Vallis.
+Rupes	Argyre Rupes	-62.5	291.8	267.0	Classical albedo feature name.
+Rupes	Arimanes Rupes	-9.6	212.1	181.0	Albedo feature; classical Persian deity of wickedness.
+Rupes	Avernus Rupes	-9.5	172.9	212.0	From albedo feature Avernus at 10S, 195W.
+Rupes	Bosporos Rupes	-42.9	302.4	507.0	Classical albedo feature name.
+Rupes	[Cerberus Rup\-es]	8.3	164.6	1254.0	From albedo feature at 10n, 212W. Changed to Cerberus Fossae.
+Rupes	Chalcoporos Rup\-es	-55.3	20.5	401.0	From albedo feature at 50S, 6W.
+Rupes	Claritas Rupes	-25.7	254.6	924.0	From albedo feature at 25S, 110W.
+Rupes	Cydnus Rupes	55.7	116.0	1600.0	From albedo feature at 70N, 248W.
+Rupes	Elysium Rupes	25.2	148.0	130.0	Albedo feature name.
+Rupes	Hephaestus Rupes	21.8	117.0	1750.0	Named for classical albedo feature at 20N, 240W.
+Rupes	Morpheos Rupes	-36.1	125.5	353.0	Classical albedo feature name.
+Rupes	Ogygis Rupes	-33.1	305.5	255.0	Classical albedo feature name.
+Rupes	Olympus Rupes	18.4	226.0	1800.0	Classical albedo feature name.
+Rupes	Panchaia Rupes	63.7	130.0	1500.0	Named for classical albedo feature at 62N, 220W.
+Rupes	Phison Rupes	26.5	50.4	177.0	Classical albedo feature name.
+Rupes	Pityusa Rupes	-64.1	29.4	390.0	From albedo feature at 58S, 319W.
+Rupes	Promethei Rupes	-75.3	90.6	1248.0	Classical albedo feature name.
+Rupes	Rupes Tenuis	80.9	295.0	185.0	Classical albedo feature name.
+Rupes	Tartarus Rupes	-6.5	175.6	89.7	Named for albedo feature at 2N, 183W.
+Rupes	Thyles Rupes	-69.6	130.9	675.0	Name and feature changes 1984 from Ultimi Cavi and Thyles Chasma.
+Rupes	Ulyxis Rupes	-68.4	159.9	390.0	Classical albedo feature name.
+Rupes	Utopia Rupes	39.7	90.0	2550.0	Named for calssical albedo feature at 55N, 260W.
+Scopulus	Charybdis Scopulus	-24.5	20.0	552.0	From albedo feature at 19S, 320W.
+Scopulus	Coronae Scopulus	-33.5	64.8	253.5	From albedo feature at 26S, 276W.
+Scopulus	Eridania Scopulus	-53.4	139.0	939.0	Classical albedo feature name.
+Scopulus	[Frigoris Scopulus]	79.4	176.0	0.0	Classical albedo feature; name dropped 1984.
+Scopulus	[Hyperboreus Scopulus]	82.4	200.0	0.0	Classical albedo feature name; dropped 1984.
+Scopulus	[Hypernotius Scopulus]	-77.9	88.0	0.0	Classical albedo feature name; dropped 1984.
+Scopulus	Nilokeras Scopulus	31.6	303.8	765.0	From albedo feature at 30N, 55W.
+Scopulus	Oenotria Scopulus	-11	76.9	1360.0	Classical albedo feature name.
+Scopulus	Scylla Scopulus	-25.1	18.3	445.0	From albedo feature at 19S, 320W.
+Scopulus	Tartarus Scopulus	-4.3	177.2	219.0	Named for albedo feature at 12S, 182W.
+Scopulus	Xanthe Scopulus	19.3	307.4	57.0	Classical albedo feature name.
+Sulcus	Amazonis Sulci	-2.7	214.6	250.0	Albedo feature name; home of the Amazons.
+Sulcus	Apollinaris Sulci	-11.4	177.4	178.0	Albedo feature at 5S, 187W.
+Sulcus	Arsia Sulci	-6	231.1	475.0	Albedo name.
+Sulcus	Ascraeus Sulci	11.9	251.2	102.0	Classical albedo name.
+Sulcus	Cyane Sulci	25.4	231.3	340.0	Classical albedo feature name.
+Sulcus	Gigas Sulci	9.9	232.2	398.0	Classical albedo feature name.
+Sulcus	Lycus Sulci	24.4	218.9	1350.0	Classical albedo feature name.
+Sulcus	Medusae Sulci	-4.9	199.9	190.0	Albedo feature name.
+Sulcus	Memnonia Sulci	-6.7	184.7	450.0	Albedo feature name.
+Sulcus	Pavonis Sulci	4.0	243.5	429.0	Albedo name.
+Sulcus	Sacra Sulci	22.1	285.4	900.0	From albedo feature at 20N, 67W.
+Sulcus	Sulci Gordii	18.7	234.5	400.0	Classical albedo feature name.
+Terra	Aonia Terra	-61.7	260.0	4000.0	Classical albedo feature name.
+Terra	Arabia Terra	22.8	5.0	5100.0	Classical albedo feature name.
+Terra	Margaritifer Terra	-4.9	335.0	2600.0	Classical albedo feature name.
+Terra	Noachis Terra	-44.7	10.0	4800.0	Classical albedo feature name.
+Terra	Promethei Terra	-57.7	100.0	3300.0	Classical albedo feature name.
+Terra	Tempe Terra	39.7	289.0	2573.0	From albedo feature at 40N, 70W.
+Terra	Terra Cimmeria	-34.7	145.0	5400.0	Classical albedo feature name.
+Terra	[Terra Meridiani]	-7.1	4.0	1622.0	Classical albedo feature name. Name dropped when new boundaries for regional features were defined in July, 2001.
+Terra	Terra Sabaea	2.0	42.0	4700.0	Classical albedo feature name.
+Terra	Terra Sirenum	-39.7	210.0	3900.0	Classical albedo feature name.
+Terra	Tyrrhena Terra	-14.8	90.0	2300.0	Classical albedo feature name.
+Terra	Xanthe Terra	3.0	312.0	2465.0	Classical albedo feature name.
+Tholus	Albor Tholus	18.8	150.4	170.0	Classical albedo feature name.
+Tholus	Apollinaris Tholus	-17.7	175.7	35.0	Albedo feature name.
+Tholus	[Australis Tholus]	-58.7	37.0	40.0	Classical albedo feature name; dropped in 1978.
+Tholus	Ceraunius Tholus	24.0	262.6	130.0	Classical albedo feature name.
+Tholus	[Charitum Tholus]	-54.7	319.0	0.0	Changed to Oceanidum Mons, 1984.
+Tholus	E. Mareotis Tholus	35.9	274.7	5.0	Classical albedo name.
+Tholus	Hecates Tholus	32.1	150.2	183.0	Classcial albedo feature name.
+Tholus	[Iaxartes Tholus]	71.8	345.0	53.0	Classical albedo feature name; name dropped 1979.
+Tholus	Issedon Tholus	36.0	265.0	52.0	Classical albedo name.
+Tholus	Jovis Tholus	18.2	242.5	58.0	Classical albedo feature name.
+Tholus	[Kison Tholus]	72.8	2.0	50.0	Classical albedo feature name; name dropped in 1979.
+Tholus	N. Mareotis Tholus	36.4	273.6	3.0	Classical albedo name.
+Tholus	[Ortygia Tholus]	69.8	352.0	100.0	Classical albedo feature name; dropped in 1979.
+Tholus	Scandia Tholi	73.8	198.0	480.0	Named for classical albedo feature at 65N, 150W.
+Tholus	Tharsis Tholus	13.4	269.2	158.0	Classical albedo feature name.
+Tholus	Uranius Tholus	26.2	262.3	62.0	Classical albedo feature name.
+Tholus	W. Mareotis Tholus	35.5	271.9	12.0	Classical albedo name.
+Tholus	Zephyria Tholus	-19.8	172.8	30.5	Albedo feature name.
+Undae	Abalos Undae	78.3	271.8	455.0	Classical albedo feature at 72N, 70W.
+Undae	Hyperboreae Undae	81.8	311.4	500.0	Classical albedo feature name.
+Undae	Olympia Undae	81.4	180.0	1100.0	Classical albedo feature name.
+Vallis	Abus Vallis	-5.5	212.7	58.0	Classical name for Humber River in England.
+Vallis	Al-Qahira Vallis	-18.2	162.5	555.0	Word for 'Mars' in Arabic, Indonesian, Malay.
+Vallis	Anio Valles	37.8	55.9	36.5	Classical river in Italy; modern Aniene and Teverone rivers.
+Vallis	Apsus Vallis	34.8	135.0	120.0	Classical river in ancient Macedonia, present-day Greece.
+Vallis	Arda Valles	-20.6	327.6	186.0	Ancient European river (Bulgaria).
+Vallis	Ares Vallis	10.3	334.2	1700.0	Word for 'Mars' in Greek.
+Vallis	Arnus Vallis	13.9	70.5	280.0	Classical and present day Arno River in Tuscany, Italy (previously named Arena Rupes).
+Vallis	Asopus Vallis	-4.3	210.3	33.0	Classical name for modern Hagios River, Greece.
+Vallis	Athabasca Vallis	9.0	155.8	184.0	River in Canada.
+Vallis	Auqakuh Vallis	30.1	60.1	312.0	Word for 'Mars' in Quechua (Inca).
+Vallis	Axius Valles	-55.6	70.1	349.0	Ancient European River (Vardar River of Greece).
+Vallis	Bahram Vallis	20.5	302.5	302.0	Word for 'Mars' in Persian.
+Vallis	Brazos Valles	-6.2	18.9	458.0	River in Texas, USA.
+Vallis	Buvinda Vallis	33.1	151.9	119.6	Classical river in Hibernia; present Boyne River, Ireland.
+Vallis	Chico Valles	-66.7	206.5	450.0	River in Argentina.
+Vallis	Clanis Valles	33.2	58.4	58.0	Classical river in Etruria; present Chiana River, Italy.
+Vallis	Clasia Vallis	33.8	56.9	125.0	Classical river in Umbria, Italy.
+Vallis	Clota Vallis	-25.6	339.4	112.0	Ancient name for present River Clyde, Scotland.
+Vallis	Cusus Valles	14.3	50.5	249.0	Classical name for modern Hron River in Czechoslavakia.
+Vallis	Dao Vallis	-38.4	87.8	816.0	Word for "star" in Thai.
+Vallis	[Deva Valles]	-7.8	203.1	0.0	Classical river in Scotland.
+Vallis	Deva Vallis	-7.6	203.0	48.0	Classical name for Dee River in Scotland; new position and coordinates.
+Vallis	Dittaino Valles	-1.5	293.0	138.0	Modern river in Italy.
+Vallis	Doanus Vallis	-63	334.4	131.0	Classical river shown in Ptolemy's map; may be modern Mekong River of Burma.
+Vallis	Drava Valles	-48.7	166.3	150.0	Modern river in Yugoslavia.
+Vallis	Drilon Vallis	7.2	307.6	94.0	Classical name for present Drin River, Albania.
+Vallis	[Drinus Valles]	-23	342.5	0.0	Ancient European river (Yugoslavia); dropped 1984.
+Vallis	Dubis Vallis	-5.2	211.8	37.0	Classical name for modern Doubs River, France.
+Vallis	Durius Valles	-17.5	172.1	223.0	Classical name for modern Douro River, Portugal.
+Vallis	Dzigai Vallis	-58.5	323.4	326.0	Word for "valley" in Navajo.
+Vallis	Elaver Vallis	-9.4	310.5	160.0	Classical name for modern Allier River, France.
+Vallis	Enipeus Vallis	36.7	266.9	357.0	Classical river.
+Vallis	Evros Vallis	-12.6	13.9	335.0	River in Greece.
+Vallis	Frento Vallis	-50	345.5	277.0	Classical name for river in Italy.
+Vallis	Granicus Valles	29.7	131.0	750.0	Ancient name for river in Turkey.
+Vallis	Harmakhis Vallis	-40.4	90.4	475.0	Ancient Egyptian word for "Mars."
+Vallis	Hebrus Valles	20.0	126.6	317.0	Ancient river in Greece.
+Vallis	Her Desher Vallis	-25.2	312.0	107.0	Egyptian name for Mars.
+Vallis	Hermus Vallis	-5.4	212.0	46.0	Classical name for river in ancient Lydia (modern Turkey).
+Vallis	Himera Valles	-21.4	337.2	160.0	Ancient name for Italian river.
+Vallis	Hrad Vallis	38.4	135.3	825.0	Word for "Mars" in Armenian.
+Vallis	Huo Hsing Vallis	30.2	66.6	318.0	Word for "Mars" in Chinese.
+Vallis	Hypanis Valles	9.5	313.3	231.0	Classical name for river in Scythia; present Kuban River in Russia.
+Vallis	Hypsas Vallis	33.7	57.9	32.8	Classical name for river in Sicily.
+Vallis	Iberus Vallis	21.3	152.0	80.2	Classical name for river present Ebro River in NE Spain.
+Vallis	Indus Vallis	19.1	38.7	307.0	Ancient and modern name for river in Pakistan.
+Vallis	Isara Valles	-5.3	213.4	8.0	Classical name for modern Oise River in France.
+Vallis	Ituxi Vallis	25.2	153.0	62.0	River in Brazil.
+Vallis	Kasei Valles	24.4	295.0	1780.0	Word for "Mars" in Japanese.
+Vallis	Labou Vallis	-8.6	205.5	222.0	French word for Mars.
+Vallis	Ladon Valles	-22.4	331.3	278.0	Ancient name for Greek river.
+Vallis	Licus Vallis	-2.9	126.1	219.1	Ancient name for modern Lech River, France.
+Vallis	Liris Valles	-10.6	57.9	613.0	Ancient name for modern Liri River, Italy.
+Vallis	Lobo Vallis	26.9	298.8	102.0	Modern river in Ivory Coast.
+Vallis	Locras Valles	8.6	47.7	314.0	Ancient name for river on Corsica.
+Vallis	Loire Valles	-18.1	343.3	720.0	Modern river in France.
+Vallis	Louros Valles	-8.4	278.0	517.0	Modern river in Greece.
+Vallis	Ma'adim Vallis	-21.6	177.3	825.0	Word for "Mars" in Hebrew.
+Vallis	Mad Vallis	-56.2	76.1	524.0	Modern river, Vermont, USA.
+Vallis	Maja Valles	12.5	301.7	1516.0	Nepali word for "Mars".
+Vallis	Mamers Valles	40.0	17.8	1020.0	Word for "Mars" in Oscan.
+Vallis	Mangala Valles	-11.5	209.0	828.0	Word for "Mars" in Sanskrit.
+Vallis	Marte Vallis	14.8	183.5	1185.0	Spanish word for "Mars".
+Vallis	Matrona Vallis	-7.6	176.1	51.0	Classical name for present Marne River, France.
+Vallis	Maumee Valles	19.5	306.8	350.0	North American river (Indiana, Ohio).
+Vallis	Mawrth Vallis	22.3	343.5	636.0	Welsh word for "Mars".
+Vallis	Minio Vallis	-4.3	208.2	88.0	Classical name for river in Italy.
+Vallis	Mosa Vallis	-14.7	22.2	171.0	Modern river in Western Europe.
+Vallis	Munda Vallis	-5.4	213.7	10.0	Classical name for river in ancient Lusitania, (modern Mondega River in Portugal).
+Vallis	Naktong Vallis	5.2	32.9	494.0	Modern name for river in Korea.
+Vallis	Nanedi Valles	4.9	311.0	508.0	Word for "planet" in Sesotho, national language of Lesotho, Africa.
+Vallis	Naro Vallis	-3.9	60.6	393.0	Ancient name for modern Neretva River, Yugoslavia.
+Vallis	Nestus Valles	-7.2	201.4	33.0	Classical name for river in Macedonia (Greece).
+Vallis	Nia Vallis	-53.8	325.3	133.0	Lowell canal name; also classical river name.
+Vallis	Nicer Vallis	-7.3	201.8	54.0	Classical name for present Neckar River, Germany.
+Vallis	Niger Vallis	-35.1	92.2	333.0	River in Africa.
+Vallis	Nirgal Vallis	-28.2	318.0	496.0	Word for "Mars" in Babylonian.
+Vallis	Ochus Valles	7.1	314.9	104.0	Classical name for present Hari-Rud River in Turkmenistan.
+Vallis	Oltis Valles	-23.6	338.3	173.0	Ancient name for modern Lot river, France.
+Vallis	Osuga Valles	-15.1	321.4	185.0	River in Russia.
+Vallis	Padus Vallis	-4.5	209.9	46.0	Classical name for modern Po River in Italy.
+Vallis	Pallacopas Vallis	-55	339.0	660.0	Lowell canal name; also classical river name.
+Vallis	Paran\'a Valles	-22.9	349.8	350.0	Ancient and modern name for South American river (Brazil, Argentina).
+Vallis	Patapsco Vallis	23.7	152.5	153.0	Modern river in Maryland, USA.
+Vallis	Protva Valles	-29	299.4	260.0	River in Russia.
+Vallis	Ravi Vallis	-0.2	319.3	205.5	Ancient Pakistani River.
+Vallis	Ravius Valles	46.2	248.7	233.0	Classical name for river in N.W. Ireland.
+Vallis	Reull Vallis	-42.3	104.2	945.0	Word for "planet" in Gaelic.
+Vallis	Rhabon Valles	21.2	268.5	247.0	Classical river in Dacia (Romania).
+Vallis	Rubicon Valles	44.7	243.0	240.0	Ancient river in Italy.
+Vallis	Runa Vallis	-28.4	323.2	39.2	Name proposed by Soviets.
+Vallis	Sabis Vallis	-5.3	207.5	206.0	Classical name for present Sambre River in France and Belgium.
+Vallis	Sabrina Vallis	11.1	311.0	237.0	Classical name for present Severn River, England.
+Vallis	Samara Valles	-24.8	340.9	615.0	Ancient name for modern Somme River, France.
+Vallis	Scamander Vallis	15.8	28.5	204.0	Ancient name of river at Troy (modern Turkey).
+Vallis	Senus Vallis	-5.2	213.0	20.0	Classical river in Ireland.
+Vallis	Sepik Vallis	-0.9	294.2	56.0	River in New Guinea.
+Vallis	Shalbatana Vallis	7.8	317.9	963.0	Word for "Mars" in Akkadian.
+Vallis	Simud Vallis	10.1	322.5	775.0	Word for "Mars" in Sumerian.
+Vallis	Stura Vallis	22.7	142.4	75.0	Classical river east of Rome, Italy.
+Vallis	Subur Vallis	11.6	306.8	26.0	Classical river in Mauritania.
+Vallis	Surinda Valles	-28.9	324.9	95.0	Name proposed by Soviets; found on Mars-5 Map.
+Vallis	Surius Vallis	-61.5	311.6	570.0	Lowell canal name.
+Vallis	Tader Valles	-48.8	207.5	200.0	Ancient name for present Segura River, Spain.
+Vallis	Tagus Valles	-6.7	114.4	155.4	Ancient and modern river in Spain, Portugal.
+Vallis	Taus Vallis	-4.9	211.5	12.6	Classical river in Caledonia (Scotland).
+Vallis	Termes Vallis	-11.1	202.9	48.0	Classical river in ancient Lusitania, present Tormes River, Spain.
+Vallis	Teviot Vallis	-43.3	102.1	140.0	River in Scotland.
+Vallis	Tinia Valles	-4.6	211.0	18.7	Classical river in Italy.
+Vallis	Tinjar Valles	37.6	124.2	425.0	Modern river in Sarawak, Malaysia.
+Vallis	Tinto Vallis	-4	111.4	146.5	River in Spain.
+Vallis	Tisia Valles	-11.8	45.7	399.0	Ancient name for modern Tisza River, Ukraine.
+Vallis	Tiu Valles	15.7	324.3	1720.0	Word for "Mars" in old English (West Germanic).
+Vallis	Trebia Valles	32.1	150.0	183.0	Classical name for modern Trebbia River, Italy.
+Vallis	Tyras Vallis	8.3	309.8	68.0	Classical name for present Dniester River, Ukraine.
+Vallis	Uzboi Vallis	-29.5	322.9	366.0	Dry riverbed in Russia.
+Vallis	Valles Marineris	-13.8	300.8	3769.0	General name of the system of canyons honoring the scientific team of the Mariner 9 program.
+Vallis	Varus Valles	-8.6	203.8	92.0	Classical name for present Var River, France.
+Vallis	Vedra Valles	19.2	304.4	115.0	Ancient European river (Great Britain).
+Vallis	Verde Vallis	-0.5	29.8	95.0	River in Arizona, USA.
+Vallis	Vistula Valles	13.6	308.1	190.0	Classical name for modern Wistla River in Poland.
+Vallis	Warrego Valles	-41.9	267.0	188.0	Modern Australian River.
+Vastitas	Vastitas Borealis	67.3	180.0	4100.0	Classical albedo feature name.

@@ -1,0 +1,391 @@
+// Copyright 2008, Arizona Board of Regents
+// on behalf of Arizona State University
+// 
+// Prepared by the Mars Space Flight Facility, Arizona State University,
+// Tempe, AZ.
+// 
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+package edu.asu.jmars.layer.map2;
+
+import java.awt.geom.Point2D;
+import java.awt.image.BufferedImage;
+import java.awt.image.WritableRaster;
+import java.io.File;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Vector;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import javax.imageio.ImageIO;
+
+import org.apache.commons.collections.ReferenceMap;
+
+import edu.asu.jmars.Main;
+import edu.asu.jmars.ProjObj;
+import edu.asu.jmars.ProjObj.Projection_OC;
+import edu.asu.jmars.util.Config;
+import edu.asu.jmars.util.DebugLog;
+import edu.asu.jmars.util.Util;
+
+
+public class CacheManager {
+	private static String cacheDir = null;
+	private static DebugLog log = DebugLog.instance();
+
+	private static ExecutorService pool;
+	private static ExecutorService fuzzyPool;
+
+	private static final int NUM_TILE_THREADS = Config.get("map.cache.tileThreadCount", 10);	
+	private static final int NUM_FUZZY_THREADS = Config.get("map.cache.fuzzyThreadCount", 5);
+	
+	static Map memoryCache = null;
+	
+	private static void addTileToMemCache(String key, BufferedImage tile) {
+		synchronized (memoryCache) {
+			memoryCache.put(key, tile);
+		}
+	}
+	
+	private static BufferedImage getTileFromMemCache(String key) {
+		BufferedImage tile = null;
+		
+		synchronized (memoryCache) {
+			if (memoryCache.containsKey(key)) {
+				tile = (BufferedImage)memoryCache.get(key);
+				if (tile == null) {
+					log.println("Tile is null! Total memory is: " + 
+							Runtime.getRuntime().maxMemory() +
+							" Free memory is: " + Runtime.getRuntime().freeMemory() +
+					" Max - total is: " + (Runtime.getRuntime().maxMemory() - Runtime.getRuntime().totalMemory())		
+					);
+				}
+			}
+		}
+		
+		return tile;
+	}
+	
+	static {			
+		memoryCache = Collections.synchronizedMap(new ReferenceMap (ReferenceMap.SOFT, ReferenceMap.SOFT));
+		
+		cacheDir = Main.getJMarsPath() + "cache/";
+		if (pool == null) {
+			pool = Executors.newFixedThreadPool(NUM_TILE_THREADS, new MapThreadFactory());
+		}		
+		
+		// We have a separate thread pool for fuzzy tiles because we don't want to ever
+		// queue up an actual cache hit behind a check for fuzzy tiles.
+		if (fuzzyPool == null) {
+			fuzzyPool = Executors.newFixedThreadPool(NUM_FUZZY_THREADS, new MapThreadFactory());
+		}
+				
+	}
+		
+	public static String getTileName(String sourceName, ProjObj projection, int ppd) {
+		Point2D up = Util.getJmars1Up((Projection_OC)projection, null);
+		// Windows doesn't allow : in filenames, so we use JMARS_1 instead of JMARS:1
+		String projectionName = "JMARS_1,"+up.getX()+","+up.getY();
+		return cacheDir+sourceName+"/"+projectionName+"/"+ppd+"ppd/";
+	}
+	
+	public static String getTileName(String sourceName, ProjObj projection, int ppd, int xTile, int yTile, boolean isNumeric) {
+		return getTileName(sourceName, projection, ppd) +xTile+"x"+yTile+(isNumeric?".vic":".png");
+	}
+	
+	public static void getTiles(MapRetriever retriever, MapTile tiles[]) {
+		if (tiles==null || tiles.length==0) {
+			return;
+		}
+		
+		for (int i = 0; i<tiles.length; i++) {
+			pool.execute(new TileLoader(retriever, tiles[i]));
+		}
+	}
+	
+	public static void getFuzzyTiles(MapRetriever retriever, MapTile tiles[]) {
+		if (tiles==null || tiles.length==0) {
+			return;
+		}
+		
+		for (int i = 0; i<tiles.length; i++) {
+			fuzzyPool.execute(new FuzzyTileLoader(retriever, tiles[i]));
+		}
+	}
+	
+	// TODO: determine why AffineTransformOp does not work
+	static BufferedImage scaleImage(BufferedImage image, double scale){
+		WritableRaster inRaster = image.getRaster();
+		
+		int w = (int)(image.getWidth() * scale);
+		int h = (int)(image.getHeight() * scale);
+		WritableRaster outRaster = inRaster.createCompatibleWritableRaster(w, h);
+		
+		Object outData = null;
+		for(int j=0; j<h; j++){
+			for(int i=0; i<w; i++){
+				outData = inRaster.getDataElements((int)(i/scale), (int)(j/scale), outData);
+				outRaster.setDataElements(i, j, outData);
+			}
+		}
+		
+		BufferedImage outImage = new BufferedImage(image.getColorModel(), outRaster, image.isAlphaPremultiplied(), null);
+		return outImage;
+	}
+	
+	public static MapTile[][] checkCache(MapTile tiles[]) {
+		if (tiles==null || tiles.length==0) {
+			return new MapTile[2][0];
+		}
+		Vector cachedTiles = new Vector(tiles.length);
+		Vector nonCachedTiles = new Vector(tiles.length);
+
+		MapSource source = tiles[0].getRequest().getSource();
+		
+		String sourceName = source.getName();
+		ProjObj proj = tiles[0].getRequest().getProjection();
+		int ppd = tiles[0].getRequest().getPPD();
+		
+		for (int i=0; i<tiles.length; i++) {
+			File tileFile = new File(getTileName(sourceName, proj, ppd, tiles[i].getXtile(), tiles[i].getYtile(), source.hasNumericKeyword()));
+			if (tileFile.canRead()) {
+				cachedTiles.add(tiles[i]);
+			} else {
+				nonCachedTiles.add(tiles[i]);
+			}
+		}
+		
+		MapTile checkedTiles[][]=new MapTile[2][];
+		
+		checkedTiles[0]=(MapTile[])cachedTiles.toArray(new MapTile[cachedTiles.size()]);
+		checkedTiles[1]=(MapTile[])nonCachedTiles.toArray(new MapTile[nonCachedTiles.size()]);
+		
+		return checkedTiles;
+	}
+	
+	
+	public static BufferedImage getTile(MapSource source, String tileName) {		
+		BufferedImage tile = null;
+		
+		tile = CacheManager.getTileFromMemCache(tileName);
+		
+		if (tile!=null) {
+			return tile;
+		}
+
+		log.println("Memory cache miss!");
+
+		
+		File tileFile = new File(tileName);
+		
+		// We've technically already done the check for whether the file exists/can be read already
+		// prior to this point... but testing shows that we can usually perform 30 of these checks
+		// in a few milliseconds, regardless of whether we're reading from local disk, CD, or netapp,
+		// so it shouldn't hurt to do this check a second time.
+		if (tileFile.canRead()) {
+			for (int i=0; i<3; i++) {
+				try {
+					if (source.hasNumericKeyword()) {
+						tile = MyVicarReaderWriter.read(tileFile);
+					} else {
+						tile = ImageIO.read(tileFile);
+						tile = Util.replaceWithLinearGrayCS(tile);
+					}
+					
+					if (tile==null) {
+						//System.out.println("TILE " + xtile + ":" +ytile + " at " + ppd + " ppd is null!");
+						return null;
+					}							
+				} catch (Exception e) {
+					log.println("Exception loading tile: " + tileName);
+					log.println("Retrying...");
+				}
+				break;
+			}
+		} else { // tile not found
+			//System.out.println("TILE " + xtile + ":" +ytile + " at " + ppd + " ppd not found!");					
+		}
+
+		if (tile!=null) {
+		
+			log.println("Memory Cache size prePut = " + CacheManager.memoryCache.size());
+			CacheManager.addTileToMemCache(tileName, tile);
+			
+			log.println("Memory Cache size postPut = " + CacheManager.memoryCache.size());
+
+		}
+		
+		return tile;
+	}
+	
+	public static void storeMapData(MapTile tile) {
+		MapSource source = tile.getRequest().getSource();
+		String sourceName = source.getName();
+
+		// Occasionally the netapp will report back that a file or directory doesn't exist, despite the
+		// fact that we've explicitly just created it.  Because of this occasional error, we attempt
+		// the write as many as three times before actually giving up.  This seems to solve this 
+		// particular rare issue with the netapp.
+		for (int i=0; i<3; i++) {
+			createDirectories(sourceName,tile.getRequest().getProjection(), tile.getRequest().getPPD());
+
+			String tileName = getTileName(
+				sourceName,
+				tile.getRequest().getProjection(),
+				tile.getRequest().getPPD(),
+				tile.getXtile(),
+				tile.getYtile(),
+				source.hasNumericKeyword());
+			
+			File tileFile = new File(tileName);
+		
+			try {
+				if (tileFile.createNewFile()) { // if already existed, assume we don't need to recache
+					if (source.hasNumericKeyword()) {
+						MyVicarReaderWriter.write(tile.getImage(), tileFile);
+					} else {
+						ImageIO.write(tile.getImage(), "PNG", tileFile);
+					}
+					
+					CacheManager.addTileToMemCache(tileName, tile.getImage());
+				}
+				break;
+			} catch (Exception e) {
+				log.println(e);
+			}
+			log.println("Retrying tile storage....");
+		}		
+	}
+	
+	private static void createDirectories(String sourceName, ProjObj projection, int ppd) {
+		try {
+			new File(getTileName(sourceName, projection, ppd)).mkdirs();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+	}
+}
+
+class TileLoader implements Runnable {
+	MapRetriever myRetriever = null;
+	MapTile tile = null;
+	
+	TileLoader(MapRetriever retriever, MapTile mapTile) {
+		myRetriever=retriever;
+		tile=mapTile;
+	}
+	
+	public void run() {
+		fetchTile();
+	}
+	
+	private void fetchTile() {
+		if (tile.getRequest().isCancelled()) {
+			return;
+		}
+		
+		MapSource source = tile.getRequest().getSource();
+		ProjObj proj = tile.getRequest().getProjection();
+		int ppd = tile.getRequest().getPPD();
+		
+		String tileName = CacheManager.getTileName(source.getName(), proj, ppd, tile.getXtile(), tile.getYtile(), source.hasNumericKeyword());
+		
+		BufferedImage tileImage = CacheManager.getTile(source, tileName);
+		
+		// This image MAY be null, it is MapRetreivers job to check
+		myRetriever.cacheResponse(tile, tileImage);
+	}
+}
+
+class FuzzyTileLoader implements Runnable {
+	private static DebugLog log = DebugLog.instance();
+
+	MapRetriever myRetriever = null;
+	MapTile tile = null;
+	
+	FuzzyTileLoader(MapRetriever retriever, MapTile mapTile) {
+		myRetriever=retriever;
+		tile=mapTile;
+	}
+	
+	public void run() {
+		fetchTile();
+	}
+	
+	private void fetchTile() {		
+		// If this request has been cancelled, or already fulfilled (downloadmanager was fast), don't
+		// bother doing this work
+		if (tile.getRequest().isCancelled() || tile.isFinal()) {
+			return;
+		}
+		
+		MapSource source = tile.getRequest().getSource();
+		ProjObj proj = tile.getRequest().getProjection();
+		final int ppd = tile.getRequest().getPPD();
+		
+		// TODO: Should this information be pulled like this, or should we get the 
+		// x and ystep values some other way?
+		double xstep=MapRetriever.getLongitudeTileSize(ppd);
+		double ystep=MapRetriever.getLatitudeTileSize(ppd);
+		
+		for (int fuzzyPPD = ppd/2 ; fuzzyPPD > 1 ; fuzzyPPD /= 2){				
+			int ratio = ppd / fuzzyPPD;
+			
+			// A tile has 256 pixels on a side.
+			// Using this method, we can't upscale data to be fuzzy if it's more than 256 times larger 
+			// than the area we are looking to fill.  Upscaling data more than 16 times seems unlikely to provide
+			// any real benefit to the user, so we will quit our search at this point
+			if (ratio>16) break;
+			
+			String tileName = CacheManager.getTileName(
+				source.getName(), proj, fuzzyPPD,
+				tile.getXtile()/ratio, tile.getYtile()/ratio,
+				source.hasNumericKeyword());
+			
+			BufferedImage tileImage = CacheManager.getTile(source, tileName);
+			
+			if (tileImage==null) {								
+				continue;
+			}
+			
+			int xtileindex = tile.getXtile() % ratio;
+			int ytileindex = ratio - (tile.getYtile() % ratio) - 1;
+			
+			double fuzzyxstep = (xstep * ppd / ratio);
+			double fuzzyystep = (ystep * ppd / ratio);
+			
+			try {
+				tileImage = tileImage.getSubimage((int)(xtileindex * fuzzyxstep), (int)(ytileindex * fuzzyystep), (int)fuzzyxstep, (int)fuzzyystep);
+			} catch (Exception e) {
+				log.println(e);
+				log.println("xtileindex:"+xtileindex+" fuzzyxstep:"+fuzzyxstep+" ytileindex:"+ytileindex+" fuzzyystep:"+fuzzyystep);
+				break;
+			}
+			
+			long outputImageSize = (tileImage.getWidth()*ratio)*(tileImage.getHeight()*ratio);
+			if (outputImageSize <= 0 || outputImageSize > Integer.MAX_VALUE){
+				log.println("Scaling tile from "+fuzzyPPD+" to "+ppd+" will result in image size overflow."+
+						" Stopping further search for lower PPDs for this tile.");
+				break;
+			}
+			
+			tileImage = CacheManager.scaleImage(tileImage, ratio);
+			
+			myRetriever.fuzzyResponse(tile, tileImage);
+		}						
+	}
+}
