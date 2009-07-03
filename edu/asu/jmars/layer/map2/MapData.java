@@ -21,9 +21,11 @@
 package edu.asu.jmars.layer.map2;
 
 import java.awt.Rectangle;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.ComponentColorModel;
@@ -90,6 +92,7 @@ public final class MapData {
 		return valid;
 	}
 	
+	/** Returns the image used in this MapData object, without making a copy */
 	public BufferedImage getImage() {
 		return image;
 	}
@@ -150,14 +153,31 @@ public final class MapData {
 		return getRasterBoundsForWorld(getImage().getRaster(), getRequest().getExtent(), outputExtent);
 	}
 	
+	/**
+	 * @param mapTile
+	 *            The tile to insert into this MapData; the bounds should
+	 *            intersect the bounds of this MapData's request, and
+	 *            {@link MapTile#getFuzzyImage()} or {@link MapTile#getImage()}
+	 *            <b>must</b> be non-null.
+	 */
 	public synchronized void addTile(MapTile mapTile) {
+		MapRequest tileRequest = mapTile.getTileRequest();
+		// prefer to work with the final image, but if there isn't one yet, fall back to the fuzzy
+		BufferedImage tileImage = mapTile.getImage();
+		if (tileImage == null) {
+			tileImage = mapTile.getFuzzyImage();
+		}
+		if (tileImage == null) {
+			throw new IllegalArgumentException("Tile has no image");
+		}
+		
 		// create image when the first tile is received
 		Rectangle2D worldExtent = request.getExtent();
 		int ppd = request.getPPD();
 		int w = (int)Math.ceil(worldExtent.getWidth()*ppd);
 		int h = (int)Math.ceil(worldExtent.getHeight()*ppd);
 		if (image == null) {
-			image = Util.createCompatibleImage(mapTile.getImage(), w, h);
+			image = Util.createCompatibleImage(tileImage, w, h);
 		}
 		
 		Point2D offset = request.getSource().getOffset();
@@ -168,18 +188,18 @@ public final class MapData {
 				worldExtent.getMinY()+offset.getY(), w / (double)ppd, h / (double)ppd);
 		
 		int outBands = image.getRaster().getNumBands();
-		int inBands = mapTile.getImage().getRaster().getNumBands();
+		int inBands = tileImage.getRaster().getNumBands();
 		if (outBands != inBands) {
-			log.aprintln("Wrong number of bands received for source " + mapTile.getRequest().getSource().getName() +"! Expected " + outBands + ", got " + inBands);
+			log.aprintln("Wrong number of bands received for source " + tileRequest.getSource().getName() +"! Expected " + outBands + ", got " + inBands);
 			return;
 		}
 		
 		// for each occurrence of this tile in the requested unwrapped world extent
-		Rectangle2D[] worldExtents = Util.toUnwrappedWorld(mapTile.getTileExtent(), fixedExtent);
+		Rectangle2D[] worldExtents = Util.toUnwrappedWorld(tileRequest.getExtent(), fixedExtent);
 		for (int i = 0; i < worldExtents.length; i++) {
 			Rectangle2D worldTile = worldExtents[i];
 			
-			WritableRaster source = getRasterForWorld(mapTile.getImage().getRaster(), worldTile, fixedExtent);
+			WritableRaster source = getRasterForWorld(tileImage.getRaster(), worldTile, fixedExtent);
 			
 			worldTile = new Rectangle2D.Double(worldExtents[i].getMinX()-offset.getX(), 
 					worldExtents[i].getY()-offset.getY(), worldExtents[i].getWidth(),
@@ -191,7 +211,7 @@ public final class MapData {
 			WritableRaster target = getRasterForWorld(image.getRaster(), unShiftedExtent, worldTile);
 			
 			// get source and target rasters based on world coordinates
-			log.println("Updating request " + rect(fixedExtent) + " with tile " + rect(mapTile.getTileExtent()));
+			log.println("Updating request " + rect(fixedExtent) + " with tile " + rect(tileRequest.getExtent()));
 			
 			if (target == null || source == null) {
 				log.println("Unable to extract intersecting area from both images, aborting tile update");
@@ -204,7 +224,9 @@ public final class MapData {
 			// update areas
 			// This can potentially be reached with cancelled/errored mapTiles... is this safe?
 			Area usedTileArea = new Area(worldTile.createIntersection(unShiftedExtent));
-			(mapTile.isFinal() ? getFinishedArea() : getFuzzyArea()).add(new Area(usedTileArea));
+			if (!mapTile.getRequest().isCancelled() && !mapTile.hasError()) {
+				(mapTile.isFinal() ? getFinishedArea() : getFuzzyArea()).add(new Area(usedTileArea));
+			}
 		}
 	}
 	
@@ -225,20 +247,9 @@ public final class MapData {
 		return r.getMinX() + "," + r.getMinY() + " to " + r.getMaxX() + "," + r.getMaxY();
 	}
 	
-	/** Creates a new MapData instance with clones of all mutable properties */
-	public synchronized MapData getDeepCopy(boolean convertToComponentColorModel) {
-		BufferedImage bi;
-		if (image == null) {
-			bi = null;
-		} else if (convertToComponentColorModel && !(image.getColorModel() instanceof ComponentColorModel)) {
-			bi = asComponentModelImage(image);
-		} else {
-			bi = new BufferedImage(
-				image.getColorModel(),
-				image.copyData(null),
-				image.isAlphaPremultiplied(), null);
-		}
-		return getDeepCopyShell(bi);
+	/** Returns a deep copy of this object, including the image */
+	public synchronized MapData getDeepCopy() {
+		return getDeepCopyShell(image == null ? null : copyImage(image));
 	}
 	
 	/** Returns a new MapData object with clones of this MapData's properties, but the given image instead. */
@@ -251,20 +262,130 @@ public final class MapData {
 		return md;
 	}
 	
-	public static BufferedImage asComponentModelImage(BufferedImage src) {
-		ColorModel srcCm = src.getColorModel();
-		ColorModel dstCm = new ComponentColorModel(
-			srcCm.getColorSpace(),
-			srcCm.getComponentSize(),
-			srcCm.hasAlpha(),
-			false,
-			srcCm.getTransparency(),
-			srcCm.getTransferType());
+	/**
+	 * Returns <code>this</code> if this image is null or already using
+	 * {@link ComponentColorModel}, otherwise returns a new MapData with a new
+	 * {@link BufferedImage} that does use a {@link ComponentColorModel}.
+	 */
+	public MapData convertToCCM() {
+		if (image == null || image.getColorModel() instanceof ComponentColorModel) {
+			return this;
+		} else {
+			ColorModel srcCm = image.getColorModel();
+			ColorModel dstCm = new ComponentColorModel(
+				srcCm.getColorSpace(),
+				srcCm.getComponentSize(),
+				srcCm.hasAlpha(),
+				false,
+				srcCm.getTransparency(),
+				srcCm.getTransferType());
+			
+			WritableRaster dstRaster = dstCm.createCompatibleWritableRaster(image.getWidth(), image.getHeight());
+			BufferedImage dst = new BufferedImage(dstCm, dstRaster, dstCm.isAlphaPremultiplied(), null);
+			dst.setData(image.getRaster());
+			return getDeepCopyShell(dst);
+		}
+	}
+
+	/**
+	 * Returns <code>this</code> if this {@link MapData}'s request is equal to
+	 * the given request, otherwise a new {@link MapData} object is created with
+	 * the new request, the finished and fuzzy areas are cropped to the extent
+	 * of the new request, and the image is cropped and scaled to the new
+	 * request.
+	 */
+	public MapData convertToRequest(MapRequest newRequest) {
+		final long start = System.currentTimeMillis();
+		final BufferedImage outImage;
+		final int oldPPD = request.getPPD();
+		final Rectangle2D oldExtent = request.getExtent();
+		final int newPPD = newRequest.getPPD();
+		final Rectangle2D newExtent = newRequest.getExtent();
 		
-		WritableRaster dstRaster = dstCm.createCompatibleWritableRaster(src.getWidth(), src.getHeight());
-		BufferedImage dst = new BufferedImage(dstCm, dstRaster, dstCm.isAlphaPremultiplied(), null);
-		dst.setData(src.getRaster());
+		if (request.equals(newRequest)) {
+			// already conforms to this request so just return self
+			return this;
+		} else if (!oldExtent.contains(newExtent)) {
+			// this implementation does not handle filling areas in the output
+			// raster that do not exist in the input raster
+			log.aprintln("New request extent must be entirely inside old request extent");
+			outImage = null;
+		} else if (image == null) {
+			// just forward a null image
+			outImage = null;
+		} else if (!oldExtent.equals(newExtent) || oldPPD != newPPD) {
+			// must transform this image to the scale of the 'newRequest'
+			// and crop to the extent at that scale
+			final int w = (int)Math.round(newExtent.getWidth() * newPPD);
+			final int h = (int)Math.round(newExtent.getHeight() * newPPD);
+			final Raster inRaster = image.getRaster();
+			final WritableRaster outRaster = inRaster.createCompatibleWritableRaster(w, h);
+			final ColorModel cm = image.getColorModel();
+			outImage = new BufferedImage(cm, outRaster, cm.isAlphaPremultiplied(), null);
+			
+			// transform from pixel position in outRaster to world coordinates
+			// to pixel position in inRaster
+			final AffineTransform out2world = Util.image2world(w, h, newExtent);
+			final AffineTransform world2in = Util.world2image(oldExtent, image.getWidth(), image.getHeight());
+			final AffineTransform at = new AffineTransform(world2in);
+			at.concatenate(out2world);
+			
+			try {
+				// the op uses the transform to map the input rectangle onto
+				// the output rectangle, and we set the clip boundaries by
+				// explicitly creating the output image
+				new AffineTransformOp(at.createInverse(),AffineTransformOp.TYPE_NEAREST_NEIGHBOR).filter(inRaster, outRaster);
+			} catch (Exception e) {
+				// the op fails for many common cases, so when it doesn't work,
+				// we use this slower technique instead; fortunately there isn't
+				// much cost to always first trying the fast way, since there are
+				// no stated limitations on AffineTransformOp to tell us where it
+				// should work.
+				// TODO: this is a good start on a generalized FixedAffineTransformOp,
+				// so if we don't find another better alternative in e.g. JAI we should
+				// port this up to a utility package.
+				log.println("AffineTransformOp error, trying slower technique");
+				final Point2D.Double p = new Point2D.Double();
+				final Point2D.Double q = new Point2D.Double();
+				Object pixel = null;
+				try {
+					for (int row = 0; row < h; row++) {
+						p.y = row;
+						for (int col = 0; col < w; col++) {
+							p.x = col;
+							at.transform(p, q);
+							// TODO: this is an order of magnitude more expensive than
+							// the rest of this manual affine operator!
+							pixel = inRaster.getDataElements((int)q.x, (int)q.y, pixel);
+							outRaster.setDataElements(col, row, pixel);
+						}
+					}
+				} catch (Exception e2) {
+					log.aprintln("Out of bounds: " + p.x + ", " + p.y);
+				}
+			}
+		} else {
+			outImage = copyImage(image);
+		}
 		
-		return dst;
+		final MapData outdata = new MapData(newRequest);
+		outdata.finishedArea = new Area(finishedArea);
+		outdata.fuzzyArea = new Area(fuzzyArea);
+		outdata.finished = finished;
+		outdata.image = outImage;
+		// clip the areas down to the new request extent
+		final Area clip = new Area(newExtent);
+		outdata.finishedArea.intersect(clip);
+		outdata.fuzzyArea.intersect(clip);
+		
+		log.println("Finished in " + (System.currentTimeMillis()-start));
+		return outdata;
+	}
+	
+	private static BufferedImage copyImage(BufferedImage image) {
+		return new BufferedImage(
+			image.getColorModel(),
+			image.copyData(null),
+			image.isAlphaPremultiplied(), null);
 	}
 }

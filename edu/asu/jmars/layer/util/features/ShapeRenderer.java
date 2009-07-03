@@ -24,30 +24,25 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
-import java.awt.Shape;
+import java.awt.RenderingHints;
 import java.awt.Stroke;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Line2D;
 import java.awt.geom.PathIterator;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 import edu.asu.jmars.Main;
 import edu.asu.jmars.layer.Layer;
 import edu.asu.jmars.layer.ProjectionEvent;
 import edu.asu.jmars.layer.ProjectionListener;
-import edu.asu.jmars.layer.util.features.ProgressListener;
-import edu.asu.jmars.util.LineType;
 
 /**
  * Realizes the FeatureRenderer for the ShapeLayer. The ShapeLayer uses this
@@ -56,98 +51,27 @@ import edu.asu.jmars.util.LineType;
  * Methods in this class which take a Graphics2D as a parameter require a World
  * Graphics2D.
  * 
- * The ShapeRenderer pays attention to the following attributes within the
- * Feature object:
- * <ul>
- * <li>{@link edu.asu.jmars.layer.util.features.Feature#FIELD_DRAW_COLOR}</li>
- * <li>{@link edu.asu.jmars.layer.util.features.Feature#FIELD_FILL_COLOR}</li>
- * <li>{@link edu.asu.jmars.layer.util.features.Feature#FIELD_FONT}</li>
- * <li>{@link edu.asu.jmars.layer.util.features.Feature#FIELD_LABEL}</li>
- * <li>{@link edu.asu.jmars.layer.util.features.Feature#FIELD_LABEL_COLOR}</li>
- * <li>{@link edu.asu.jmars.layer.util.features.Feature#FIELD_LINE_WIDTH}</li>
- * <li>{@link edu.asu.jmars.layer.util.features.Feature#FIELD_LINE_DASH}</li>
- * <li>{@link edu.asu.jmars.layer.util.features.Feature#FIELD_LINE_DIRECTED}</li>
- * <li>{@link edu.asu.jmars.layer.util.features.Feature#FIELD_PATH}</li>
- * This is a required attribute.
- * <li>{@link edu.asu.jmars.layer.util.features.Feature#FIELD_SELECTED}</li>
- * This is a required attribute.
- * <li>{@link edu.asu.jmars.layer.util.features.Feature#FIELD_SHOW_LABEL}</li>
- * </ul>
+ * The ShapeRenderer uses an instance of {@link Styles} to get all of the info
+ * it requires for rendering.  This distinction between feature attributes and
+ * styles allows using a renderer with a fixed set of understood attributes
+ * with any kind of Feature by mapping attributes to styles through the Styles
+ * class.
  * 
- * The ShapeRenderer is cognizant with the following styling attributes:
- * <ul>
- * <li>{@link #STYLE_KEY_DRAW_COLOR}</li>
- * <li>{@link #STYLE_KEY_DRAW_SELECTED_ONLY}</li>
- * Not available on a per-Feature basis.
- * <li>{@link #STYLE_KEY_FILL_COLOR}</li>
- * <li>{@link #STYLE_KEY_FILL_POLYGONS}</li>
- * <li>{@link #STYLE_KEY_FONT}</li>
- * <li>{@link #STYLE_KEY_LABEL}</li>
- * <li>{@link #STYLE_KEY_LABEL_COLOR}</li>
- * <li>{@link #STYLE_KEY_LABEL_OFFSET}</li>
- * <li>{@link #STYLE_KEY_LINE_DASH}</li>
- * <li>{@link #STYLE_KEY_LINE_WIDTH}</li>
- * <li>{@link #STYLE_KEY_POINT_SIZE}</li>
- * <li>{@link #STYLE_KEY_SHOW_LABELS}</li>
- * <li>{@link #STYLE_KEY_SHOW_LINE_DIRECTION}</li>
- * <li>{@link #STYLE_KEY_SHOW_VERTICES}</li>
- * <li>{@link #STYLE_KEY_STROKE}</li>
- * </ul>
- * 
- * The ShapeRenderer maps the Feature attribute Field values to style
- * attributes. Any style attributes which are not mapped by the the Feature
- * attributes are filled-in from default style. The resulting style has all the
- * styling attributes. If the user has also specified overrides for the style
- * attributes, these are applied to the style. This gives us the effective
- * style. In short, the effective style is derived from default style overlaid
- * with Feature->Style mapping overlaid with style overrides.
- * <p>
- * Use {@link #setDefaultAttribute(String, Object)} to modify the styling
- * defaults and {@link #setOverrideAttribute(String, Object)} to modify the
- * overrides.
- * <p>
- * The ShapeRenderer also allows the user to override the Field to request the
- * <em>path</em> attribute from the Feature object. This takes care of the
- * situation when the <em>path</em> attribute is stored in Spatial coordinates
- * in the Feature object and there is a derived attribute, say,
- * <em>world_path</em> which contains the world coordinates for the Feature
- * path.
- * <p>
  * During {@link #drawAll(Graphics2D, Collection)}, a progress notification is
  * sent to each ProgressListener registered with the Renderer. This notification
  * is generated on every draw.
- * <p>
+ * 
  * A {@link #drawAll(Graphics2D, Collection)} may be aborted in middle by
  * issuing a {@link #stopDrawing()}. This call has no effect when the
  * ShapeRenderer is not currently drawing.
- * <p>
- * 
- * @author saadat
- * 
  */
-public class ShapeRenderer implements FeatureRenderer, ProjectionListener {
-
+public class ShapeRenderer implements ProjectionListener {
+	private static final Point2D labelOffset = new Point2D.Float(3f,3f);
+	
 	/**
 	 * Owner LView.
 	 */
 	private Layer.LView lView;
-
-	/**
-	 * Default style, gap-fill for attributes not specified by the Feature
-	 * object.
-	 */
-	private HashMap defaultAttrs = new HashMap();
-
-	/**
-	 * Type of the value associated with each style attribute.
-	 */
-	private HashMap attrTypes = new HashMap();
-
-	/**
-	 * Overrides for various style attributes. These override both the default
-	 * as well as Feature object specified attributes.
-	 */
-	private HashMap overrideAttrs = new HashMap();
 
 	/**
 	 * Flag indicating that the ShapeRenderer has been instructed to abandon
@@ -164,157 +88,47 @@ public class ShapeRenderer implements FeatureRenderer, ProjectionListener {
 	/**
 	 * List of {@link ProgressListener}s.
 	 */
-	private List listeners = new LinkedList();
-
-	/**
-	 * Clipping rectangles used to discard data outside viewing boundary
-	 * trivially.
-	 * <p>
-	 * <b>Caution:</b> Do not use this value directly, use the accessor method
-	 * instead.
-	 */
-	private Rectangle2D[] clippingRectangles = null;
+	private List<ProgressListener> listeners = new ArrayList<ProgressListener>();
 	
-	// These are our defaults
-	/**
-	 * Default draw color or line color.
-	 */
-	public static final Color defaultDrawColor = Color.WHITE;
-
-	/**
-	 * Default polygon fill color.
-	 */
-	public static final Color defaultFillColor = Color.RED;
-
-	/**
-	 * Default label color.
-	 */
-	public static final Color defaultLabelColor = Color.WHITE;
-
-	/**
-	 * Default line width for drawing polygonal outlines. This attribute is a
-	 * special in the way it is used. When used in the context of DefaultStyle,
-	 * it is interpreted as minimum line width. When used in the the context of
-	 * OverrideStyle, it is interpreted as the maximum line width.
-	 */
-	public static final Float defaultLineWidth = new Float(0); // single-pixel
-
-	/**
-	 * Default point size for drawing point shapes.
-	 */
-	public static final Integer defaultPointSize = new Integer(3);
-	
-	// line
-
-	/**
-	 * Default line dashing pattern index for polygonal outlines.
-	 * 
-	 * @see edu.asu.jmars.util.LineType
-	 */
-	public static final LineType defaultLineDash = new LineType(); // solid
-
-	// line
-
-	/**
-	 * Default Stroke for drawing polygonal outlines. In reality this default
-	 * value is not reused ever. The Stroke value is recomputed on each Feature
-	 * draw.
-	 */
-	public static final Stroke defaultStroke = new BasicStroke(0);
-
-	// TODO Figure out a better way of getting the default Font
-	// GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts()[0]; does
-	// not work
-	/**
-	 * Default Font for drawing labels. It is currently set to "Ariel-Bold-14"
-	 * for lack of a better mechanism to get the default system Font that I know
-	 * about.
-	 */
-	public static final Font defaultFont = Font.decode("Ariel-Bold-14");
-
-	/**
-	 * Default label string.
-	 */
-	public static final String defaultLabelString = "";
-
-	/**
-	 * Default offset (in pixels) of the label from the center of Feature.
-	 */
-	public static final Point2D defaultLabelOffsetPixels = new Point2D.Float(
-			3.0f, 0.0f); // not a user customizable param
-
-	/**
-	 * Default control flag controlling whether a Feature object will be drawn
-	 * with exagerated vertices or not.
-	 */
-	public static final Boolean defaultShowVertices = Boolean.TRUE; // draw
-
-	// thick
-	// vertex
-	// boundary
-
-	/**
-	 * Default control flag controlling whether a polyline Feature object which
-	 * has direction information, will be drawing with a tail end Arrow.
-	 */
-	public static final Boolean defaultShowLineDirection = Boolean.FALSE;
-
-	/**
-	 * Default control flag controlling whether label on the Feature object will
-	 * be rendered or not.
-	 */
-	public static final Boolean defaultShowLabels = Boolean.TRUE;
-
-	/**
-	 * Default control flag controlling whether closed polygonal Feature objects
-	 * will be rendered filled.
-	 */
-	public static final Boolean defaultFillPolygons = Boolean.TRUE;
-
-	/**
-	 * Length (in pixels) of the side of the box used to represent an exagerated
-	 * vertex. In other words, this is the length of the side of the box drawn
-	 * around a vertex such that the vertex stands out from the line which
-	 * contains it.
-	 */
-	public static final int defaultVertexBoxSide = 3;
-
 	/**
 	 * BasicStroke's end-cap style.
 	 */
-	public static final int defaultStrokeCapStyle = BasicStroke.CAP_BUTT;
+	private static final int defaultStrokeCapStyle = BasicStroke.CAP_BUTT;
 
 	/**
 	 * BasicStroke's end-join style.
 	 */
-	public static final int defaultStrokeJoinStyle = BasicStroke.JOIN_MITER;
+	private static final int defaultStrokeJoinStyle = BasicStroke.JOIN_MITER;
 
 	/**
 	 * BasicStroke's miter-limit.
 	 */
-	public static final float defaultMiterLimit = 10.0f;
+	private static final float defaultMiterLimit = 10.0f;
 
 	/**
 	 * Height of the arrowhead from the base (in pixels).
 	 */
-	public static final double ahHeight = 15;
+	private static final double ahHeight = 15;
 
 	/**
 	 * Width of the arrowhead base (in pixels).
 	 */
-	public static final double ahWidth = 12;
+	private static final double ahWidth = 12;
 
 	/**
 	 * Half the width of the arrowhead base (in pixels).
 	 */
-	public static final double ahHalfWidth = ahWidth / 2.0;
-
+	private static final double ahHalfWidth = ahWidth / 2.0;
+	
+	Styles styles = new Styles();
+	private final Font font;
+	
 	/**
 	 * A standard arrowhead based on the static width and height parameters. The
 	 * arrowhead is aligned with the x-axis with its tip at the origin and the
 	 * base of the triangle extending in the negative-X direction.
 	 */
-	public static final GeneralPath arrowHead;
+	private static final GeneralPath arrowHead;
 	static {
 		// Populate the default arrowhead as a head aligned with the X-axis
 		// pointing at (0,0)
@@ -333,122 +147,6 @@ public class ShapeRenderer implements FeatureRenderer, ProjectionListener {
 	 */
 	private static final int defaultStopDrawingCheckCount = 10;
 
-	// Styles to be used as keys for the style HashMap built during draw.
-	/**
-	 * Style key for the drawing/line color. Associated value is a Color object.
-	 */
-	public static final String STYLE_KEY_DRAW_COLOR = "draw_color";
-
-	/**
-	 * Style key for the fill color. Associated value is a Color object.
-	 */
-	public static final String STYLE_KEY_FILL_COLOR = "fill_color";
-
-	/**
-	 * Style key for the label color. Associated value is a Color object.
-	 */
-	public static final String STYLE_KEY_LABEL_COLOR = "label_color";
-
-	/**
-	 * Style key for the line width. Associated value is a Float.
-	 */
-	public static final String STYLE_KEY_LINE_WIDTH = "line_width";
-
-	/**
-	 * Style key for the point size, in pixels. Associated value is an Integer.
-	 */
-	public static final String STYLE_KEY_POINT_SIZE = "point_size";
-	
-	/**
-	 * Style key for the line dash pattern. Associated value is a
-	 * {@link LineType} object.
-	 */
-	public static final String STYLE_KEY_LINE_DASH = "line_dash";
-
-	/**
-	 * Style key for the font used for rendering labels. Associated value is a
-	 * Font.
-	 */
-	public static final String STYLE_KEY_FONT = "font";
-
-	/**
-	 * Style key for the label. Associated value is a String.
-	 */
-	public static final String STYLE_KEY_LABEL = "label";
-
-	/**
-	 * Style key for the label offset. Associate value is a Point2D.
-	 */
-	public static final String STYLE_KEY_LABEL_OFFSET = "text_offset";
-
-	/**
-	 * Style key for the line direction control flag. Associated value is a
-	 * Boolean.
-	 */
-	public static final String STYLE_KEY_SHOW_LINE_DIRECTION = "draw_line_directed";
-
-	/**
-	 * Style key for the draw vertices control flag. Associated value is a
-	 * Boolean.
-	 */
-	public static final String STYLE_KEY_SHOW_VERTICES = "draw_vertices";
-
-	/**
-	 * Style key for the show labels control flag. Associated value is a
-	 * Boolean.
-	 */
-	public static final String STYLE_KEY_SHOW_LABELS = "show_labels";
-
-	/**
-	 * Style key for the fill control flag. Associated value is a Boolean.
-	 */
-	public static final String STYLE_KEY_FILL_POLYGONS = "fill";
-
-	/**
-	 * Feature attribute Field to Style key mapping.
-	 */
-	public static final Object[][] fieldsToStyleKeysEntries = new Object[][] {
-			{ Field.FIELD_DRAW_COLOR, STYLE_KEY_DRAW_COLOR },
-			{ Field.FIELD_FILL_COLOR, STYLE_KEY_FILL_COLOR },
-			{ Field.FIELD_LABEL_COLOR, STYLE_KEY_LABEL_COLOR },
-			{ Field.FIELD_LINE_WIDTH, STYLE_KEY_LINE_WIDTH },
-			{ Field.FIELD_POINT_SIZE, STYLE_KEY_POINT_SIZE },
-			{ Field.FIELD_LINE_DASH, STYLE_KEY_LINE_DASH },
-			{ Field.FIELD_LINE_DIRECTED, STYLE_KEY_SHOW_LINE_DIRECTION },
-			{ Field.FIELD_FONT, STYLE_KEY_FONT },
-			{ Field.FIELD_LABEL, STYLE_KEY_LABEL },
-			{ Field.FIELD_SHOW_LABEL, STYLE_KEY_SHOW_LABELS },
-			{ Field.FIELD_FILL_POLYGON, STYLE_KEY_FILL_POLYGONS }, };
-
-	/**
-	 * Feature attribute Field to Style key mapping.
-	 */
-	private static HashMap fieldsToStyleKeysMap = new HashMap();
-	static {
-		for (int i = 0; i < fieldsToStyleKeysEntries.length; i++)
-			fieldsToStyleKeysMap.put(fieldsToStyleKeysEntries[i][0],
-					fieldsToStyleKeysEntries[i][1]);
-	}
-
-	/**
-	 * User modifiable style elements, their default values and the value types.
-	 */
-	public static final Object[][] styleKeysToDefaults = new Object[][] {
-			{ STYLE_KEY_DRAW_COLOR, defaultDrawColor, Color.class },
-			{ STYLE_KEY_FILL_COLOR, defaultFillColor, Color.class },
-			{ STYLE_KEY_LABEL_COLOR, defaultLabelColor, Color.class },
-			{ STYLE_KEY_LINE_WIDTH, defaultLineWidth, Number.class },
-			{ STYLE_KEY_POINT_SIZE, defaultPointSize, Number.class },
-			{ STYLE_KEY_LINE_DASH, defaultLineDash, LineType.class },
-			{ STYLE_KEY_SHOW_LINE_DIRECTION, defaultShowLineDirection, Boolean.class },
-			{ STYLE_KEY_FONT, defaultFont, Font.class },
-			{ STYLE_KEY_LABEL, defaultLabelString, String.class },
-			{ STYLE_KEY_LABEL_OFFSET, defaultLabelOffsetPixels, Point2D.class },
-			{ STYLE_KEY_SHOW_VERTICES, defaultShowVertices, Boolean.class },
-			{ STYLE_KEY_SHOW_LABELS, defaultShowLabels, Boolean.class },
-			{ STYLE_KEY_FILL_POLYGONS, defaultFillPolygons, Boolean.class },
-	};
-
 	/**
 	 * Creates an instance of the ShapeRenderer object. The instance takes the
 	 * owner LView as a parameter.
@@ -459,105 +157,10 @@ public class ShapeRenderer implements FeatureRenderer, ProjectionListener {
 	public ShapeRenderer(Layer.LView lView) {
 		super();
 		this.lView = lView;
+		font = lView.getFont().deriveFont(Font.BOLD);
 		Main.addProjectionListener(this);
-
-		for (int i = 0; i < styleKeysToDefaults.length; i++) {
-			defaultAttrs.put(styleKeysToDefaults[i][0],
-					styleKeysToDefaults[i][1]);
-
-			attrTypes.put(styleKeysToDefaults[i][0], styleKeysToDefaults[i][2]);
-		}
 	}
-
-	/**
-	 * Returns a mapping of Field to style key for all the attribute fields that
-	 * participate in the rendering style process. Note that the two required
-	 * Feature fields, i.e. <code>path</code> and <code>selected</code> are
-	 * not a part of this map.
-	 * 
-	 * @return Feature attribute Field to Style key mapping used by the
-	 *         ShapeRenderer to construct style.
-	 */
-	public static Map getFieldToStyleKeysMap() {
-		return Collections.unmodifiableMap(fieldsToStyleKeysMap);
-	}
-
-	/**
-	 * Returns a set of all the style keys.
-	 * 
-	 * @return All style keys that this renderer knows/cares about.
-	 */
-	public static Set getAllStyleKeys() {
-		Set styleKeys = new HashSet();
-
-		for (int i = 0; i < styleKeysToDefaults.length; i++)
-			styleKeys.add(styleKeysToDefaults[i][0]);
-
-		return styleKeys;
-	}
-
-	/**
-	 * Returns the unadultrated default style.
-	 * 
-	 * @return Default style.
-	 */
-	public static Map getDefaultStyle() {
-		HashMap defaultStyle = new HashMap();
-
-		for (int i = 0; i < styleKeysToDefaults.length; i++)
-			defaultStyle.put(styleKeysToDefaults[i][0],
-					styleKeysToDefaults[i][1]);
-
-		return defaultStyle;
-	}
-
-	/**
-	 * Converts Feature attributes to a style. The feature is constructed in the
-	 * following way:
-	 * <ol>
-	 * <li>Initialize style from defaults.</li>
-	 * <li>Override style attributes from Feature attributes.</li>
-	 * <li>Override style attributes from Override attributes this is the
-	 * effective style.</li>
-	 * <li>Reconstruct the <em>stroke</em> attribute based on the effective
-	 * style.</li>
-	 * </ol>
-	 * 
-	 * @param feat
-	 *            Feature for which a style has to be computed.
-	 * @return The style computed from the input Feature.
-	 */
-	public HashMap getStyle(Feature feat) {
-		// Initialize style with defaults
-		HashMap style = (HashMap) defaultAttrs.clone();
-
-		Object obj;
-		Field f;
-		String styleKey;
-
-		// Override non-default style attributes from the Feature
-		Iterator fi = fieldsToStyleKeysMap.keySet().iterator();
-		while (fi.hasNext()) {
-			f = (Field) fi.next();
-			styleKey = (String) fieldsToStyleKeysMap.get(f);
-			if (styleKey != null && (obj = feat.getAttribute(f)) != null
-					&& ((Class) attrTypes.get(styleKey)).isInstance(obj))
-				style.put(fieldsToStyleKeysMap.get(f), obj);
-		}
-
-		// The STYLE_KEY_LINE_WIDTH is special, it acts as minimum line
-		// width when used in default style, and maximum when used in override.
-		style.put(STYLE_KEY_LINE_WIDTH, new Double(Math
-				.max(((Number) style.get(STYLE_KEY_LINE_WIDTH)).doubleValue(),
-						((Number) defaultAttrs.get(STYLE_KEY_LINE_WIDTH))
-								.doubleValue())));
-
-		// Override with user specified overrides
-		style.putAll(overrideAttrs);
-
-		return style;
-	}
-
+	
 	/**
 	 * Returns magnified dash-pattern by copying the input dash-pattern and
 	 * scaling it with the LView PPD magnification. If the input dash-pattern is
@@ -587,9 +190,9 @@ public class ShapeRenderer implements FeatureRenderer, ProjectionListener {
 	 *            Line width to magnify.
 	 * @return Magnified line width.
 	 */
-	protected double getMagnifiedLineWidth(double lineWidth) {
+	protected float getMagnifiedLineWidth(double lineWidth) {
 		int magnification = getMagnification();
-		return lineWidth / magnification;
+		return (float)lineWidth / magnification;
 	}
 
 	/**
@@ -605,37 +208,14 @@ public class ShapeRenderer implements FeatureRenderer, ProjectionListener {
 				/ magnification);
 	}
 
-	/**
-	 * Check to see if the given feature overlaps the viewing region.
-	 * 
-	 * @param f
-	 *            Feature object to test.
-	 * @return true if the Feature object overlaps the clipping rectangles,
-	 *         false otherwise.
-	 */
-	protected boolean overlapsClippingRectangles(Feature f) {
-		FPath path = (FPath)f.getAttribute(Field.FIELD_PATH);
-		GeneralPath p = path.getWorld().getGeneralPath();
-		if (p == null)
-			return false;
-
-		Rectangle2D pathBoundary = normalizeRectangle(p.getBounds2D());
-		Rectangle2D[] clipRects = getClippingRectangles();
-
-		if (f.getPathType() == Feature.TYPE_POINT)
-			for (int i = 0; i < clipRects.length; i++) {
-				if (clipRects[i].contains(pathBoundary.getX(), pathBoundary.getY()))
-					return true;
-			}
-		else
-			for (int i = 0; i < clipRects.length; i++) {
-				if (clipRects[i].intersects(pathBoundary))
-					return true;
-			}
-
-		return false;
+	public Styles getStyles() {
+		return styles;
 	}
-
+	
+	public void setStyles(Styles styles) {
+		this.styles = styles;
+	}
+	
 	/**
 	 * Draws the given Feature onto the specified World Graphics2D. While
 	 * drawing, ignore everything that does not fall within our current display
@@ -649,69 +229,65 @@ public class ShapeRenderer implements FeatureRenderer, ProjectionListener {
 	 */
 	public void draw(Graphics2D g2w, Feature f) {
 		try {
-			if (!overlapsClippingRectangles(f))
-				return; // skip rectangles not in our clipping boundary.
-
+			g2w.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+				styles.antialias.getValue(f)
+					? RenderingHints.VALUE_ANTIALIAS_ON
+					: RenderingHints.VALUE_ANTIALIAS_OFF);
+			
 			// Get the req'd path field
-			FPath path = f.getPath();
+			FPath path = styles.geometry.getValue(f);
 			GeneralPath p = path.getWorld().getGeneralPath();
-			int type = f.getPathType();
-			if (type == Feature.TYPE_NONE || p == null)
+			int type = path.getType();
+			if (type == FPath.TYPE_NONE || p == null)
 				return;
-
-			// TODO: think about caching Styles!
-			// Reduce Feature to a Style map.
-			HashMap style = getStyle(f);
 
 			// Install various pieces of style as needed and draw.
 
 			// Draw filled polygon.
-			if (type == Feature.TYPE_POINT) {
-				g2w.setColor((Color) style.get(STYLE_KEY_FILL_COLOR));
-				fillVertices(g2w, p, ((Integer)style.get(STYLE_KEY_POINT_SIZE)).intValue());
-			} else if (type == Feature.TYPE_POLYGON) {
-				g2w.setColor((Color) style.get(STYLE_KEY_FILL_COLOR));
-				if (((Boolean) style.get(STYLE_KEY_FILL_POLYGONS))
-						.booleanValue())
+			if (type == FPath.TYPE_POINT) {
+				g2w.setColor(styles.fillColor.getValue(f));
+				fillVertices(g2w, p, styles.pointSize.getValue(f).intValue());
+			} else if (type == FPath.TYPE_POLYGON) {
+				g2w.setColor(styles.fillColor.getValue(f));
+				if (styles.fillPolygons.getValue(f)) {
 					g2w.fill(p);
+				}
 			}
-
-			// Draw polygonal outline.
-			double lineWidth = ((Number) style.get(STYLE_KEY_LINE_WIDTH)).doubleValue();
-			float[] dashPattern = ((LineType) style.get(STYLE_KEY_LINE_DASH)).getDashPattern();
-
+			
+			double lineWidth = styles.lineWidth.getValue(f).doubleValue();
+			float[] dashPattern = styles.lineDash.getValue(f).getDashPattern();
+			
 			// TODO: THIS IS FOR THE FUTURE (WHERE NO MAN HAS GONE BEFORE ...
 			// CAPTAIN!)
 			// TODO: Add caching here: Cache: <lineWidth,lineDash,ProjObj> ->
 			// Stroke
 			// TODO: Drop Stroke cache on a Projection change
 			Stroke stroke = new BasicStroke(
-					(float) getMagnifiedLineWidth(lineWidth),
+					getMagnifiedLineWidth(lineWidth),
 					defaultStrokeCapStyle, defaultStrokeJoinStyle,
 					defaultMiterLimit, getMagnifiedDashPattern(dashPattern), 0);
 
 			g2w.setStroke(stroke);
-			g2w.setColor((Color) style.get(STYLE_KEY_DRAW_COLOR));
-			if (type == Feature.TYPE_POINT)
-				drawVertices(g2w, p, ((Integer)style.get(STYLE_KEY_POINT_SIZE)).intValue());
+			g2w.setColor(styles.lineColor.getValue(f));
+			if (type == FPath.TYPE_POINT)
+				drawVertices(g2w, p, styles.pointSize.getValue(f).intValue());
 			else
 				g2w.draw(p);
 
 			// Switch to non-patterned stroke to draw vertices and arrows.
-			stroke = new BasicStroke((float) getMagnifiedLineWidth(lineWidth),
+			stroke = new BasicStroke(getMagnifiedLineWidth(lineWidth),
 					defaultStrokeCapStyle, defaultStrokeJoinStyle,
 					defaultMiterLimit, null, 0);
 
 			g2w.setStroke(stroke);
 
 			// Draw vertices.
-			if (type != Feature.TYPE_POINT && ((Boolean) style.get(STYLE_KEY_SHOW_VERTICES)).booleanValue())
-				drawVertices(g2w, p, defaultVertexBoxSide);
+			if (type != FPath.TYPE_POINT && styles.showVertices.getValue(f))
+				drawVertices(g2w, p, styles.vertexSize.getValue(f).intValue());
 
 			// Draw direction arrows.
-			if (type == Feature.TYPE_POLYLINE) {
-				if (((Boolean) style.get(STYLE_KEY_SHOW_LINE_DIRECTION))
-						.booleanValue()) {
+			if (type == FPath.TYPE_POLYLINE) {
+				if (styles.showLineDir.getValue(f)) {
 					Line2D lastSeg = getLastSegment(p);
 					GeneralPath arrowHead = makeArrowHead(lastSeg);
 					g2w.fill(arrowHead);
@@ -719,20 +295,16 @@ public class ShapeRenderer implements FeatureRenderer, ProjectionListener {
 			}
 
 			// Draw optional text.
-			if (((Boolean) style.get(STYLE_KEY_SHOW_LABELS)).booleanValue()) {
-				String label = (String) style.get(STYLE_KEY_LABEL);
-				Color labelColor = (Color) style.get(STYLE_KEY_LABEL_COLOR);
-				Font font = (Font) style.get(STYLE_KEY_FONT);
-				Point2D labelOffset = (Point2D) style
-						.get(STYLE_KEY_LABEL_OFFSET);
-				labelOffset = getMagnifiedTextOffset(labelOffset);
-
+			if (styles.showLabels.getValue(f)) {
+				String label = styles.labelText.getValue(f);
+				Color labelColor = styles.labelColor.getValue(f);
 				Point2D center = path.getWorld().getCenter();
-
+				Point2D offset = getMagnifiedTextOffset(labelOffset);
+				float x = (float)(center.getX() + offset.getX());
+				float y = (float)(center.getY() + offset.getY());
 				g2w.setFont(font);
 				g2w.setColor(labelColor);
-				g2w.drawString(label, (float) center.getX(), (float) center
-						.getY());
+				g2w.drawString(label, x, y);
 			}
 		} catch (ClassCastException ex) {
 			ex.printStackTrace();
@@ -740,7 +312,7 @@ public class ShapeRenderer implements FeatureRenderer, ProjectionListener {
 			ex.printStackTrace();
 		}
 	}
-
+	
 	/**
 	 * Shared vertex box used for various drawing functions.
 	 * 
@@ -859,6 +431,8 @@ public class ShapeRenderer implements FeatureRenderer, ProjectionListener {
 	 *            Collection of Feature objects to draw.
 	 */
 	public void drawAll(Graphics2D g2w, Collection fc) {
+		// TODO: group features by associated styles so we only set things once
+		
 		isDrawing = true;
 
 		int i = 0, n = fc.size();
@@ -1012,134 +586,7 @@ public class ShapeRenderer implements FeatureRenderer, ProjectionListener {
 		throw new IllegalArgumentException(
 				"getFirstPoint() called with a path with no points.");
 	}
-
-	/**
-	 * Aggregate a collection of shapes into one GeneralPath.
-	 * 
-	 * @param shapes
-	 *            An array of Shape objects to be aggregated.
-	 * @return A GeneralPath which is an aggregate of all the input shapes.
-	 */
-	protected GeneralPath aggregateShapes(Shape[] shapes) {
-		GeneralPath p = new GeneralPath();
-
-		for (int i = 0; i < shapes.length; i++)
-			p.append(shapes[i], false);
-
-		return p;
-	}
-
-	/**
-	 * Returns true if the value specified for the given key is of the correct
-	 * type, false otherwise.
-	 * 
-	 * @param key
-	 *            A style key.
-	 * @param value
-	 *            The value to be associated with the style key.
-	 * @return true if the style key and value pair are compatible, false
-	 *         otherwise.
-	 */
-	protected boolean isCorrectType(String key, Object value) {
-		if (key == null || value == null)
-			throw new IllegalArgumentException(
-					"setDefaultAttribute(): Neither key nor value can be null.");
-
-		Class expectedValueClass = (Class) attrTypes.get(key);
-		if (!expectedValueClass.isInstance(value))
-			return false;
-
-		return true;
-	}
-
-	/**
-	 * Set default value for a styling attribute. Null keys or values are not
-	 * allowed. If passed an IllegalArgumentException is thrown. In addition,
-	 * the types must not deviate from the expected types. If that happens, an
-	 * IllegalArgumentException is thrown.
-	 * 
-	 * @param key
-	 *            A style key.
-	 * @param value
-	 *            The value associated with the style key.
-	 * @return The previous value of the style key or null if no such key
-	 *         existed.
-	 */
-	public Object setDefaultAttribute(String key, Object value) {
-		// Ensure proper type of attributes
-		if (!isCorrectType(key, value))
-			throw new IllegalArgumentException(
-					"setDefaultAttribute(): Trying to set \"" + key
-							+ "\" to value type \"" + value.getClass()
-							+ "\". Expected value type \"" + attrTypes.get(key)
-							+ "\".");
-
-		return defaultAttrs.put(key, value);
-	}
-
-	/**
-	 * Get default value for the given styling attribute.
-	 * 
-	 * @param key
-	 *            A style key.
-	 * @return The value associated with the style key or null if no such key
-	 *         exits.
-	 */
-	public Object getDefaultAttribute(String key) {
-		return defaultAttrs.get(key);
-	}
-
-	/**
-	 * Set override value for a styling attribute. Null keys or values are not
-	 * allowed. If passed an IllegalArgumentException is thrown. In addition,
-	 * the value types may not deviate from the expected types. If this happens,
-	 * an IllegalArgumentException is thrown.
-	 * 
-	 * The override values take precedence over the default attribute values as
-	 * well as the feature specified values.
-	 * 
-	 * @param key
-	 *            A style key.
-	 * @param value
-	 *            The value associated with the key.
-	 * @return The old value associated with the style key or null if no such
-	 *         key,value mapping existed.
-	 */
-	public Object setOverrideAttribute(String key, Object value) {
-		// Ensure proper type of attributes
-		if (!isCorrectType(key, value))
-			throw new IllegalArgumentException(
-					"setOverrideAttribute(): Trying to set \"" + key
-							+ "\" to value type \"" + value.getClass()
-							+ "\". Expected value type \"" + attrTypes.get(key)
-							+ "\".");
-
-		return overrideAttrs.put(key, value);
-	}
-
-	/**
-	 * Get override value for the given styling attribute.
-	 * 
-	 * @param key
-	 *            A style key.
-	 * @return The value associated with the style key.
-	 */
-	public Object getOverrideAttribute(String key) {
-		return overrideAttrs.get(key);
-	}
-
-	/**
-	 * Removes the specified override styling attribute.
-	 * 
-	 * @param key
-	 *            A style key.
-	 * @return The current value of the style key, if any of null if no such key
-	 *         exists.
-	 */
-	public Object removeOverrideAttribute(String key) {
-		return overrideAttrs.remove(key);
-	}
-
+	
 	/**
 	 * Returns LView that this Renderer is attached to.
 	 * 
@@ -1148,7 +595,7 @@ public class ShapeRenderer implements FeatureRenderer, ProjectionListener {
 	public Layer.LView getLView() {
 		return lView;
 	}
-
+	
 	/**
 	 * Register a ProgressListener with this Renderer.
 	 * 
@@ -1158,7 +605,7 @@ public class ShapeRenderer implements FeatureRenderer, ProjectionListener {
 	public void addProgressListener(ProgressListener l) {
 		listeners.add(l);
 	}
-
+	
 	/**
 	 * Deregister a ProgressListener with this Renderer. Returns true if the
 	 * listeners list contained this listener.
@@ -1170,7 +617,7 @@ public class ShapeRenderer implements FeatureRenderer, ProjectionListener {
 	public boolean removeProgressListener(ProgressListener l) {
 		return listeners.remove(l);
 	}
-
+	
 	/**
 	 * Fires a progress update event. This event is transmitted to all the
 	 * ProgressListeners.
@@ -1182,13 +629,11 @@ public class ShapeRenderer implements FeatureRenderer, ProjectionListener {
 	 *            Total number of elements.
 	 */
 	protected void fireProgressEvent(int i, int n) {
-		Iterator li = listeners.iterator();
-		while (li.hasNext()) {
-			ProgressListener pl = (ProgressListener) li.next();
+		for (ProgressListener pl: listeners) {
 			pl.finished(i, n);
 		}
 	}
-
+	
 	/**
 	 * Listen to projection change events.
 	 * 
@@ -1200,80 +645,21 @@ public class ShapeRenderer implements FeatureRenderer, ProjectionListener {
 
 		// Discard the shared vertex box. We'll build it again when we need it.
 		sharedVertexBoxes.clear();
-
-		// Discard the current clipping rectangles. We'll get them again when
-		// needed.
-		clippingRectangles = null;
 	}
-
+	
 	/**
 	 * Returns current magnification.
 	 * 
 	 * @return The current magnification as pixels per degree.
 	 */
-	public int getMagnification() {
+	private int getMagnification() {
 		// TODO: See if MultiProjection object can be linked in directly instead
 		// of LView.
 		if (lView == null)
 			return 1;
 		return lView.getProj().getPPD();
 	}
-
-	/**
-	 * Returns a rectangle derived from the input rectangle such that its x
-	 * coordinate is between -180 and 180 with a maximum width of 360.
-	 * 
-	 * @param rect
-	 *            The rectangle to normalize.
-	 * @return A new rectangle which is the normalized version of input
-	 *         rectangle.
-	 */
-	protected Rectangle2D normalizeRectangle(Rectangle2D rect) {
-		Rectangle2D.Double r1 = new Rectangle2D.Double();
-		r1.setFrame(rect);
-		if (r1.width > 360) {
-			r1.x = -180;
-			r1.width = 360;
-		} else {
-			while (r1.x < -180) {
-				r1.x += 360;
-			}
-			while (r1.x > 180) {
-				r1.x -= 360;
-			}
-		}
-		return r1;
-	}
-
-	/**
-	 * Returns world-coordinate rectangles corresponding to the current viewing
-	 * rectangle of the LView. These rectangles are used as clipping boundaries
-	 * to discard data trivially if it will not fall within the veiwing
-	 * rectangle.
-	 * 
-	 * @return An array of three clipping rectangles.
-	 */
-	public synchronized Rectangle2D[] getClippingRectangles() {
-		if (clippingRectangles == null) {
-			Rectangle2D viewingRect;
-			if (lView == null)
-				viewingRect = new Rectangle2D.Double(-1000, -1000, 2000, 2000);
-			else
-				viewingRect = lView.viewman2.getProj().getWorldWindow();
-
-			Rectangle2D r = normalizeRectangle(viewingRect);
-			Rectangle2D[] clipRects = new Rectangle2D[3];
-			clipRects[0] = r;
-			clipRects[1] = new Rectangle2D.Double(r.getX() - 360.0, r.getY(), r
-					.getWidth(), r.getHeight());
-			clipRects[2] = new Rectangle2D.Double(r.getX() + 360.0, r.getY(), r
-					.getWidth(), r.getHeight());
-
-			clippingRectangles = clipRects;
-		}
-		return clippingRectangles;
-	}
-
+	
 	/**
 	 * Dispose off various object references such that object finalization may
 	 * happen correctly.

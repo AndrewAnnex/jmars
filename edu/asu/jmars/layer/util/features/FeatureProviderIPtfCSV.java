@@ -75,7 +75,6 @@ public class FeatureProviderIPtfCSV implements FeatureProvider{
 				Feature feature = new Feature();
 				feature.setAttributeQuiet( Field.FIELD_FEATURE_TYPE, FeatureUtil.TYPE_STRING_POLYGON);
 				feature.setAttributeQuiet( Field.FIELD_PATH, path);
-				feature.setAttributeQuiet( Field.FIELD_SELECTED, Boolean.FALSE);
 				for(int i=1; i<hdr.length; i++)
 					feature.setAttributeQuiet(fields[i], "".equals(vals[i])? null: vals[i]);
 				featureList.add( feature);
@@ -84,14 +83,6 @@ public class FeatureProviderIPtfCSV implements FeatureProvider{
 			// Build a FeatureCollection.
 			SingleFeatureCollection fc = new SingleFeatureCollection();
 			
-			// Setup default schema
-			fc.addField(Field.FIELD_FEATURE_TYPE);
-			fc.addField(Field.FIELD_PATH);
-			fc.addField(Field.FIELD_SELECTED);
-			for(int i=1; i<fields.length; i++)
-				fc.addField(fields[i]);
-			
-
 			// Add read features to the feature collection
 			fc.addFeatures( featureList);
 			return fc;

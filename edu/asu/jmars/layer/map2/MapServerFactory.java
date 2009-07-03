@@ -139,6 +139,7 @@ public class MapServerFactory {
 							newServer = new WMSMapServer(name);
 						}
 						if (newServer != null) {
+							newServer.loadCapabilities(false);
 							newServer.addListener(new MapServerListener() {
 								public void mapChanged(MapSource source, Type changeType) {
 									// rebuild menus

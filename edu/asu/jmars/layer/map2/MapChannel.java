@@ -21,6 +21,7 @@
 package edu.asu.jmars.layer.map2;
 
 import java.awt.geom.Rectangle2D;
+import java.text.MessageFormat;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -57,7 +58,6 @@ public class MapChannel {
 		ppd = newPpd;
 		proj= newProj;
 		setPipeline(newPipe);
-		reprocess();
 	}
 	
 	/**
@@ -89,6 +89,7 @@ public class MapChannel {
 		reprocess();
 	}
 	
+	private long sequence = 0;
 	private long startTime;
 	private MapRequest[] mapRequests = {};
 	
@@ -104,6 +105,7 @@ public class MapChannel {
 		
 		if (pipe.length > 0 && proj != null && ppd > 0 && extent != null) {
 			log.println("Channel[" + super.hashCode() + "] started");
+			sequence ++;
 			startTime = System.currentTimeMillis();
 			mapRequests = new MapRequest[pipe.length];
 			// create a new request+runner for each pipeline
@@ -137,8 +139,12 @@ public class MapChannel {
 		reprocess();
 	}
 	
-	private synchronized long getStartTime(){
-		return startTime;
+	private synchronized long getSequence(){
+		return sequence;
+	}
+	
+	private void log(String msg) {
+		log.println(MessageFormat.format("Channel [{0,number,#}] {1}", hashCode(), msg));
 	}
 	
 	public void receiveMap(final MapData newData) {
@@ -147,13 +153,16 @@ public class MapChannel {
 		// about being on the AWT thread. Also avoids sending updates for older
 		// versions of the MapChannel by looking at the change time as a sort of
 		// serial number.
-		final long time = getStartTime();
+		final long sequence = getSequence();
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
-				if (time == getStartTime() && !newData.getRequest().isCancelled()) {
+				if (sequence != getSequence()) {
+					log("Skipping update for invalid sequence");
+				} else if (newData.getRequest().isCancelled()) {
+					log("Skipping update for canceled request");
+				} else {
 					if (newData.isFinished()) {
-						log.println("Channel[" + MapChannel.this.hashCode() +
-							"] finished, took " + (System.currentTimeMillis()-time) + " ms");
+						log("Finished after " + (System.currentTimeMillis()-startTime) + " ms");
 					}
 					// dispatching could take awhile, so sync on the same lock that
 					// the listener mutators use, and copy the listeners so adding a listener

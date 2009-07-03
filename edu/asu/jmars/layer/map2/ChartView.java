@@ -27,13 +27,13 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Paint;
 import java.awt.Rectangle;
+import java.awt.Shape;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
-import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
@@ -42,9 +42,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
-import java.text.DecimalFormat;
-import java.text.FieldPosition;
 import java.text.NumberFormat;
+import java.util.Arrays;
 
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JComboBox;
@@ -57,6 +56,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
+import javax.swing.event.AncestorEvent;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -82,6 +82,7 @@ import org.jfree.data.xy.XYSeriesCollection;
 import edu.asu.jmars.Main;
 import edu.asu.jmars.ProjObj;
 import edu.asu.jmars.layer.DataReceiver;
+import edu.asu.jmars.swing.AncestorAdapter;
 import edu.asu.jmars.util.DebugLog;
 import edu.asu.jmars.util.Util;
 import edu.asu.jmars.util.stable.ColorCellEditor;
@@ -110,7 +111,7 @@ public class ChartView extends JPanel implements DataReceiver, MapChannelReceive
 	Samples samples = null;
 	
 	// Profile line, as it exists in the MapLView
-	Line2D profileLine;
+	Shape profileLine;
 	double profileLineLengthKm;
 	
 	// Range of linear parameter t (within [0,1]) for which profile line is effectively visible.
@@ -120,7 +121,6 @@ public class ChartView extends JPanel implements DataReceiver, MapChannelReceive
 	//XYSeriesCollection dataset;
 	JFreeChart chart;
 	ChartPanel chartPanel;
-	boolean sepRanges = true;
 	
 	JMenuItem saveAsTextMenuItem;
 	JFileChooser fileChooser;
@@ -151,6 +151,10 @@ public class ChartView extends JPanel implements DataReceiver, MapChannelReceive
 		// Setting pipeline this way makes sure that we'll get a pipelineChangedEvent
 		// which we need to set the chart properly.
 		ch.setPipeline(pipeline);
+	}
+	
+	public boolean hasEmptyPipeline(){
+		return ch.getPipeline() == null || ch.getPipeline().length == 0;
 	}
 	
 	private JPanel createReadoutPanel(Pipeline[] pipeline, JFreeChart chart){
@@ -189,7 +193,14 @@ public class ChartView extends JPanel implements DataReceiver, MapChannelReceive
 		
 		chartPanel.addComponentListener(new ComponentAdapter(){
 			public void componentResized(ComponentEvent e) {
-				chartResizedEventOccurred(e);
+				updateMaxAndSelectedPpd();
+			}
+		});
+		
+		chartPanel.addAncestorListener(new AncestorAdapter(){
+			@Override
+			public void ancestorAdded(AncestorEvent e) {
+				updateMaxAndSelectedPpd();
 			}
 		});
 		
@@ -218,7 +229,7 @@ public class ChartView extends JPanel implements DataReceiver, MapChannelReceive
 		return p;
 	}
 	
-	private  void chartResizedEventOccurred(ComponentEvent e){
+	private  void updateMaxAndSelectedPpd(){
 		if (profileLine != null)
 			if (updateMaxPpd())
 				ppdComboBox.setSelectedIndex(ppdComboBox.getItemCount()-1);
@@ -230,12 +241,11 @@ public class ChartView extends JPanel implements DataReceiver, MapChannelReceive
 	
 	private boolean updateMaxPpd(int minPpdIndex){
 		// Get new angular span in degrees, determine max-ppd and update ppd combo-box.
-		Line2D effLine = getEffProfileLineSpan();
-		double aSpan = Util.angularAndLinearDistanceW(effLine.getP1(), effLine.getP2(), mapLView.getProj())[0];
+		Shape effLine = getEffProfileLineSpan();
+		double aSpan = mapLView.perimeterLength(effLine)[0];
 		double pixSpan = chartPanel.getScreenDataArea().getWidth();
 		int maxPpdIndex = aSpan > 0.0 && pixSpan > 0? (int)Math.ceil(Math.log(pixSpan / aSpan)/Math.log(2.0)): 0;
-		if (minPpdIndex >= 0)
-			maxPpdIndex = Math.max(maxPpdIndex, minPpdIndex);
+		maxPpdIndex = Math.max(0, Math.max(maxPpdIndex, minPpdIndex));
 		log.println("aSpan:"+aSpan+"  pixSpan:"+pixSpan+"  maxPpdIndex:"+maxPpdIndex);
 		return updatePpdComboBox(maxPpdIndex);
 	}
@@ -276,17 +286,19 @@ public class ChartView extends JPanel implements DataReceiver, MapChannelReceive
 		}
 	}
 	
-	private  Line2D getProfileLineSpan(Range span){
+	private  Shape getProfileLineSpan(Range span){
 		if (profileLine == null)
 			return null;
 		
-		Line2D reqLine = new Line2D.Double(
-				Util.interpolate(profileLine, span.getLowerBound()),
-				Util.interpolate(profileLine, span.getUpperBound()));
+		Shape reqLine = mapLView.spanSelect(profileLine, span.getLowerBound(), span.getUpperBound());
+		
+		//Line2D reqLine = new Line2D.Double(
+		//		mapLView.interpolate(profileLine, span.getLowerBound()),
+		//		mapLView.interpolate(profileLine, span.getUpperBound()));
 		return reqLine;
 	}
 	
-	private  Line2D getEffProfileLineSpan(){
+	private  Shape getEffProfileLineSpan(){
 		return getProfileLineSpan(effRange);
 	}
 	
@@ -422,6 +434,7 @@ public class ChartView extends JPanel implements DataReceiver, MapChannelReceive
 		Samples samples = getSamples();
 		if (samples != null){
 			cuePoint = samples.getPointAtDist(km);
+			//log.aprintln("km:"+km+"  -> cuePoint:"+cuePoint+"  -> km:"+samples.getDistance(cuePoint));
 			sampleData = samples.getSampleData(km);
 		}
 		
@@ -442,7 +455,8 @@ public class ChartView extends JPanel implements DataReceiver, MapChannelReceive
 		double km = Double.NaN;
 		double[] sampleData = null;
 		if (samples != null && worldCuePoint != null){
-			//km = samples.getDistance(worldCuePoint);
+			km = samples.getDistance(worldCuePoint);
+			//log.aprintln("worldCuePoint:"+worldCuePoint+"  -> km:"+km+"  -> worldPt:"+samples.getPointAtDist(km));
 			sampleData = samples.getSampleData(worldCuePoint);
 		}
 		setCrosshair(km);
@@ -469,22 +483,17 @@ public class ChartView extends JPanel implements DataReceiver, MapChannelReceive
 			final String label = pipeline[i].getSource().getTitle();
 			
 			XYSeries s = new XYSeries(label);
-			if (sepRanges){
-				XYDataset newDataset = new XYSeriesCollection(s);
-				NumberAxis newAxis = new NumberAxis(label);
-				
-				plot.setDataset(i, newDataset);
-				plot.setRangeAxis(i, newAxis);
-				plot.mapDatasetToRangeAxis(i, i);
-				
-				if (plot.getRenderer(i) == null){
-					XYItemRenderer r = new DefaultXYItemRenderer();
-					r.setShape(new GeneralPath());
-					plot.setRenderer(i, r);
-				}
-			}
-			else {
-				((XYSeriesCollection)plot.getDataset()).addSeries(s);
+			XYDataset newDataset = new XYSeriesCollection(s);
+			NumberAxis newAxis = new NonStickyZeroNumberAxis(label);
+
+			plot.setDataset(i, newDataset);
+			plot.setRangeAxis(i, newAxis);
+			plot.mapDatasetToRangeAxis(i, i);
+
+			if (plot.getRenderer(i) == null){
+				XYItemRenderer r = new DefaultXYItemRenderer();
+				r.setShape(new GeneralPath());
+				plot.setRenderer(i, r);
 			}
 		}
 		for(int j=plot.getDatasetCount()-1; j>=Math.max(i,1); j--){
@@ -493,7 +502,7 @@ public class ChartView extends JPanel implements DataReceiver, MapChannelReceive
 		}
 	}
 	
-	private void resetPlot(Pipeline[] pipeline, Line2D profileLine){
+	private void resetPlot(Pipeline[] pipeline, Shape profileLine){
 		configurePlot(pipeline);
 		chart.getXYPlot().getDomainAxis().setAutoRange(true);
 		chart.getXYPlot().configureDomainAxes();
@@ -530,16 +539,26 @@ public class ChartView extends JPanel implements DataReceiver, MapChannelReceive
 			s.add(new Double(samples.lsegLengthKm), null);
 
 			final int axisNumber = k;
-			if (sepRanges){
-				XYDataset newDataset = new XYSeriesCollection(s);
-				chart.getXYPlot().setDataset(axisNumber, newDataset);
-			}
-			else {
-				if (axisNumber == 0)
-					chart.getXYPlot().setDataset(new XYSeriesCollection());
-
-				((XYSeriesCollection)chart.getXYPlot().getDataset()).addSeries(s);
-			}
+			XYDataset newDataset = new XYSeriesCollection(s);
+			//chart.getXYPlot().setRangeAxis(axisNumber, new NonStickyZeroNumberAxis(s.getKey().toString()));
+			chart.getXYPlot().setDataset(axisNumber, newDataset);
+		}
+	}
+	
+	class NonStickyZeroNumberAxis extends NumberAxis {
+		public NonStickyZeroNumberAxis(){
+			super();
+			setAutoRangeIncludesZero(false);
+			setAutoRangeStickyZero(false);
+		}
+		public NonStickyZeroNumberAxis(String label){
+			super(label);
+			setAutoRangeIncludesZero(false);
+			setAutoRangeStickyZero(false);
+		}
+		
+		public void setAutoRangeIncludesZero(boolean flag){
+			super.setAutoRangeIncludesZero(flag);
 		}
 	}
 	
@@ -549,11 +568,11 @@ public class ChartView extends JPanel implements DataReceiver, MapChannelReceive
 	 * @param newProfileLine Profile line in world coordinates.
 	 *        It can be null.
 	 */
-	public  void setProfileLine(Line2D newProfileLine, int newppd){
+	public  void setProfileLine(Shape newProfileLine, int newppd){
 		// Set new profile line
 		profileLine = newProfileLine;
 		if (profileLine != null)
-			profileLineLengthKm = Util.angularAndLinearDistanceW(profileLine.getP1(), profileLine.getP2(), mapLView.getProj())[1];
+			profileLineLengthKm = mapLView.perimeterLength(profileLine)[1];
 		else
 			profileLineLengthKm = 0.0;
 
@@ -576,7 +595,7 @@ public class ChartView extends JPanel implements DataReceiver, MapChannelReceive
 	 * converted into effective extent by narrowing it to the profile line's extent.
 	 * Appropriate diagonal from this extent is the output of the profile line.
 	 */
-	private  void setViewExtent(Line2D newViewExtent, int newppd){
+	private  void setViewExtent(Shape newViewExtent, int newppd){
 		// disable data save menu options in the chart panel
 		saveAsTextMenuItem.setEnabled(false);
 		
@@ -587,19 +606,23 @@ public class ChartView extends JPanel implements DataReceiver, MapChannelReceive
 		if (newViewExtent != null && ch.getPipeline().length > 0) {
 			mapLView.getLayer().monitoredSetStatus(this, Util.darkRed);
 			
-			Rectangle2D requestedExtent = expandByHalfAPixelEachSide(newViewExtent.getBounds2D(), ppd);
+			Rectangle2D requestedExtent = expandByXPixelsEachSide(newViewExtent.getBounds2D(), ppd, 0.5);
+			double x1 = Math.floor(requestedExtent.getMinX() * ppd) / ppd;
+			double x2 = Math.ceil(requestedExtent.getMaxX() * ppd) / ppd;
+			double y1 = Math.floor(requestedExtent.getMinY() * ppd) / ppd;
+			double y2 = Math.ceil(requestedExtent.getMaxY() * ppd) / ppd;
+			requestedExtent = new Rectangle2D.Double(x1,y1,Math.max(1.0/ppd,x2-x1),Math.max(1.0/ppd,y2-y1));
 			log.println("Requesting viewExtent:"+requestedExtent+" at "+ppd+" ppd.");
 			ch.setMapWindow(requestedExtent, ppd, proj);
 		}
 	}
 	
-	private Rectangle2D expandByHalfAPixelEachSide(Rectangle2D in, int ppd){
+	private Rectangle2D expandByXPixelsEachSide(Rectangle2D in, int ppd, double xPixels){
 		Rectangle2D.Double out = new Rectangle2D.Double();
 		out.setFrame(in);
 		
-		double dpp = 1.0/ppd;
-		double hdpp = 0.5 * dpp;
-		out.setFrame(out.getX() - hdpp, out.getY() - hdpp, out.getWidth() + dpp, out.getHeight() + dpp);
+		double hdpp = xPixels * (1.0/ppd);
+		out.setFrame(out.getX() - hdpp, out.getY() - hdpp, out.getWidth() + 2*hdpp, out.getHeight() + 2*hdpp);
 		
 		return out;
 	}
@@ -664,11 +687,9 @@ public class ChartView extends JPanel implements DataReceiver, MapChannelReceive
 		setViewExtent(getEffProfileLineSpan(), ppd);
 	}
 	
-	/** Does nothing */
-	public void userInitiatedStageChangedEventOccurred(StageChangedEvent e){
-	}
-	
 	public  void saveAsText(File outputFile) throws FileNotFoundException {
+		final String nullString = "N/A";
+		
 		log.println("Save as text requested to file "+outputFile.getName());
 		String delim = ",";
 
@@ -691,11 +712,19 @@ public class ChartView extends JPanel implements DataReceiver, MapChannelReceive
 		double[][] sampleData = samples.getSampleData();
 		for(int k=0; k<samples.getNumSamples(); k++){
 			ps.print(nf.format(distances[k]));
-			Point2D ptS = mapLView.getProj().world.toSpatial(samplePtsW[k]);
-			ps.print(delim); ps.print(nf.format(ptS.getX()));
-			ps.print(delim); ps.print(nf.format(ptS.getY()));
-			for(int i=0; i<pipeline.length; i++)
-				ps.print(delim+nf.format(sampleData[k][i]));
+			if (samplePtsW[k] != null){
+				Point2D ptS = mapLView.getProj().world.toSpatial(samplePtsW[k]);
+				ps.print(delim); ps.print(nf.format(ptS.getX()));
+				ps.print(delim); ps.print(nf.format(ptS.getY()));
+			}
+			else {
+				ps.print(delim); ps.print(nullString);
+				ps.print(delim); ps.print(nullString);
+			}
+			for(int i=0; i<pipeline.length; i++){
+				ps.print(delim);
+				ps.print(sampleData[k] == null? nullString: nf.format(sampleData[k][i]));
+			}
 			ps.println();
 		}
 	}
@@ -760,7 +789,7 @@ public class ChartView extends JPanel implements DataReceiver, MapChannelReceive
 			return columns[columnIndex];
 		}
 		
-		public Class getColumnClass(int columnIndex){
+		public Class<?> getColumnClass(int columnIndex){
 			switch(columnIndex){
 				case 0: return String.class;
 				case 1: return Color.class;
@@ -790,8 +819,8 @@ public class ChartView extends JPanel implements DataReceiver, MapChannelReceive
 			if (columnIndex == 0)
 				return pipeline[rowIndex].getSource().getTitle();
 
-			int datasetIndex = sepRanges? rowIndex: 0;
-			int seriesIndex = sepRanges? 0: rowIndex;
+			int datasetIndex = rowIndex;
+			int seriesIndex = 0;
 
 			// This should be thread-safe since all updates to the chart occur on the AWT thread.
 			XYPlot plot = chart.getXYPlot();
@@ -818,8 +847,8 @@ public class ChartView extends JPanel implements DataReceiver, MapChannelReceive
 			if (columnIndex != 1)
 				throw new IllegalArgumentException("Columns other than the color column are uneditable.");
 			
-			int datasetIndex = sepRanges? rowIndex: 0;
-			int seriesIndex = sepRanges? 0: rowIndex;
+			int datasetIndex = rowIndex;
+			int seriesIndex = 0;
 			
 			XYPlot plot = chart.getXYPlot();
 			if (datasetIndex < plot.getDatasetCount() && seriesIndex < plot.getDataset(datasetIndex).getSeriesCount()){
@@ -840,7 +869,7 @@ public class ChartView extends JPanel implements DataReceiver, MapChannelReceive
 	 * @author saadat
 	 */
 	class Samples {
-		final Line2D lseg;             // Line-segment in world coordinates
+		final Shape lseg;             // Line-segment in world coordinates
 		final double t0, t1;           // [0,1] means the entire lseg, [0.5,1] means mid of lseg to end
 		final double lsegLength;       // Length of line segment in degrees (of world coordinates)
 		final double lsegLengthKm;     // Length of line segment in Km
@@ -849,6 +878,9 @@ public class ChartView extends JPanel implements DataReceiver, MapChannelReceive
 		final int nBands;              // Number of bands per sample (or per pixel)
 		final MapData mapData;         // MapData object used as source of all sample data
 		final AffineTransform ext2Pix; // Transform to convert from map extent (or world) coordinates to mapData raster coordinates.
+		
+		/** First point in lseg. */
+		Point2D pt0;
 		
 		/**
 		 * World coordinates of each of the sampled location along the lseg.
@@ -865,6 +897,9 @@ public class ChartView extends JPanel implements DataReceiver, MapChannelReceive
 		 */
 		double[]   dist;
 		
+		/** t-parameter locations at which the data has been sampled. */
+		double[]   tVals;
+		
 		/**
 		 * Constructs a Samples object which holds sample data for the specified
 		 * line segment as extracted from the input mapData object. Consecutive
@@ -874,14 +909,15 @@ public class ChartView extends JPanel implements DataReceiver, MapChannelReceive
 		 * @param lseg Line segment along which sampling is to be done.
 		 * @param ppd Spacing between consecutive samples.
 		 */
-		public Samples(MapData mapData, Line2D lseg, double t0, double t1, int ppd){
+		public Samples(MapData mapData, Shape lseg, double t0, double t1, int ppd){
 			this.lseg = lseg;
 			this.t0 = t0;
 			this.t1 = t1;
 			this.ppd = ppd;
 			this.mapData = mapData;
-			lsegLength = lseg.getP1().distance(lseg.getP2());
-			lsegLengthKm = Util.angularAndLinearDistanceW(lseg.getP1(), lseg.getP2(), mapLView.getProj())[1];
+			double dists[] = mapLView.perimeterLength(lseg); 
+			lsegLength = dists[0];
+			lsegLengthKm = dists[1];
 			nSamples = (int)(ppd * lsegLength * (t1-t0));
 			nBands = mapData.getImage() != null? mapData.getImage().getData().getNumBands(): 0;
 			ext2Pix = StageUtil.getExtentTransform(
@@ -889,9 +925,12 @@ public class ChartView extends JPanel implements DataReceiver, MapChannelReceive
 					mapData.getImage().getHeight(),
 					mapData.getRequest().getExtent());
 			
+			pt0 = MapLView.getFirstPoint(lseg);
+			
 			pts = new Point2D[nSamples];
 			data = new double[nSamples][];
 			dist = new double[nSamples];
+			tVals = new double[nSamples];
 			
 			sampleData(mapData);
 		}
@@ -901,23 +940,65 @@ public class ChartView extends JPanel implements DataReceiver, MapChannelReceive
 			Raster raster = image.getData();
 			Rectangle rasterBounds = raster.getBounds();
 			
+			//log.aprintln("extent:"+mapData.getRequest().getExtent()+" rasterBounds:"+rasterBounds);
 			Point2D pix = new Point2D.Double();
 			
-			for(int i=0; i<nSamples; i++){
-				double t = t0+((double)i)/nSamples;
-				pts[i] = Util.interpolate(lseg, t);
-				dist[i] = lsegLengthKm * t;
-				// dist[i] = Util.angularAndLinearDistanceW(lseg.getP1(), pts[i], mapLView.getProj())[1];
-				if (rasterBounds.contains(ext2Pix.transform(pts[i], pix)))
+			for(int i=0; i<nSamples; i++){ // Loops over the left edge
+				double t = t0+((double)i)/nSamples; // TODO: Not quite correct, t never equals 1
+				tVals[i] = t;
+				pts[i] = mapLView.interpolate(lseg, t);
+				dist[i] = mapLView.distanceTo(lseg, pts[i])[1];
+				ext2Pix.transform(pts[i], pix);
+				//if (i < 3 || i > (nSamples-3))
+					//log.aprintln("i:"+i+" t:"+t+" pts[i]:"+pts[i]+" dist[i]:"+dist[i]+" pix:"+pix+" contains?"+rasterBounds.contains(pix));
+				if (rasterBounds.contains(pix))
 					raster.getPixel((int)pix.getX(), (int)pix.getY(), data[i] = new double[nBands]);
 				else
 					data[i] = null;
 			}
 		}
 		
+		/**
+		 * Return the point (in world coordinates) that falls at the
+		 * specified distance (in Km) starting from the first point of
+		 * the profile-line.
+		 * @param km Perimeter distance (in Km) from the first point of
+		 *     the profile-line. 
+		 * @return <code>null</code> if there are less than two samples. 
+		 *     Otherwise, return the point as a linear interpolation of
+		 *     the bounding points (based on distance in km).
+		 */
 		public Point2D getPointAtDist(double km){
-			double t = km/lsegLengthKm;
-			Point2D p = Util.interpolate(lseg, t);
+			int idx = Arrays.binarySearch(dist, km);
+			double t;
+			if (idx < 0){
+				idx = -(idx+1);
+				double t0, t1, d0, d1;
+				if (idx > 0 && idx <nSamples){
+					d0 = dist[idx-1]; d1 = dist[idx];
+					t0 = tVals[idx-1]; t1 = tVals[idx];
+				}
+				else if (nSamples > 1){
+					if (idx == 0){
+						d0 = dist[0]; d1 = dist[1];
+						t0 = tVals[0]; t1 = tVals[1];
+					}
+					else { //if (idx >= nSamples)
+						d0 = dist[dist.length-2]; d1 = dist[dist.length-1];
+						t0 = tVals[dist.length-2]; t1 = tVals[dist.length-1];
+					}
+				}
+				else {
+					return null;
+				}
+				double segLength = d1-d0;
+				double tt = (km-d0)/segLength;
+				t = (t0*(1-tt)+t1*tt);
+			}
+			else {
+				t = tVals[idx];
+			}
+			Point2D p = mapLView.interpolate(lseg, t);
 			return p;
 		}
 		
@@ -953,10 +1034,24 @@ public class ChartView extends JPanel implements DataReceiver, MapChannelReceive
 			return null;
 		}
 		
+		/**
+		 * 
+		 * @param worldPt
+		 * @return Km distance from the starting point of the profile-line.
+		 */
 		public double getDistance(Point2D worldPt){
-			if (lseg.relativeCCW(worldPt) == 0){
-				double t = Util.uninterploate(lseg, worldPt);
-				return t * lsegLengthKm;
+			double t = mapLView.uninterpolate(lseg, worldPt, null);
+			int idx = Arrays.binarySearch(tVals, t);
+			
+			if (idx < 0){
+				idx = -(idx + 1);
+				if (idx > 0 && idx < nSamples){
+					double tt = (t-tVals[idx-1])/(tVals[idx]-tVals[idx-1]);
+					return dist[idx-1]*(1-tt)+dist[idx]*tt;
+				}
+			}
+			else {
+				return dist[idx];
 			}
 			return Double.NaN;
 		}
@@ -969,10 +1064,34 @@ public class ChartView extends JPanel implements DataReceiver, MapChannelReceive
 			return (Point2D[])pts.clone();
 		}
 		
+		/**
+		 * Returns the sample index of the specified distance value (in Km).
+		 * @param km Input distance from the start of the profile-line.
+		 * @return <code>-1</code> if the km value is less than zero and
+		 * <code>nSamples</code> if the km value is greater than the total
+		 * km-length of the profile line. Otherwise returns an index based
+		 * on the interpolated <code>t</code>-value based on the index.
+		 */
 		public int getDistanceIndex(double km){
-			double t = km/lsegLengthKm - t0;
-			int idx = (int)Math.round(t * nSamples);
-			return idx;
+			
+			int idx = Arrays.binarySearch(dist, km);
+			
+			if (idx < 0){
+				idx = -(idx + 1);
+				if (idx > 0 && idx < nSamples){
+					double tt = (km-dist[idx-1])/(dist[idx]-dist[idx-1]);
+					return tt < 0.5? idx-1: idx;
+				}
+				else if (idx == 0){
+					return -1;
+				}
+				else {
+					return nSamples;
+				}
+			}
+			else {
+				return idx;
+			}
 		}
 	}
 	

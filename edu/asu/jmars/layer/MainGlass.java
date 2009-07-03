@@ -195,16 +195,12 @@ public final class MainGlass extends BaseGlass {
 						.getID(), e.getWhen(), e.getModifiers(), e.getX(), e
 						.getY(), e.getClickCount(), SwingUtilities
 						.isRightMouseButton(e));
-				if (!Main.inTimeProjection()) {
-					double worldX = mainVMan.getProj().screen.toWorld(
-							e1.getPoint()).getX();
-					int scale = 360 * mainVMan.magnify;
-					e1.translatePoint(-(int) Math.floor(worldX / 360) * scale,
-							0);
-				}
+				double worldX = mainVMan.getProj().screen.toWorld(
+						e1.getPoint()).getX();
+				int scale = 360 * mainVMan.magnify;
+				e1.translatePoint(-(int) Math.floor(worldX / 360) * scale, 0);
 
-				popup = getPopupMenu(e, mainVMan.getProj().screen.toWorld(e1
-						.getPoint()));
+				popup = getPopupMenu(e, mainVMan.getProj().screen.toWorld(e1.getPoint()));
 				popup.show(MainGlass.this, e.getX(), e.getY());
 				log.println("Menu shown");
 			} else if (SwingUtilities.isMiddleMouseButton(e))

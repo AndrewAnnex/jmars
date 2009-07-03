@@ -45,22 +45,13 @@ public class HSVComposite extends CompositeStage implements Cloneable, Serializa
 	
 	public static final String[] inputNames = new String[] {"Hue", "Saturation", "Value"};
 	transient private Extractor[] extractor;
-
-	// This field is used to keep track of the total number of instances of this stage that have been created
-	private static int layerCnt=0;
-	// This field is used to keep track of this stage's number, to allow for the display of a unique layer name
+	
+	/** @deprecated No longer contaminating the stage with an LManager problem! */
 	private int myCnt=0;
 	
 	public HSVComposite(HSVCompositeSettings settings) {
 		super(settings);
 		reset();
-		myCnt=layerCnt++;
-	}
-	
-	// This method returns this stage's number, to allow for the creation of a unique layer name when more than
-	// one exist.
-	public int getLayerCount() {
-		return myCnt;
 	}
 	
 	private void reset() {
@@ -197,27 +188,32 @@ final class GrayByteExtractor extends Extractor {
 }
 
 final class ColorExtractor extends Extractor {
-	int rgb;
+	private final ColorModel cm;
+	private final Raster raster;
+	private Object pixel;
 	public ColorExtractor (BufferedImage input) {
 		super(input);
+		cm = input.getColorModel();
+		raster = input.getRaster();
 	}
 	public float getHue(int i, int j) {
-		rgb = input.getRGB(i, j);
-		Color.RGBtoHSB((rgb & 0xff0000) >> 16, (rgb & 0xff00) >> 8, (rgb & 0xff), hsb);
+		pixel = raster.getDataElements(i, j, pixel);
+		Color.RGBtoHSB(cm.getRed(pixel), cm.getGreen(pixel), cm.getBlue(pixel), hsb);
 		return hsb[0];
 	}
 	public float getSat(int i, int j) {
-		rgb = input.getRGB(i, j);
-		Color.RGBtoHSB((rgb & 0xff0000) >> 16, (rgb & 0xff00) >> 8, (rgb & 0xff), hsb);
+		pixel = raster.getDataElements(i, j, pixel);
+		Color.RGBtoHSB(cm.getRed(pixel), cm.getGreen(pixel), cm.getBlue(pixel), hsb);
 		return hsb[1];
 	}
 	public float getVal(int i, int j) {
-		rgb = input.getRGB(i, j);
-		Color.RGBtoHSB((rgb & 0xff0000) >> 16, (rgb & 0xff00) >> 8, (rgb & 0xff), hsb);
+		pixel = raster.getDataElements(i, j, pixel);
+		Color.RGBtoHSB(cm.getRed(pixel), cm.getGreen(pixel), cm.getBlue(pixel), hsb);
 		return hsb[2];
 	}
 	public float getAlpha(int i, int j) {
-		return ColorModel.getRGBdefault().getAlpha(input.getRGB(i, j)) / 255.0f;
+		pixel = raster.getDataElements(i, j, pixel);
+		return cm.getAlpha(pixel) / 255.0f;
 	}
 }
 

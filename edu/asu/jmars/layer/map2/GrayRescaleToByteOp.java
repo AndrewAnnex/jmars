@@ -21,7 +21,6 @@
 package edu.asu.jmars.layer.map2;
 
 import java.awt.RenderingHints;
-import java.awt.color.ColorSpace;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BandedSampleModel;
@@ -31,7 +30,6 @@ import java.awt.image.ColorModel;
 import java.awt.image.ComponentColorModel;
 import java.awt.image.DataBuffer;
 import java.awt.image.DirectColorModel;
-import java.awt.image.IndexColorModel;
 import java.awt.image.Raster;
 import java.awt.image.RescaleOp;
 import java.awt.image.SampleModel;
@@ -40,10 +38,17 @@ import java.util.Arrays;
 
 import edu.asu.jmars.util.Util;
 
-public class GrayRescaleToByteOp implements BufferedImageOp {
-	float scaleFactor;
-	float offset;
-
+/**
+ * This operator requires the input and output rasters to have the same number
+ * of bands.
+ * 
+ * Note that this operator only handles alpha values for a DirectColorModel or a
+ * ComponentColorModel, other ColorModels are not handled.
+ */
+public final class GrayRescaleToByteOp implements BufferedImageOp {
+	private final float scaleFactor;
+	private final float offset;
+	
 	public GrayRescaleToByteOp(float scaleFactor, float offset) {
 		this.scaleFactor = scaleFactor;
 		this.offset = offset;
@@ -59,92 +64,93 @@ public class GrayRescaleToByteOp implements BufferedImageOp {
 		
 		return outImage;
 	}
-
-	public BufferedImage filter(BufferedImage src, BufferedImage dest) {
-
-		int w = src.getWidth();
-		int h = src.getHeight();
-		ColorModel cm = src.getColorModel();
-		
-		if (!((cm instanceof DirectColorModel) || (cm instanceof ComponentColorModel)))
+	
+	public BufferedImage filter(final BufferedImage src, BufferedImage dest) {
+		// set up the source
+		final int w = src.getWidth();
+		final int h = src.getHeight();
+		final ColorModel cm = src.getColorModel();
+		if (!(cm instanceof DirectColorModel || cm instanceof ComponentColorModel))
 			throw new IllegalArgumentException("Unsupported color model :"+cm.getClass().getName()+".");
-
-		ColorModel destCM;
+		final Raster srcRaster = src.getRaster().createWritableChild(0, 0, w, h, 0, 0, getBands(cm.getNumColorComponents()));
+		final Raster srcAlpha = src.getAlphaRaster();
+		
+		// set up the destination
+		final ColorModel destCM;
 		if (dest == null){
 			destCM = new ComponentColorModel(
 					Util.getLinearGrayColorSpace(), cm.hasAlpha(), false,
 					cm.hasAlpha()? ColorModel.TRANSLUCENT: ColorModel.OPAQUE, DataBuffer.TYPE_BYTE);
 			dest = createCompatibleDestImage(src, destCM);
-		}
-		else {
+		} else {
 			destCM = dest.getColorModel();
 		}
-
-		Raster srcRaster = src.getRaster();
-		int srcTransferType = srcRaster.getTransferType();
-
-		switch(srcTransferType){
+		final WritableRaster destRaster = dest.getRaster().createWritableChild(0, 0, w, h, 0, 0, getBands(destCM.getNumColorComponents()));
+		final WritableRaster destAlpha = dest.getAlphaRaster();
+		
+		// do an optimized filter using RescaleOp for the types it supports, do it manually otherwise
+		final int srcTransferType = srcRaster.getTransferType();
+		switch(srcTransferType) {
 		case DataBuffer.TYPE_BYTE:
 		case DataBuffer.TYPE_SHORT:
 		case DataBuffer.TYPE_USHORT:
 		case DataBuffer.TYPE_INT:
 			// Do the rescale the fast way
-			RescaleOp rescaleOp = new RescaleOp(scaleFactor, offset, getRenderingHints());
-			rescaleOp.filter(
-					src.getRaster().createWritableChild(0, 0, w, h, 0, 0, getBands(cm.getNumColorComponents())),
-					dest.getRaster().createWritableChild(0, 0, w, h, 0, 0, getBands(destCM.getNumColorComponents())));
-
-			// TODO This getAlphaRaster() only takes care of the situation when we have
-			// either a DirectColorModel or a ComponentColorModel, other ColorModels are not
-			// handled. This comment applies to all other Stages where alpha is handled in
-			// this fashion.
-			if (src.getAlphaRaster() != null && dest.getAlphaRaster() != null){
-				// If alpha is present in both source and target, scale it appropriately.
-				// TODO This may not be correct alpha scale for short or int
-				double alphaScale = 255.0 / (Math.pow(2.0, cm.getComponentSize(cm.getNumComponents()-1))-1);
-
-				RescaleOp alphaRescaleOp = new RescaleOp((float)alphaScale, 0.0f, null);
-				alphaRescaleOp.filter(src.getAlphaRaster(), dest.getAlphaRaster());
-			}
-			else if (dest.getAlphaRaster() != null){
-				// If alpha not there in source, set the target alpha to opaque.
-				fillRaster(dest.getAlphaRaster(), 255);
+			new RescaleOp(scaleFactor, offset, getRenderingHints()).filter(srcRaster, destRaster);
+			break;
+		case DataBuffer.TYPE_FLOAT:
+			// Do the slower way, optimized a bit for float
+			int[] destRow = new int[w];
+			float[] floatRow = null;
+			float f;
+			for (int row = 0; row < h; row++) {
+				floatRow = srcRaster.getPixels(0, row, w, 1, floatRow);
+				for (int i=0; i<floatRow.length; i++) {
+					f = floatRow[i]*scaleFactor + offset;
+					if (f > 255f)
+						destRow[i] = 255;
+					else if (f < 0f)
+						destRow[i] = 0;
+					else
+						destRow[i] = (int)f;
+				}
+				destRaster.setPixels(0, row, w, 1, destRow);
 			}
 			break;
-
-		case DataBuffer.TYPE_FLOAT:
 		case DataBuffer.TYPE_DOUBLE:
-			// Do the rescale the slow way
-			double[] srcPixel = new double[cm.getNumColorComponents()];
-			int[] destPixel = new int[cm.getNumColorComponents()];
-			double destPixelValue;
-			int maxZ = Math.min(srcPixel.length, destPixel.length);
-			WritableRaster destRaster = dest.getRaster();
-			for(int j=0; j<h; j++){
-				for(int i=0; i<w; i++){
-					srcRaster.getPixel(i, j, srcPixel);
-					for(int z=0; z<maxZ; z++){
-						destPixelValue = (srcPixel[z] * scaleFactor + offset);
-						if (destPixelValue < 0)
-							destPixelValue = 0;
-						else if (destPixelValue > 255)
-							destPixelValue = 255;
-						destPixel[z] = (int)destPixelValue;
-					}
-					destRaster.setPixel(i, j, destPixel);
+			// Do the slower way, optimized a bit for double
+			destRow = new int[w];
+			double[] dblRow = null;
+			double d;
+			for (int row = 0; row < h; row++) {
+				dblRow = srcRaster.getPixels(0, row, w, 1, dblRow);
+				for (int i = 0; i < dblRow.length; i++) {
+					d = dblRow[i]*scaleFactor + offset;
+					if (d > 255d)
+						destRow[i] = 255;
+					else if (d < 0d)
+						destRow[i] = 0;
+					else
+						destRow[i] = (int)d;
 				}
+				destRaster.setPixels(0, row, w, 1, destRow);
 			}
-
-			if (dest.getAlphaRaster() != null){
-				// If alpha not there in the source, set the target alpha to opaque.
-				fillRaster(dest.getAlphaRaster(), 255);
-			}
-
 			break;
 		default:
 			throw new IllegalArgumentException("Unhandled src image data (transfer) type "+srcTransferType);
 		}
-
+		
+		if (destAlpha != null) {
+			// set the output alpha to something
+			if (srcAlpha != null && destAlpha.getTransferType() == srcAlpha.getTransferType()) {
+				// copy a compatible source alpha band to destination
+				destAlpha.setRect(srcAlpha);
+			} else {
+				// If no alpha or its not compatible, make the whole dest image opaque
+				fillRaster(destAlpha, 255);
+			}
+		}
+		
 		return dest;
 	}
 
@@ -155,7 +161,8 @@ public class GrayRescaleToByteOp implements BufferedImageOp {
 		Arrays.fill(alpha, val);
 		raster.setPixels(0, 0, w, h, alpha);
 	}
-
+	
+	/** Returns an array of band numbers from 0 inclusive to <code>count</code> exclusive */
 	private int[] getBands(int count) {
 		int[] bands = new int[count];
 		for (int i = 0; i < bands.length; i++)

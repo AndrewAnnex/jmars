@@ -21,11 +21,17 @@
 package edu.asu.jmars.layer.map2.stages;
 
 
-import java.awt.Rectangle;
+import java.awt.color.ColorSpace;
 import java.awt.geom.Area;
+import java.awt.geom.Rectangle2D;
+import java.awt.image.BandedSampleModel;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
+import java.awt.image.ComponentColorModel;
+import java.awt.image.DataBuffer;
 import java.awt.image.Raster;
+import java.awt.image.SampleModel;
+import java.awt.image.WritableRaster;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
@@ -34,15 +40,14 @@ import edu.asu.jmars.layer.map2.AbstractStage;
 import edu.asu.jmars.layer.map2.GrayRescaleToByteOp;
 import edu.asu.jmars.layer.map2.MapAttr;
 import edu.asu.jmars.layer.map2.MapData;
-import edu.asu.jmars.layer.map2.StageUtil;
 import edu.asu.jmars.util.DebugLog;
+import edu.asu.jmars.util.PolyArea;
+import edu.asu.jmars.util.Util;
 
 /**
- * Converts the image stored in the input MapData object to a
- * byte image. If the image is already a byte image or lower, it
- * is passed along as it is.
- * 
- * @author saadat
+ * Converts the image stored in the input MapData object to a byte image, with
+ * an alpha band if the input image had an alpha band or if there is an ignore
+ * value defined on the map source.
  */
 public class GrayscaleStage extends AbstractStage implements Cloneable, Serializable {
 	private static final long serialVersionUID = 2L;
@@ -62,114 +67,251 @@ public class GrayscaleStage extends AbstractStage implements Cloneable, Serializ
 	}
 	
 	public MapData process(int inputNumber, MapData data, Area changedArea) {
-		MapData processedData = null;
-		
 		BufferedImage image = data.getImage();
-		ColorModel cm = image.getColorModel();
-		int nBands = cm.getNumColorComponents();
-		if (nBands != 1)
+		if (image.getColorModel().getNumColorComponents() != 1)
 			throw new IllegalArgumentException("Input images must be single band images.");
 		
-		GrayscaleStageSettings s = (GrayscaleStageSettings)getSettings();
-		boolean autoMinMax;
-		double minValue, maxValue;
-		synchronized(s){
-			autoMinMax = s.getAutoMinMax();
-			minValue = s.getMinValue();
-			maxValue = s.getMaxValue();
-		}
+		// Convert from source # bits to 8-bit data per plane
+		image.coerceData(false); // have alpha separated out
 		
-		if (autoMinMax){
-			if (setMinMax(data, changedArea)){
-				changedArea.reset();
-				changedArea.add(data.getValidArea());
-				
-				synchronized(s){
-					minValue = s.getMinValue();
-					maxValue = s.getMaxValue();
-				}
+		int w = image.getWidth();
+		int h = image.getHeight();
+		GrayscaleStageSettings settings = (GrayscaleStageSettings)getSettings();
+		double ignore = settings.getIgnore();
+		boolean outputAlpha = !Double.isNaN(ignore) || image.getColorModel().hasAlpha();
+		
+		double[] minMax = getMinMax(data, changedArea);
+		double minValue = minMax[0];
+		double maxValue = minMax[1];
+		
+		log.println("GrayscaleStage: "+minValue+","+maxValue);
+		
+		// create output image
+		ColorSpace cs = Util.getLinearGrayColorSpace();
+		int trans = outputAlpha ? ColorModel.TRANSLUCENT: ColorModel.OPAQUE;
+		ColorModel destCM = new ComponentColorModel(cs, outputAlpha, false, trans, DataBuffer.TYPE_BYTE);
+		SampleModel outModel = new BandedSampleModel(DataBuffer.TYPE_BYTE, w, h, destCM.getNumComponents());
+		WritableRaster outRaster = Raster.createWritableRaster(outModel, null);
+		BufferedImage outImage = new BufferedImage(destCM, outRaster, destCM.isAlphaPremultiplied(), null);
+		
+		// rescale the data band
+		double diff = maxValue - minValue;
+		double scaleFactor = diff == 0? 0: 255.0 / (maxValue - minValue);
+		double offset = diff == 0? 0: -255 * minValue / (maxValue - minValue);
+		if (Double.isInfinite(minValue) || Double.isInfinite(maxValue))
+			offset = scaleFactor = 0;
+		GrayRescaleToByteOp rescaleOp = new GrayRescaleToByteOp((float)scaleFactor, (float)offset);
+		rescaleOp.filter(image, outImage);
+		
+		// if an ignore value is defined, then since we have already ensured there
+		// is an alpha band, go set those pixels to transparent where the data is
+		// equal to the ignore value
+		if (!Double.isNaN(ignore)) {
+			Ignore tool = createIgnoreFromType(image.getRaster().getTransferType(), ignore);
+			Object rpixels = null;
+			byte[] apixels = null;
+			WritableRaster rdata = Util.getBands(image, 0);
+			WritableRaster adata = Util.getBands(outImage, 1);
+			
+			for (int row = 0; row < h; row++) {
+				rpixels = rdata.getDataElements(0, row, w, 1, rpixels);
+				apixels = (byte[])adata.getDataElements(0, row, w, 1, apixels);
+				tool.setAlpha(rpixels, apixels);
+				adata.setDataElements(0, row, w, 1, apixels);
 			}
 		}
 		
-		int[] sampleSizes = data.getImage().getRaster().getSampleModel().getSampleSize();
-		boolean hasNon8BitData = sampleSizes[0] > 8;
-		
-		log.println("GrayscaleStage: "+minValue+","+maxValue+","+autoMinMax);
-		if (hasNon8BitData || !autoMinMax){
-			// Convert from source # bits to 8-bit data per plane
-			image.coerceData(false); // have alpha separated out
-			
-			double diff = maxValue - minValue;
-			double scaleFactor = diff == 0? 0: 255.0 / (maxValue - minValue);
-			double offset = diff == 0? 0: -255 * minValue / (maxValue - minValue);
-			if (Double.isInfinite(minValue) || Double.isInfinite(maxValue))
-				offset = scaleFactor = 0;
-			
-			GrayRescaleToByteOp rescaleOp = new GrayRescaleToByteOp((float)scaleFactor, (float)offset);
-			BufferedImage outImage = rescaleOp.filter(image, null);
-			
-			processedData = data.getDeepCopyShell(outImage);
-		}
-		else {
-			// Pass the data along, unmodified
-			processedData = data;
-		}
-		
-		return processedData;
+		return data.getDeepCopyShell(outImage);
 	}
 	
-	private double[] getMinMax(MapData mapData, Area changed){
-		double[] minMax = new double[]{ Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY };
+	/**
+	 * Returns an Ignore instance optimized for the given DataBuffer type.
+	 * 
+	 * Note that returning the same final type greatly in this way greatly
+	 * increases the level of optimization this code will achieve.
+	 */
+	private Ignore createIgnoreFromType(int dataType, double ignore) {
+		switch(dataType) {
+		case DataBuffer.TYPE_BYTE: return new ByteIgnore(ignore);
+		case DataBuffer.TYPE_SHORT:
+		case DataBuffer.TYPE_USHORT: return new ShortIgnore(ignore);
+		case DataBuffer.TYPE_INT: return new IntIgnore(ignore);
+		case DataBuffer.TYPE_FLOAT: return new FloatIgnore(ignore);
+		case DataBuffer.TYPE_DOUBLE: return new DoubleIgnore(ignore);
+		default: throw new IllegalArgumentException("Image has unrecognized data type " + dataType);
+		}
+	}
+	
+	private static interface Ignore {
+		void setAlpha(Object data, byte[] alpha);
+	}
+	
+	private static final class ByteIgnore implements Ignore {
+		private final byte ignore;
+		public ByteIgnore(double ignore) {
+			this.ignore = (byte)ignore;
+		}
+		public void setAlpha(Object data, byte[] alpha) {
+			byte[] bdata = (byte[])data;
+			for (int i = 0; i < bdata.length; i++) {
+				if (bdata[i] == ignore) {
+					alpha[i] = (byte)0;
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Should handle signed or unsigned short values, since Java casts from
+	 * double to short for unsigned numbers do end up with the bits in the right
+	 * place (e.g. (short)32768 == -32768)
+	 */
+	private static final class ShortIgnore implements Ignore {
+		private final short ignore;
+		public ShortIgnore(double ignore) {
+			this.ignore = (short)ignore;
+		}
+		public void setAlpha(Object data, byte[] alpha) {
+			short[] sdata = (short[])data;
+			for (int i = 0; i < sdata.length; i++) {
+				if (sdata[i] == ignore) {
+					alpha[i] = (byte)0;
+				}
+			}
+		}
+	}
+	
+	private static final class IntIgnore implements Ignore {
+		private final int ignore;
+		public IntIgnore(double ignore) {
+			this.ignore = (short)ignore;
+		}
+		public void setAlpha(Object data, byte[] alpha) {
+			int[] sdata = (int[])data;
+			for (int i = 0; i < sdata.length; i++) {
+				if (sdata[i] == ignore) {
+					alpha[i] = (byte)0;
+				}
+			}
+		}
+	}
+	
+	private static final class FloatIgnore implements Ignore {
+		private final float ignore;
+		public FloatIgnore(double ignore) {
+			this.ignore = (float)ignore;
+		}
+		public void setAlpha(Object data, byte[] alpha) {
+			float[] sdata = (float[])data;
+			for (int i = 0; i < sdata.length; i++) {
+				if (sdata[i] == ignore) {
+					alpha[i] = (byte)0;
+				}
+			}
+		}
+	}
+	
+	private static final class DoubleIgnore implements Ignore {
+		private final double ignore;
+		public DoubleIgnore(double ignore) {
+			this.ignore = ignore;
+		}
+		public void setAlpha(Object data, byte[] alpha) {
+			double[] sdata = (double[])data;
+			for (int i = 0; i < sdata.length; i++) {
+				if (sdata[i] == ignore) {
+					alpha[i] = (byte)0;
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Computes the min/max range for this stretch and updates the settings if
+	 * 'auto' is set and a new min and/or max value is found. Will avoid
+	 * 'ignore' pixels if an ignore value is set, and will skip alpha
+	 * transparent pixels if ignore is unset
+	 * 
+	 * @param data
+	 *            The data object for the whole request
+	 * @param changedArea
+	 *            The area affected by the last stage; changes to this area will
+	 *            affect this and future stages!
+	 * @return [min, max]
+	 */
+	private double[] getMinMax(MapData data, Area changedArea) {
+		GrayscaleStageSettings s = (GrayscaleStageSettings)getSettings();
+		
+		boolean auto;
+		double ignore;
+		double min, max, oldMin, oldMax;
+		synchronized(s) {
+			auto = s.getAutoMinMax();
+			ignore = s.getIgnore();
+			oldMin = min = s.getMinValue();
+			oldMax = max = s.getMaxValue();
+		}
 		
 		Area toProcess = new Area();
-		toProcess.add(changed);
-		toProcess.intersect(new Area(mapData.getRequest().getExtent()));
+		toProcess.add(changedArea);
+		toProcess.intersect(new Area(data.getRequest().getExtent()));
 		
 		if (toProcess.isEmpty())
-			return minMax;
+			return new double[]{min,max};
 		
-		BufferedImage image = mapData.getImage();
-		Raster r = image.getRaster();
-		
-		// Narrow to the changed (valid) region.
-		Rectangle maskBounds = mapData.getRasterBoundsForWorld(toProcess.getBounds2D());
-		Raster mask = StageUtil.getMask(maskBounds.width, maskBounds.height, toProcess.getBounds2D(), toProcess);
-		
-		double[] pix = new double[r.getNumBands()];
-		int b = image.getColorModel().getNumColorComponents();
-		
-		for(int j=0; j<maskBounds.height; j++){
-			for(int i=0; i<maskBounds.width; i++){
-				if (mask.getSample(i, j, 0) == 0)
-					continue;
-				
-				r.getPixel(i+maskBounds.x, j+maskBounds.y, pix);
-				for(int k=0; k<b; k++){
-					if (pix[k] < minMax[0])
-						minMax[0] = pix[k];
-					if (pix[k] > minMax[1])
-						minMax[1] = pix[k];
+		if (auto) {
+			// determine min/max range of each changed block
+			BufferedImage bi = data.getImage();
+			WritableRaster inRaster = Util.getColorRaster(bi);
+			WritableRaster inRasterAlpha = bi.getAlphaRaster();
+			Rectangle2D inExtent = data.getRequest().getExtent();
+			for (Rectangle2D changedRect: new PolyArea(toProcess).getRectangles()) {
+				Raster changedRaster = MapData.getRasterForWorld(inRaster, inExtent, changedRect);
+				int x = changedRaster.getWidth();
+				int y = changedRaster.getHeight();
+				double[] pixels = new double[x];
+				if (inRasterAlpha == null || !Double.isNaN(ignore)) {
+					// use ignore value
+					for (int j = 0; j < y; j++) {
+						changedRaster.getPixels(0, j, x, 1, pixels);
+						for (int i = 0; i < x; i++) {
+							if (pixels[i] != ignore) {
+								min = Math.min(min, pixels[i]);
+								max = Math.max(max, pixels[i]);
+							}
+						}
+					}
+				} else {
+					// use alpha band
+					Raster changedRasterAlpha = MapData.getRasterForWorld(inRasterAlpha, inExtent, changedRect);
+					int[] alpha = new int[x];
+					for (int j = 0; j < y; j++) {
+						changedRaster.getPixels(0, j, x, 1, pixels);
+						changedRasterAlpha.getPixels(0, j, x, 1, alpha);
+						for (int i = 0; i < x; i++) {
+							if (alpha[i] != 0) {
+								min = Math.min(min, pixels[i]);
+								max = Math.max(max, pixels[i]);
+							}
+						}
+					}
 				}
+			}
+			
+			synchronized (s) {
+				s.setMinValue(Math.min(min, s.getMinValue()));
+				s.setMaxValue(Math.max(max, s.getMaxValue()));
+				min = s.getMinValue();
+				max = s.getMaxValue();
+			}
+			
+			if (oldMin != min || oldMax != max) {
+				changedArea.reset();
+				changedArea.add(data.getValidArea());
 			}
 		}
 		
-		return minMax;
-	}
-	
-	private boolean setMinMax(MapData mapData, Area changedArea){
-		double[] minMax = getMinMax(mapData, changedArea);
-		boolean changed = false;
-		
-		GrayscaleStageSettings s = (GrayscaleStageSettings)getSettings();
-		if (minMax[0] < s.getMinValue()){
-			s.setMinValue(minMax[0]);
-			changed = true;
-		}
-		if (minMax[1] > s.getMaxValue()){
-			s.setMaxValue(minMax[1]);
-			changed = true;
-		}
-		return changed;
+		return new double[]{min,max};
 	}
 	
 	public MapAttr[] consumes(int inputNumber){

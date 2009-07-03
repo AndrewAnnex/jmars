@@ -205,6 +205,28 @@ public class STable extends JTable implements HierarchyListener {
 	}
 
 	/**
+     * Override of JTable's createDefaultColumnsFromModel to handle the case when
+     * the columns in the FilteringColumnModel change.
+     */
+    public void createDefaultColumnsFromModel() {
+        TableModel m = getModel();
+        if (m != null) {
+            // Remove any current columns
+        	TableColumnModel tcm = getColumnModel();
+        	
+        	if (tcm instanceof FilteringColumnModel) {
+	            FilteringColumnModel fcm = (FilteringColumnModel) tcm;
+	            fcm.removeAllColumns(); 
+        	}
+            // Create new columns from the data model info
+            for (int i = 0; i < m.getColumnCount(); i++) {
+                TableColumn newColumn = new TableColumn(i);
+                addColumn(newColumn);
+            }
+        }
+    }
+	
+	/**
 	 * * returns the current table model.
 	 */
 	public TableModel getUnsortedTableModel() {
@@ -580,6 +602,8 @@ public class STable extends JTable implements HierarchyListener {
 			if (SwingUtilities.isRightMouseButton(e)) {
 				if (m instanceof FilteringColumnModel) {
 					FilteringColumnModel fcm = (FilteringColumnModel)m;
+					
+					fcm.getColumnDialog().setLocationRelativeTo(e.getComponent());									
 					fcm.getColumnDialog().setVisible(true);
 				}
 			} else if (sorter != null) {

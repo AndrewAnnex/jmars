@@ -20,13 +20,25 @@
 
 package edu.asu.jmars.layer;
 
-import edu.asu.jmars.*;
-import edu.asu.jmars.graphics.*;
+import java.awt.BasicStroke;
+import java.awt.Dimension;
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
+import java.awt.Shape;
+import java.awt.Stroke;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Dimension2D;
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
+import java.util.HashMap;
+import java.util.Map;
+
+import edu.asu.jmars.LocationManager;
+import edu.asu.jmars.Main;
+import edu.asu.jmars.ProjObj;
+import edu.asu.jmars.graphics.SpatialGraphics2D;
+import edu.asu.jmars.graphics.SpatialGraphicsCyl;
 import edu.asu.jmars.swing.Dimension2D_Double;
-import edu.asu.jmars.util.*;
-import java.awt.*;
-import java.awt.geom.*;
-import java.util.*;
 
 /**
  ** Contains the state and methods for transforming between screen,
@@ -117,9 +129,6 @@ public abstract class MultiProjection
 	 {
 		if(g2 == null)
 			return  null;
-
-		if(Main.inTimeProjection())
-			return  new SpatialGraphicsSpOb(g2, this);
 		else
 			return  new SpatialGraphicsCyl(g2, this);
 	 }
@@ -296,5 +305,9 @@ public abstract class MultiProjection
 			}
 		}
 	}
-
- }
+	
+	// TODO: MultiProjection should have a ProjObj field, not a static reference!
+	public ProjObj getProjection() {
+		return Main.PO;
+	}
+}

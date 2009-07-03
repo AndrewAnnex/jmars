@@ -36,7 +36,6 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 
 import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.DomDriver;
 
 import edu.asu.jmars.Main;
 import edu.asu.jmars.swing.STable;
@@ -56,21 +55,15 @@ import edu.asu.jmars.util.stable.Sorter.Listener;
  * 
  * <p>Once connect is called, altering the column order, sort order, sort
  * directions, or show/hide changes will update the XML automatically.
+ * 
+ * <p>This class may also be constructed with a custom {@link TableStore} instance
+ * to save and load table settings to and from some other location on a change.
  */
 public class STableViewPersister {
 	private static DebugLog log = DebugLog.instance();
 
-	// serialization mechanism
-	private XStream xstream = new XStream(new DomDriver());
-
-	// used to avoid unecessary saves while still catching them
-	private Timer timer = new Timer();
-
 	// the table to save to
 	private STable table;
-
-	// the basename of the XML file to load from and save to
-	private String filename;
 
 	// listen to table model structure and table model change events
 	private TableModelListener tableModelListener = new TableModelListener() {
@@ -113,7 +106,9 @@ public class STableViewPersister {
 			updateConfig();
 		}
 	};
-
+	
+	private final TableStore store;
+	
 	/**
 	 * Construct an instance of the table adapter for the given table and table
 	 * ID. This instance can be used to serialize table view settinsg to
@@ -121,10 +116,14 @@ public class STableViewPersister {
 	 * connect() is called.
 	 */
 	public STableViewPersister(STable table, String configID) {
-		this.table = table;
-		this.filename = "tableView" + configID + ".xml";
+		this(table, new XmlStore(table, "tableView" + configID + ".xml"));
 	}
-
+	
+	public STableViewPersister(STable table, TableStore store) {
+		this.table = table;
+		this.store = store;
+	}
+	
 	/**
 	 * Set the table's view settings to the last-saved state in the XML file.
 	 * 
@@ -132,57 +131,28 @@ public class STableViewPersister {
 	 * exception, log a message, and move on.
 	 */
 	public void updateTable() {
-		log.println("Loading table settings from " + filename);
+		log.println("Loading table settings from " + store);
 		try {
-			String fullpath = Main.getJMarsPath() + filename;
-			FileInputStream fis = new FileInputStream(fullpath);
-			Map settings = (Map) xstream.fromXML(fis);
-			table.setViewSettings(settings);
-		} catch (FileNotFoundException e) {
-			// the first time you use this feature, there won't be a file 
-			log.println("Unable to find table view settings file " + filename);
+			store.updateTable();
 		} catch (Exception e) {
-			log.aprintln("Unable to read table view settings from " + filename);
-			log.println(e);
+			log.aprintln("Error reading table settings:");
+			log.aprintln(e);
 		}
 	}
-
-	private TimerTask saveTask;
-
-	class SaveTask extends TimerTask {
-		public void run() {
-			log.println("Saving table settings to " + filename);
-			try {
-				String fullpath = Main.getJMarsPath() + filename;
-				FileOutputStream fos = new FileOutputStream(fullpath);
-				xstream.toXML(table.getViewSettings(), fos);
-			} catch (FileNotFoundException e) {
-				log.println("Unable to update table view settings in "
-					+ filename);
-			}
-			SwingUtilities.invokeLater(new Runnable() {
-				public void run() {
-					saveTask = null;
-				}
-			});
-		}
-	};
-
+	
 	/**
 	 * Updates with settings in the column model.
 	 */
 	public void updateConfig() {
-		// this operation is slightly expensive and we don't need to do it
-		// on every change, so we wait a bit to compress rapid updates
-		SwingUtilities.invokeLater(new Runnable() {
-			public void run() {
-				if (saveTask == null) {
-					timer.schedule(saveTask = new SaveTask(), 1000);
-				}
-			}
-		});
+		log.println("Saving table settings to " + store);
+		try {
+			store.updateStore();
+		} catch (Exception e) {
+			log.aprintln("Error saving table settings:");
+			log.aprintln(e);
+		}
 	}
-
+	
 	/**
 	 * Connects settings change listeners to the table so jmars.config is
 	 * updated with changes in column width, visibility, and order.
@@ -200,5 +170,78 @@ public class STableViewPersister {
 		table.getModel().removeTableModelListener(tableModelListener);
 		table.getSorter().removeListener(sorterListener);
 		table.getColumnModel().removeColumnModelListener(columnListener);
+	}
+	
+	/** A custom store for table settings */
+	public interface TableStore {
+		/** Called when a table setting changes, this should save the result of calling {@link STable#getViewSettings()}. */
+		void updateTable() throws Exception;
+		/** Called to restore the table settings, this should load the settings and pass them to {@link STable#setViewSettings(Map)}. */
+		void updateStore() throws Exception;
+	}
+	
+	/** The default table store is an xml file in ~/jmars */
+	public static class XmlStore implements TableStore {
+		// serialization mechanism
+		private final STable table;
+		private XStream xstream = new XStream() {
+			protected boolean useXStream11XmlFriendlyMapper() {
+				return true;
+			}
+		};
+
+		// used to avoid unecessary saves while still catching them
+		private Timer timer = new Timer();
+
+		// the basename of the XML file to load from and save to
+		private String filename;
+		
+		private TimerTask saveTask;
+		
+		private class SaveTask extends TimerTask {
+			public void run() {
+				log.println("Saving table settings to " + filename);
+				try {
+					String fullpath = Main.getJMarsPath() + filename;
+					FileOutputStream fos = new FileOutputStream(fullpath);
+					xstream.toXML(table.getViewSettings(), fos);
+				} catch (FileNotFoundException e) {
+					log.println("Unable to update table view settings in "
+						+ filename);
+				}
+				SwingUtilities.invokeLater(new Runnable() {
+					public void run() {
+						saveTask = null;
+					}
+				});
+			}
+		};
+		
+		public XmlStore(STable table, String filename) {
+			this.table = table;
+			this.filename = filename;
+		}
+		
+		public String toString() {
+			return filename;
+		}
+		
+		public void updateTable() throws FileNotFoundException {
+			String fullpath = Main.getJMarsPath() + filename;
+			FileInputStream fis = new FileInputStream(fullpath);
+			table.setViewSettings((Map) xstream.fromXML(fis));
+		}
+		
+		public void updateStore() {
+			// this operation is slightly expensive and we don't need to do it
+			// on every change, so we wait a bit to compress rapid updates
+			SwingUtilities.invokeLater(new Runnable() {
+				public void run() {
+					if (saveTask == null) {
+						timer.schedule(saveTask = new SaveTask(), 1000);
+					}
+				}
+			});
+		}
 	}
 }

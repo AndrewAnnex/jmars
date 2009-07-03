@@ -20,14 +20,34 @@
 
 package edu.asu.jmars.layer.map2;
 
+import java.awt.geom.Rectangle2D;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
 import java.net.URL;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpMethod;
+import org.apache.commons.httpclient.HttpMethodRetryHandler;
+import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.NameValuePair;
+import org.apache.commons.httpclient.URIException;
+import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.httpclient.methods.multipart.FilePart;
+import org.apache.commons.httpclient.methods.multipart.MultipartRequestEntity;
+import org.apache.commons.httpclient.methods.multipart.Part;
+import org.apache.commons.httpclient.methods.multipart.PartSource;
+import org.apache.commons.httpclient.methods.multipart.StringPart;
+import org.apache.commons.httpclient.params.HttpMethodParams;
 
 import edu.asu.jmars.util.DebugLog;
 import edu.asu.jmars.util.Util;
 
-// TODO: move Util.httpPost and Util.httpPostFileName from Util to here
 /**
  * CustomMapServer is a MapServer with authentication to get maps for a
  * particular user. There is only one constructor that prevents creation
@@ -37,11 +57,13 @@ public class CustomMapServer extends WMSMapServer implements Serializable {
 	public static String customMapServerName = "custom";
 	private static DebugLog log = DebugLog.instance();
 	private final String user;
+	private transient final String passwd;
 	
 	/** Constructs a new custom map server with the given user's custom maps. */
 	public CustomMapServer(String serverName, String user, String passwd) {
-		super(serverName, "user=" + Util.urlEncode(user) + "&passwd=" + Util.urlEncode(passwd) + "&");
+		super(serverName, "user=" + user);
 		this.user = user;
+		this.passwd = passwd;
 	}
 	
 	/** Overrides the category of a custom map source */
@@ -56,14 +78,15 @@ public class CustomMapServer extends WMSMapServer implements Serializable {
 				this,
 				source.hasNumericKeyword(),
 				(source instanceof WMSMapSource)? ((WMSMapSource)source).getLatLonBoundingBox(): null,
-				source.getIgnoreValue()));
+				source.getIgnoreValue(),
+				source.getMaxPPD()));
 	}
 	
 	/**
 	 * @param name The descriptive name of this map
 	 * @return The canonic unique name of  this map
 	 */
-	public String getCanonicName(String name) {
+	private String getCanonicName(String name) {
 		String canonicName = user + "." + String.valueOf(name.hashCode());
 		return canonicName.replaceAll("[^0-9A-Za-z\\.-]", "_");
 	}
@@ -74,23 +97,14 @@ public class CustomMapServer extends WMSMapServer implements Serializable {
 	 * @param file The File to post to the server.
 	 * @throws Exception If anything goes wrong. The message will contain the error or server response.
 	 */
-	public void uploadCustomMap(String name, File file) throws Exception {
-		log.println("Uploading custom map named " + name + " from local file " + file.getAbsolutePath());
-		String url = getURI("request=upload","name=" + name).toString().replaceAll("\\?", "/?");
-		String fname = file.getAbsolutePath();
-		String response = Util.httpPostFileName(url, fname, getCanonicName(fname));
-		if (response.toUpperCase().startsWith("ERROR:")) {
-			log.println("Uploading local map failed with " + response);
-			throw new Exception(response);
-		} else {
-			log.println("Local upload succeeded");
-			loadCapabilities(false);
-			if (getSourceByName(getCanonicName(fname)) == null) {
-				throw new Exception(
-					"Upload succeeded but custom map cannot be found with name " +
-					getCanonicName(fname));
-			}
-		}
+	public void uploadCustomMap(String remoteName, File file, Rectangle2D bounds, Double ignoreValue, boolean email) throws Exception {
+		String remoteID = getCanonicName(remoteName);
+		PostMethod post = getMethod("upload");
+		addArgs(post, remoteName, bounds, ignoreValue, email);
+		addFile(post, file, remoteID);
+		log.println("Uploading custom map named " + remoteName + " from local file " + file.getAbsolutePath() + " to layer id " + remoteID);
+		String response = read(post);
+		finishUpload("local", response, remoteID);
 	}
 	
 	/**
@@ -100,22 +114,109 @@ public class CustomMapServer extends WMSMapServer implements Serializable {
 	 * @throws Exception Thrown if anything goes wrong. The message will
 	 * contain the server response.
 	 */
-	public void uploadCustomMap(String name, URL remoteUrl) throws Exception {
+	public void uploadCustomMap(String name, URL remoteUrl, Rectangle2D bounds, Double ignoreValue, boolean email) throws Exception {
+		PostMethod post = getMethod("remote");
+		addArgs(post, name, bounds, ignoreValue, email);
+		String remoteID = getCanonicName(name);
+		post.addParameter("rfile",remoteUrl.toString());
+		post.addParameter("lfile",remoteID);
 		log.println("Uploading custom map named " + name + " from remote URL " + remoteUrl);
-		String getString = getURI("request=remote","name=" + name).toString().replaceAll("\\?", "/?");
-		String fileNameOnServer = user + "." + remoteUrl.hashCode();
-		String postString = "rfile=" + remoteUrl + "&lfile=" + fileNameOnServer;
-		String response = Util.httpPost(getString, postString);
+		String response = read(post);
+		finishUpload("remote", response, remoteID);
+	}
+	
+	protected HttpMethod getCapsMethod() {
+		PostMethod post = new PostMethod(getCapabilitiesURI().toString());
+		post.addParameter("passwd", passwd);
+		return post;
+	}
+	
+	private PostMethod getMethod(String request) {
+		PostMethod post = new PostMethod(getSuffixedURI(getURI(), "request="+request).toString());
+		post.addParameter("passwd", passwd);
+		return post;
+	}
+	
+	/** Adds upload parameters to a post */
+	private void addArgs(PostMethod post, String remoteName, Rectangle2D bounds, Double ignoreValue, boolean email) {
+		post.addParameter("name", remoteName);
+		if (bounds != null) {
+			post.addParameter("bbox", MessageFormat.format(
+				"{0,number,#.######},{1,number,#.######},{2,number,#.######},{3,number,#.######}",
+				bounds.getMinX(),bounds.getMinY(),bounds.getMaxX(),bounds.getMaxY()));
+		}
+		if (ignoreValue != null) {
+			post.addParameter("ignore", MessageFormat.format("{0,number,#.######}",ignoreValue));
+		}
+		if (email) {
+			post.addParameter("sendemail","1");
+		}
+	}
+	
+	private void finishUpload(String type, String response, String mapName) throws Exception {
 		if (response.toUpperCase().startsWith("ERROR:")) {
-			log.println("Uploading remote map failed with " + response);
+			log.println("Uploading " + type + " map failed with " + response);
 			throw new Exception(response);
-		} else {
-			log.println("Remote upload succeeded");
-			loadCapabilities(false);
-			if (getSourceByName(fileNameOnServer) == null) {
-				throw new Exception(
+		}
+		
+		log.println("Remote upload succeeded");
+		Thread.sleep(2000);
+		loadCapabilities(false);
+		MapSource source = getSourceByName(mapName);
+		if (source == null) {
+			throw new Exception(
 					"Upload succeeded but custom map cannot be found with name " +
-					fileNameOnServer);
+					mapName);
+		}
+		
+		// clear cache in case this is an updated map
+		CacheManager.removeMap(source);
+	}
+	
+	private void addFile(final PostMethod post, final File localFile , final String remoteName) throws URIException {
+		// construct a custom FilePart that will cause 'localName' to be named
+		// 'remoteName' on the server
+		List<Part> parts = new ArrayList<Part>();
+		for (NameValuePair parm: post.getParameters()) {
+			parts.add(new StringPart(parm.getName(), parm.getValue()));
+		}
+		parts.add(new FilePart(remoteName, new PartSource() {
+			public InputStream createInputStream() throws IOException {
+				return new FileInputStream(localFile);
+			}
+			public String getFileName() {
+				return remoteName;
+			}
+			public long getLength() {
+				return localFile.length();
+			}
+		}));
+		post.setRequestEntity(new MultipartRequestEntity(parts.toArray(new Part[0]), post.getParams()));
+		
+		// construct a retry handler that will never retry
+		post.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, new HttpMethodRetryHandler() {
+			public boolean retryMethod(HttpMethod method, IOException exception, int executionCount) {
+				return false; 
+			}
+		});
+	}
+	
+	private String read(PostMethod post) {
+		try {
+			HttpClient client = new HttpClient();
+			int code = Util.postWithRedirect(client, post, 3);
+			client.getHttpConnectionManager().getParams().setConnectionTimeout(getTimeout());
+			if (code == HttpStatus.SC_OK) {
+				return Util.readResponse(post.getResponseBodyAsStream());
+			} else {
+				return "ERROR: Unexpected HTTP code " + code + " received";
+			}
+		} catch (Exception e) {
+			log.aprintln(e);
+			return "ERROR: " + e.getMessage();
+		} finally {
+			if (post != null) {
+				post.releaseConnection();
 			}
 		}
 	}
@@ -131,13 +232,15 @@ public class CustomMapServer extends WMSMapServer implements Serializable {
 		if (source == null) {
 			throw new Exception("No map source with the name " + name + " was found");
 		}
-		String reqUrl = getURI("request=delete","names=" + name).toString();
-		String response = Util.readResponse(new URL(reqUrl).openStream());
+		PostMethod post = getMethod("delete");
+		post.addParameter("names", name);
+		String response = read(post);
 		if (!response.startsWith("OK:")) {
 			log.println("Delete of map failed with " + response);
 			throw new Exception(response);
 		} else {
 			log.println("Removal succeeded");
+			CacheManager.removeMap(source);
 			loadCapabilities(false);
 			if (getSourceByName(source.getName()) != null) {
 				throw new Exception("Custom map removal succeeded but it is still found!");
@@ -145,4 +248,3 @@ public class CustomMapServer extends WMSMapServer implements Serializable {
 		}
 	}
 }
-

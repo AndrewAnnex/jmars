@@ -504,18 +504,9 @@ public class Graphics2DAdapter
         return  g2.getClip();
      }
 
-    /** DO NOT CALL, NOT PROPERLY IMPLEMENTED **/
     public void setClip(Shape clip)
      {
-         if (clip == null){
-             g2.setClip(null);
-         }
-         else {
-             log.aprintln("POSSIBLY UNSUPPORTED GRAPHICS OPERATION CALLED " +
-                          "(" + getClass().getName() + ")");
-             log.aprintStack(5);
-             g2.setClip(clip);
-         }
+         g2.setClip(clip);
      }
 
     /** DO NOT CALL, NOT PROPERLY IMPLEMENTED **/

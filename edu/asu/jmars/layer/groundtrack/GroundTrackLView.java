@@ -20,22 +20,53 @@
 
 package edu.asu.jmars.layer.groundtrack;
 
-import edu.asu.jmars.*;
-import edu.asu.jmars.Main;
-import edu.asu.jmars.graphics.*;
-import edu.asu.jmars.layer.*;
-import edu.asu.jmars.swing.*;
-import edu.asu.jmars.util.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.geom.*;
-import java.io.*;
-import java.text.*;
-import java.util.*;
+import java.awt.BasicStroke;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Graphics2D;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Shape;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.geom.Dimension2D;
+import java.awt.geom.Line2D;
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
+import java.text.DecimalFormat;
+import java.util.Collections;
 import java.util.List;
-import javax.swing.*;
-import javax.swing.border.*;
-import javax.swing.event.*;
+
+import javax.swing.AbstractAction;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+
+import edu.asu.jmars.Main;
+import edu.asu.jmars.ProjObj;
+import edu.asu.jmars.graphics.Graphics2DAdapter;
+import edu.asu.jmars.graphics.SpatialGraphicsSpOb;
+import edu.asu.jmars.layer.FocusPanel;
+import edu.asu.jmars.layer.Layer;
+import edu.asu.jmars.layer.SerializedParameters;
+import edu.asu.jmars.layer.WatchedThread;
+import edu.asu.jmars.swing.ColorCombo;
+import edu.asu.jmars.swing.LongField;
+import edu.asu.jmars.swing.TimeField;
+import edu.asu.jmars.util.Config;
+import edu.asu.jmars.util.DebugLog;
+import edu.asu.jmars.util.HVector;
+import edu.asu.jmars.util.TimeException;
+import edu.asu.jmars.util.Util;
 
 public class GroundTrackLView
  extends Layer.LView
@@ -256,26 +287,18 @@ public class GroundTrackLView
 	if(Double.isNaN(et))
 	    return  new Component[0];
 
-	JMenuItem menuItem = new JMenuItem(
-	    new AbstractAction("Recenter projection at ET: " + (long) et)
-	     {
-		 {
-		    setEnabled("true".equals(Config.get("reproj")));
-		 }
-		public void actionPerformed(ActionEvent e)
-		 {
-		    if(Main.inTimeProjection())
-			viewman.getLocationManager().setLocation(
-			    new Point2D.Double(
-				(long) et - Main.PO.getServerOffsetX(), 0),
-			    true);
-		    else
-			recenterProjection(worldPt, et);
-		 }
-	     }
-	    );
-	return new Component[] { menuItem };
-     }
+	JMenuItem menuItem = new JMenuItem(new AbstractAction(
+				"Recenter projection at ET: " + (long) et) {
+			{
+				setEnabled("true".equals(Config.get("reproj")));
+			}
+
+			public void actionPerformed(ActionEvent e) {
+				recenterProjection(worldPt, et);
+			}
+		});
+		return new Component[] { menuItem };
+	}
 
     /**
      ** Re-centers the current projection to orient the groundtrack at
@@ -507,7 +530,7 @@ public class GroundTrackLView
 	if(segs == null)
 	    return  Double.NaN;
 
-	if(Main.inTimeProjection())
+	if(Main.PO instanceof ProjObj.Projection_SOM)
 	    return  findTimeByWorldPt_time(worldPt);
 	else
 	    return  findTimeByWorldPt_cyl(worldPt);
@@ -867,9 +890,6 @@ public class GroundTrackLView
 	    jp.add(comboBegColor, c);
 	    jp.add(comboEndColor, c);
 	    jp.add(noColorCombo, c);
-
-	    if(Main.isStudentApplication())
-		txtDelta.setEnabled(false);
 	 }
 
 	public void actionPerformed(ActionEvent e)

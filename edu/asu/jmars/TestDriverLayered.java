@@ -22,25 +22,38 @@ package edu.asu.jmars;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.geom.Point2D;
+import java.text.MessageFormat;
+import java.util.Date;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import javax.swing.BorderFactory;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JSplitPane;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 import javax.swing.border.BevelBorder;
 import javax.swing.border.CompoundBorder;
 
-import edu.asu.jmars.layer.LManager;
+import edu.asu.jmars.layer.LManager2;
 import edu.asu.jmars.layer.LViewFactory;
 import edu.asu.jmars.layer.LViewManager;
 import edu.asu.jmars.layer.Layer;
 import edu.asu.jmars.layer.SerializedParameters;
+import edu.asu.jmars.layer.stamp.StampFactory;
 import edu.asu.jmars.ruler.BaseRuler;
 import edu.asu.jmars.ruler.RulerManager;
 import edu.asu.jmars.swing.TabLabel;
+import edu.asu.jmars.util.Config;
 import edu.asu.jmars.util.DebugLog;
 
 public class TestDriverLayered extends JPanel
@@ -50,7 +63,7 @@ public class TestDriverLayered extends JPanel
     public  LocationManager locMgr;
     public  LViewManager    mainWindow;
     private LViewManager    panner;
-    public  LManager	lmanager;
+    public  LManager2	lmanager;
     
     protected TabLabel statusBar;
     protected JSplitPane splitPane;
@@ -58,31 +71,14 @@ public class TestDriverLayered extends JPanel
     public static final int    INITIAL_MAIN_ZOOM;
     public static final int    INITIAL_PANNER_ZOOM;
     static {
-	if ( Main.isStudentApplication() ) {
-	    INITIAL_MAIN_ZOOM = 16;
-	    INITIAL_PANNER_ZOOM = 4;
-	} else {
 	    INITIAL_MAIN_ZOOM = 32;
 	    INITIAL_PANNER_ZOOM = 8;
 	}
-    }
     
     boolean ignorePreviousState = false;    
     
     public TestDriverLayered()
     {
-	//if we have switched projects or from student mode, etc then ignore saved starting place and views.
-	boolean wasTimeProjection = Main.userProps.getPropertyBool("TimeProjection", false);
-	boolean wasStudentApp = Main.userProps.getPropertyBool("StudentApplication", false);
-	boolean ignorePreviousState = false;
-	if ( wasTimeProjection && ! Main.inTimeProjection() ||
-	     ! wasTimeProjection && Main.inTimeProjection() ||
-	     wasStudentApp && ! Main.isStudentApplication() ||
-	     ! wasStudentApp && Main.isStudentApplication() ) {
-
-	    ignorePreviousState = true;
-	}
-
 	// location manager - look for a save initial value
 	String initialX = Main.userProps.getProperty("Initialx", "");
 	String initialY = Main.userProps.getProperty("Initialy", "");
@@ -90,9 +86,7 @@ public class TestDriverLayered extends JPanel
 
 	locMgr = new LocationManager(Main.initialWorldLocation);
 
-	//Time passed in on command line has precedence
-	if ( ! ignorePreviousState && !Main.timeOnCommandLine && ( initialX != "" && initialY != "" ) ) {
-
+	if (initialX != "" && initialY != "" ) {
 	    Point2D.Double pt = null;
 
 	    try {
@@ -134,18 +128,77 @@ public class TestDriverLayered extends JPanel
 			BorderFactory.createEmptyBorder(10,0,10,0),
 			BorderFactory.createBevelBorder(BevelBorder.LOWERED))
 	    );
-
+	
 	int height = Main.userProps.getPropertyInt("SplitPaneHeight", 400);
 	int width =  Main.userProps.getPropertyInt("SplitPaneWidth",  500);
 	int div = Main.userProps.getPropertyInt("MainDividerLoc", splitPane.getDividerLocation());
 	splitPane.setPreferredSize( new Dimension( width, height));
 	splitPane.setDividerLocation(div);
-
+	
 	add(locMgr,    BorderLayout.NORTH);
 	add(splitPane, BorderLayout.CENTER);
-	add(statusBar, BorderLayout.SOUTH);
+	add(bottomRow, BorderLayout.SOUTH);
+	setMetersVisible(Config.get("main.meters.enable", false));
     }
-
+    
+	private final JPanel bottomRow = new JPanel(new GridBagLayout());
+	private final JProgressBar memmeter = new JProgressBar(0,100);
+	{
+		memmeter.addMouseListener(new MouseAdapter() {
+			public void mouseClicked(MouseEvent e) {
+				log.println("gc running");
+				System.gc();
+				log.println("gc finished");
+			}
+		});
+	}
+	private Timer meterTimer;
+	
+	/**
+	 * @param visible
+	 *            If true, will make sure the meter component is next to the
+	 *            status bar, otherwise will make sure the status bar has the
+	 *            whole bottomRow component to itself.
+	 */
+	public void setMetersVisible(boolean visible) {
+		Insets in = new Insets(0,0,0,0);
+		// always cancel an existing timer and clear all components
+		if (meterTimer != null) {
+			meterTimer.cancel();
+			meterTimer = null;
+		}
+		bottomRow.removeAll();
+		if (visible) {
+			// insert meter next to status bar and start new timer
+			meterTimer = new Timer("memmeter-updater", true);
+			final TimerTask meterUpdater = new TimerTask() {
+				public void run() {
+					Runtime r = Runtime.getRuntime();
+					final long max = r.maxMemory();
+					final long used = r.totalMemory() - r.freeMemory();
+					final int percent = (int)Math.round(100d * used / max);
+					SwingUtilities.invokeLater(new Runnable() {
+						public void run() {
+							memmeter.setValue(percent);
+							memmeter.setToolTipText(MessageFormat.format(
+								"Memory: {0}% of {1} MB used, click to clean",
+								percent, Math.round(max/1024/1024)));
+						}
+					});
+				}
+			};
+			meterTimer.scheduleAtFixedRate(meterUpdater, new Date(), 1000);
+			bottomRow.add(statusBar, new GridBagConstraints(0,0,1,1,1,0,GridBagConstraints.WEST,GridBagConstraints.HORIZONTAL,new Insets(0,0,0,4),0,0));
+			bottomRow.add(memmeter, new GridBagConstraints(1,0,1,1,0,0,GridBagConstraints.EAST,GridBagConstraints.NONE,in,0,0));
+		} else {
+			// ensure status bar has entire bottom row to itself
+			bottomRow.add(statusBar, new GridBagConstraints(0,0,2,1,1,0,GridBagConstraints.WEST,GridBagConstraints.HORIZONTAL,in,0,0));
+		}
+		Config.set("main.meters.enable", visible);
+		bottomRow.validate();
+		bottomRow.repaint();
+	}
+    
     public Dimension getMainLViewManagerSize() {
 	return mainWindow.getSize();
     }
@@ -164,7 +217,7 @@ public class TestDriverLayered extends JPanel
         mainWindow.dumpPNG(filename);
     }
     
-    public LManager getLManager() {
+    public LManager2 getLManager() {
 	return lmanager;
     }
     
@@ -262,8 +315,6 @@ public class TestDriverLayered extends JPanel
 	Main.userProps.setProperty("SplitPaneHeight", String.valueOf(splitPane.getSize().height));
 	Main.userProps.setProperty("SplitPaneWidth", String.valueOf(splitPane.getSize().width));
 	Main.userProps.setProperty("jmars.user", Main.USER);
-	Main.userProps.setPropertyBool("TimeProjection",     Main.inTimeProjection());
-	Main.userProps.setPropertyBool("StudentApplication", Main.isStudentApplication());
 	Main.userProps.setPropertyInt("MainDividerLoc",	     splitPane.getDividerLocation());
 	Main.userProps.setPropertyInt("MainZoom",	 mainWindow.getMagnification());
 	Main.userProps.setPropertyInt("PannerZoom",	 panner.getMagnification());
@@ -342,18 +393,29 @@ public class TestDriverLayered extends JPanel
 				//data if present.
 				String factoryName = Main.userProps.getProperty("View" + String.valueOf(i), "");
 				LViewFactory factory = LViewFactory.getFactoryObject(factoryName);
-
+				// TODO: serialization formats change, and code to adapt from an
+				// old form to a new form WILL ABSOLUTELY BE REQUIRED. We just
+				// need a mechanism to make bolting in such code less of a hack.
+				if (factory == null && factoryName.endsWith("StampFactory")) {
+					try {
+						factory = StampFactory.createAdapterFactory(factoryName);
+					} catch (Exception e) {
+						log.println("Failure recreating instance of " + factoryName);
+						log.println(e);
+					}
+				}
+				
 				if ( factory != null ) {
 					SerializedParameters obj = 
 						(SerializedParameters) Main.userProps.loadUserObject("View" + String.valueOf(i) + "Parms");
 					view = factory.recreateLView(obj);
 					if (view != null) {
+						mainWindow.viewList.add(view);
 						Hashtable sobj = 
 							(Hashtable) Main.userProps.loadUserObject("View" + String.valueOf(i) + "Settings");
 						if ( sobj != null ){
 							view.setViewSettings(sobj);
 						}
-						mainWindow.viewList.add(view);
 					}
 				}
 			}

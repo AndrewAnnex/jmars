@@ -23,7 +23,6 @@ package edu.asu.jmars.layer.map2.msd;
 import java.awt.Component;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
-import java.awt.dnd.DnDConstants;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -52,13 +51,11 @@ import edu.asu.jmars.util.Util;
 public class AvailableMapsTree extends JTree {
 	private static DebugLog log = DebugLog.instance();
 	
-	final int supportedDragActions = DnDConstants.ACTION_COPY;
-
 	public AvailableMapsTree() {
 		//setCellRenderer(new MapTreeCellRenderer());
 		setupDragAndDrop();
 	}
-
+	
 	private void setupDragAndDrop(){
 		setTransferHandler(new AvailableMapsTreeTransferHandler());
 		setDragEnabled(true);
@@ -66,7 +63,7 @@ public class AvailableMapsTree extends JTree {
 	
 	public MapSource[] getSelectedMapSources() {
 		TreePath[] tps = getSelectionPaths();
-		if (tps == null)
+		if (tps == null || tps.length == 0)
 			return null;
 
 		MapSource[] srcs = new MapSource[tps.length];

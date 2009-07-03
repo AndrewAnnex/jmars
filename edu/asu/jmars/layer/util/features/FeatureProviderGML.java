@@ -53,23 +53,10 @@ public class FeatureProviderGML implements FeatureProvider {
 	private DebugLog log = DebugLog.instance();
 
 	public static final Field ID        = new Field( "id",           String.class, false);
-	public static final Field DESCRIPT  = Field.FIELD_LABEL;
-
-	public static final Field [] fieldArray = {
-		Field.FIELD_FEATURE_TYPE,
-		Field.FIELD_PATH,
-		Field.FIELD_SELECTED,
-		ID,
-		DESCRIPT,
-	};
 
 	public FeatureCollection load(String name) {
 		// Build a new FeatureProvider inside a new FeatureCollection
 		SingleFeatureCollection fc = new SingleFeatureCollection();
-
-		// Install the default schema in the FeatureCollection just built.
-		for(int i=0; i<fieldArray.length; i++)
-			fc.addField(fieldArray[i]);
 
 		// Build the List of Features for the FeatureCollection.
 		final File file = filterFile(name);
@@ -85,11 +72,10 @@ public class FeatureProviderGML implements FeatureProvider {
 					String featureTypeString = FeatureUtil.getFeatureTypeString(gmlFeatureTypeToFeatureType(gmlFeature.getType()));
 					GeneralPath gp = gmlFeature.getGeneralPath();
 					FPath path = new FPath (gp, FPath.SPATIAL_EAST);
-					newFeature.setAttributeQuiet( ID,                   gmlFeature.getId());
-					newFeature.setAttributeQuiet( DESCRIPT,             gmlFeature.getDescription());
-					newFeature.setAttributeQuiet( Field.FIELD_FEATURE_TYPE,     featureTypeString);
-					newFeature.setAttributeQuiet( Field.FIELD_PATH,     path.getSpatialWest());
-					newFeature.setAttributeQuiet( Field.FIELD_SELECTED, Boolean.FALSE);
+					newFeature.setAttributeQuiet( ID,                       gmlFeature.getId());
+					newFeature.setAttributeQuiet( Field.FIELD_LABEL,        gmlFeature.getDescription());
+					newFeature.setAttributeQuiet( Field.FIELD_FEATURE_TYPE, featureTypeString);
+					newFeature.setAttributeQuiet( Field.FIELD_PATH,         path.getSpatialWest());
 
 					// Add the feature to the list.
 					featureList.add( newFeature);
@@ -105,18 +91,18 @@ public class FeatureProviderGML implements FeatureProvider {
 
 	public int gmlFeatureTypeToFeatureType(int gmlFeatureType){
 		switch(gmlFeatureType){
-			case GML.POINT: return Feature.TYPE_POINT;
-			case GML.LINE: return Feature.TYPE_POLYLINE;
-			case GML.POLYGON: return Feature.TYPE_POLYGON;
+			case GML.POINT: return FPath.TYPE_POINT;
+			case GML.LINE: return FPath.TYPE_POLYLINE;
+			case GML.POLYGON: return FPath.TYPE_POLYGON;
 		}
-		return Feature.TYPE_NONE;
+		return FPath.TYPE_NONE;
 	}
 
 	public int featureTypeToGmlFeatureType(int featureType){
 		switch(featureType){
-			case Feature.TYPE_POINT: return GML.POINT;
-			case Feature.TYPE_POLYLINE: return GML.LINE;
-			case Feature.TYPE_POLYGON: return GML.POLYGON;
+			case FPath.TYPE_POINT: return GML.POINT;
+			case FPath.TYPE_POLYLINE: return GML.LINE;
+			case FPath.TYPE_POLYGON: return GML.POLYGON;
 		}
 		return GML.NONE;
 	}
@@ -147,14 +133,14 @@ public class FeatureProviderGML implements FeatureProvider {
 		for (Iterator fi = fc.getFeatures().iterator(); fi.hasNext(); i++){
 			Feature f = (Feature)fi.next();
 
-			int gmlShape = featureTypeToGmlFeatureType(f.getPathType());
+			int gmlShape = featureTypeToGmlFeatureType(f.getPath().getType());
 
 			FPath path = (FPath)f.getAttribute( Field.FIELD_PATH);
 			GeneralPath gp = path.getSpatialEast().getGeneralPath();
 
 			String id = (String) f.getAttribute(ID);
 
-			String desc = (String) f.getAttribute(DESCRIPT);
+			String desc = (String) f.getAttribute(Field.FIELD_LABEL);
 			GML.Feature feature = new GML.Feature(gmlShape, gp, id, desc);
 			gmlFeatures.add(feature);
 		}

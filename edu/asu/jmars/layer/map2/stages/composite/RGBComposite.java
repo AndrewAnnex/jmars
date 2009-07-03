@@ -48,22 +48,13 @@ public class RGBComposite extends CompositeStage implements Cloneable, Serializa
 	
 	private BufferedImage alphas = null;
 	private AlphaCombinerOp alphaCombiner = null;
-
-	// This field is used to keep track of the total number of instances of this stage that have been created
-	private static int layerCnt=0;
-	// This field is used to keep track of this stage's number, to allow for the display of a unique layer name
+	
+	/** @deprecated No longer contaminating the stage with an LManager problem! */
 	private int myCnt=0;
 	
 	public RGBComposite(RGBCompositeSettings settings) {
 		super(settings);
 		alphaCombiner = new AlphaCombinerOp();
-		myCnt=layerCnt++;
-	}
-	
-	// This method returns this stage's number, to allow for the creation of a unique layer name when more than
-	// one exist.
-	public int getLayerCount() {
-		return myCnt;
 	}
 	
 	public synchronized MapData process(int input, MapData inputData, Area changedArea) {

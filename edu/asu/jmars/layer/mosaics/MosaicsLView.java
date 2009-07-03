@@ -32,8 +32,6 @@ import java.awt.geom.Rectangle2D;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -54,12 +52,10 @@ import edu.asu.jmars.layer.map2.MapSource;
 import edu.asu.jmars.layer.util.features.FPath;
 import edu.asu.jmars.layer.util.features.Feature;
 import edu.asu.jmars.layer.util.features.FeatureCollection;
-import edu.asu.jmars.layer.util.features.FeatureEvent;
-import edu.asu.jmars.layer.util.features.FeatureListener;
-import edu.asu.jmars.layer.util.features.FeatureRenderer;
-import edu.asu.jmars.layer.util.features.FeatureUtil;
 import edu.asu.jmars.layer.util.features.Field;
 import edu.asu.jmars.layer.util.features.ShapeRenderer;
+import edu.asu.jmars.layer.util.features.Styles;
+import edu.asu.jmars.util.ObservableSetListener;
 import edu.asu.jmars.util.Util;
 
 public class MosaicsLView extends LView implements MouseListener {
@@ -67,9 +63,11 @@ public class MosaicsLView extends LView implements MouseListener {
 	Color borderColor;
 	Color borderColorSelected;
 	FeatureCollection fc;
+	MosaicsLayer layer;
 	
 	public MosaicsLView(MosaicsLayer layer){
 		super(layer);
+		this.layer = layer;
 		setBufferCount(2);
 		
 		addMouseListener(this);
@@ -79,11 +77,9 @@ public class MosaicsLView extends LView implements MouseListener {
 		borderColorSelected = Color.yellow;
 		
 		fc = layer.getFeatures();
-		fc.addListener(new FeatureListener(){
-			public void receive(FeatureEvent e) {
-				if (e.type == FeatureEvent.CHANGE_FEATURE && e.fields.contains(Field.FIELD_SELECTED)){
-					drawSelected();
-				}
+		layer.selections.addListener(new ObservableSetListener<Feature>() {
+			public void change(Set<Feature> added, Set<Feature> removed) {
+				drawSelected();
 			}
 		});
 	}
@@ -102,17 +98,17 @@ public class MosaicsLView extends LView implements MouseListener {
 		
 		return focusPanel;
 	}
-
-	private FeatureRenderer getFeatureRenderer(boolean forSelected){
+	
+	private ShapeRenderer getFeatureRenderer(boolean forSelected){
 		ShapeRenderer sr = new ShapeRenderer(this);
-		sr.setDefaultAttribute(ShapeRenderer.STYLE_KEY_DRAW_COLOR, forSelected? borderColorSelected: borderColor);
-		sr.setDefaultAttribute(ShapeRenderer.STYLE_KEY_LINE_WIDTH, new Double(forSelected? 2: 1));
-		sr.setDefaultAttribute(ShapeRenderer.STYLE_KEY_FILL_COLOR, fillColor);
-		sr.setDefaultAttribute(ShapeRenderer.STYLE_KEY_FILL_POLYGONS, forSelected? Boolean.FALSE: Boolean.TRUE);
-		sr.setDefaultAttribute(ShapeRenderer.STYLE_KEY_SHOW_VERTICES, Boolean.FALSE);
-		sr.setDefaultAttribute(ShapeRenderer.STYLE_KEY_SHOW_LINE_DIRECTION, Boolean.FALSE);
-		sr.setDefaultAttribute(ShapeRenderer.STYLE_KEY_SHOW_LABELS, Boolean.FALSE);
-		
+		Styles styles = sr.getStyles();
+		styles.lineColor.setConstant(forSelected? borderColorSelected: borderColor);
+		styles.lineWidth.setConstant(forSelected? 2f : 1f);
+		styles.fillColor.setConstant(fillColor);
+		styles.fillPolygons.setConstant(!forSelected);
+		styles.showVertices.setConstant(false);
+		styles.showLineDir.setConstant(false);
+		styles.showLabels.setConstant(false);
 		return sr;
 	}
 	
@@ -121,7 +117,7 @@ public class MosaicsLView extends LView implements MouseListener {
 			return;
 		
 		clearOffScreen(0);
-		FeatureRenderer sr = getFeatureRenderer(false);
+		ShapeRenderer sr = getFeatureRenderer(false);
 		// TODO: This does not seem the right way of avoiding NullPointerException
 		if (getOffScreenG2(0) != null)
 			sr.drawAll(getOffScreenG2(0), fc.getFeatures());
@@ -133,10 +129,10 @@ public class MosaicsLView extends LView implements MouseListener {
 			return;
 		
 		clearOffScreen(1);
-		FeatureRenderer srSel = getFeatureRenderer(true);
+		ShapeRenderer srSel = getFeatureRenderer(true);
 		// TODO: This does not seem the right way of avoiding NullPointerException
 		if (getOffScreenG2(1) != null)
-			srSel.drawAll(getOffScreenG2(1), FeatureUtil.getSelectedFeatures(fc));
+			srSel.drawAll(getOffScreenG2(1), layer.selections);
 		repaint();
 	}
 	
@@ -180,12 +176,10 @@ public class MosaicsLView extends LView implements MouseListener {
 		if (features.isEmpty())
 			return null;
 		
-		Set<Feature> selected = new HashSet<Feature>(FeatureUtil.getSelectedFeatures(features));
-		
 		StringBuffer sbuf = new StringBuffer();
 		sbuf.append("<html>");
 		for(Feature f: features){
-			sbuf.append("<b>"+(selected.contains(f)?"<i>":"")+f.getAttribute(Field.FIELD_LABEL)+(selected.contains(f)?"</i>":"")+"</b><br>");
+			sbuf.append("<b>"+(layer.selections.contains(f)?"<i>":"")+f.getAttribute(Field.FIELD_LABEL)+(layer.selections.contains(f)?"</i>":"")+"</b><br>");
 			String abstractText = (String)f.getAttribute(FeatureProviderWMS.FIELD_ABSTRACT);
 			if (abstractText != null && abstractText.trim().length() > 0){
 				sbuf.append("<table cellspacing=0 cellpadding=0>");
@@ -204,17 +198,16 @@ public class MosaicsLView extends LView implements MouseListener {
 
 	public Component[] getContextMenu(Point2D worldPt){
 		Set<Feature> features = getFeaturesUnder(worldPt);
-		Set<Feature> selected = new HashSet<Feature>(FeatureUtil.getSelectedFeatures(features));
 		List<Component> centerAtMenuItems = new ArrayList<Component>();
 		List<Component> loadMenuItems = new ArrayList<Component>();
 		JMenuItem menuItem;
 		for(Feature f: features){
 			menuItem = new JMenuItem(new CenterAtAction(f));
-			if (selected.contains(f))
+			if (layer.selections.contains(f))
 				menuItem.setFont(menuItem.getFont().deriveFont(Font.ITALIC|Font.BOLD));
 			centerAtMenuItems.add(menuItem);
 			menuItem = new JMenuItem(new LoadMosaicAction(f));
-			if (selected.contains(f))
+			if (layer.selections.contains(f))
 				menuItem.setFont(menuItem.getFont().deriveFont(Font.ITALIC|Font.BOLD));
 			loadMenuItems.add(menuItem);
 		}
@@ -262,18 +255,9 @@ public class MosaicsLView extends LView implements MouseListener {
 	
 	public void mouseClicked(MouseEvent e) {
 		if (SwingUtilities.isLeftMouseButton(e) && e.getClickCount() == 1){
+			layer.selections.clear();
 			Point2D worldPt = getProj().screen.toWorld(e.getPoint());
-			Set<Feature> underMouse = getFeaturesUnder(worldPt);
-			
-			List selected = FeatureUtil.getSelectedFeatures(fc);
-			if (!selected.isEmpty()){
-				FeatureUtil.deselectAllFeatures(fc);
-			}
-			
-			if (!underMouse.isEmpty()){
-				fc.setAttributes(findClosest(underMouse, worldPt),
-						Collections.singletonMap(Field.FIELD_SELECTED, Boolean.TRUE));
-			}
+			layer.selections.addAll(getFeaturesUnder(worldPt));
 		}
 	}
 

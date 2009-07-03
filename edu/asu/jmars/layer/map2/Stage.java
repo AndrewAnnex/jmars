@@ -21,7 +21,6 @@
 package edu.asu.jmars.layer.map2;
 
 import java.awt.geom.Area;
-import java.beans.PropertyChangeListener;
 import java.io.Serializable;
 
 public interface Stage extends Cloneable, Serializable {
@@ -76,23 +75,6 @@ public interface Stage extends Cloneable, Serializable {
 	 * stage.
 	 */
 	public MapAttr produces();
-	
-	/**
-	 * Adds a PropertyChangeListener to listen to the model changes.
-	 * These events are for the benefit of StageView that may be tied
-	 * to this stage.<p>
-	 * <em>If you would like to get notification of changes
-	 * to Stage state initiated by the user, register with the
-	 * {@link StageView#addChangeListener(javax.swing.event.ChangeListener)}
-	 * instead.</em>
-	 */
-	public void   addPropertyChangeListener(PropertyChangeListener l);
-	
-	/**
-	 * Removes a PropertyChangeListener which was listening to model changes.
-	 */
-	public void   removePropertyChangeListener(PropertyChangeListener l);
-	
 	
 	public Object clone() throws CloneNotSupportedException;
 }

@@ -69,6 +69,7 @@ public class SerializingThread extends Thread {
             catch(InterruptedException ex){}
         }
         busy = true;
+        Thread.interrupted();
         return (Runnable)outstanding.removeFirst();
     }
     
@@ -78,6 +79,21 @@ public class SerializingThread extends Thread {
     
     public synchronized boolean isIdle(){
     	return (!busy && outstanding.size() == 0);
+    }
+    
+    /**
+	 * Interrupts any current activity, and if flushPending is true clears any
+	 * future activity, and returns whether a flush occurred
+	 */
+    public synchronized boolean interruptIfBusy(boolean flushPending){
+    	if (!isIdle()){
+    		interrupt();
+    		if (flushPending) {
+    			outstanding.clear();
+        		return true;
+    		}
+    	}
+    	return false;
     }
     
 	public void run() {

@@ -22,27 +22,30 @@ package edu.asu.jmars.layer.map2;
 
 import java.awt.image.DataBuffer;
 import java.util.Arrays;
+import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
-import edu.asu.jmars.layer.map2.stages.BandExtractorStage;
 import edu.asu.jmars.layer.map2.stages.BandExtractorStageSettings;
-import edu.asu.jmars.layer.map2.stages.GrayscaleStage;
 import edu.asu.jmars.layer.map2.stages.GrayscaleStageSettings;
 import edu.asu.jmars.layer.map2.stages.composite.CompositeStage;
-import edu.asu.jmars.layer.map2.stages.composite.NoComposite;
 import edu.asu.jmars.layer.map2.stages.composite.NoCompositeSettings;
 import edu.asu.jmars.util.Util;
 
 /**
- * Describes one pipeline source, and processing stages for it
+ * Describes one path through a series of processing steps. Graphs of
+ * processing steps are represented by finding all of the linear paths through
+ * the graph and representing them as an array of Pipeline objects.
  * 
- * The source is the origin of the data. The processes array supplies the
- * processor with the processing steps to take, and the order to take them in.
- * This can be replaced with a more complex object if need ever arises to
- * allow more complicated processing (tee data, for example) but it will still
- * need to have a data structure the processor can walk in a predetermined
- * order.
+ * There are some static methods on this object for working with arrays of
+ * Pipeline objects.
+ * 
+ * The {@link #getDeepCopy(Pipeline[])} method creates a complete copy of a
+ * given graph. The {@link #getStageCopy} creates a copy of the <i>nodes</i> of
+ * the graph, causing the two copies to retain the same settings. When copies
+ * need to be made, choose between these methods based on whether the two
+ * pipelines should see changes to each others' settings.
  */
 public class Pipeline {
 	private MapSource source;
@@ -57,6 +60,11 @@ public class Pipeline {
 		this(source, concat(innerStages, finalStage));
 	}
 	
+	/**
+	 * Clones the entire <code>pipeline</code>, including the settings so
+	 * changes to settings on the input pipeline are not seen by the output
+	 * pipeline, and vice-versa
+	 */
 	public static Pipeline[] getDeepCopy(Pipeline[] pipeline) throws CloneNotSupportedException {
 		if (pipeline == null)
 			return null;
@@ -75,6 +83,25 @@ public class Pipeline {
 		}
 		
 		return out;
+	}
+	
+	/** Duplicates the given pipeline but preserves the original {@link StageSettings} */
+	public static Pipeline[] getStageCopy(Pipeline[] pipes) {
+		Map<Stage,Stage> oldToNew = new IdentityHashMap<Stage,Stage>();
+		Pipeline[] outPipes = new Pipeline[pipes.length];
+		for (int i = 0; i < outPipes.length; i++) {
+			MapSource source = pipes[i].getSource();
+			Stage[] stages = new Stage[pipes[i].getStageCount()];
+			for (int j = 0; j < stages.length; j++) {
+				Stage oldStage = pipes[i].getStageAt(j);
+				if (! oldToNew.containsKey(oldStage)) {
+					oldToNew.put(oldStage, oldStage.getSettings().createStage());
+				}
+				stages[j] = oldToNew.get(oldStage);
+			}
+			outPipes[i] = new Pipeline(source, stages);
+		}
+		return outPipes;
 	}
 	
 	public static CompositeStage getCompStage(Pipeline[] pipeline){
@@ -135,7 +162,7 @@ public class Pipeline {
 	}
 	
 	public static Pipeline buildAutoFilled(MapSource source, Stage toStage, int toStageInputNumber) throws AutoFillException {
-		Stage[] autoFillStages = (Stage[])getAutoFillStages(source.getMapAttr(), toStage, toStageInputNumber, 10).toArray(new Stage[0]);
+		Stage[] autoFillStages = (Stage[])getAutoFillStages(source, toStage, toStageInputNumber, 10).toArray(new Stage[0]);
 		return new Pipeline(source, autoFillStages);
 	}
 	
@@ -143,7 +170,9 @@ public class Pipeline {
 	// OR better yet, since auto-filling is in response to a user action and whatNeededFor
 	// returning null signifies an inability to fail that, this goop should throw a checked
 	// exception that the user interface code has to catch and handle.
-	public static List<Stage> getAutoFillStages(MapAttr srcAttr, Stage tgtStage, int tgtInput, int maxStages) throws AutoFillException {
+	public static List<Stage> getAutoFillStages(MapSource source, Stage tgtStage, int tgtInput, int maxStages) throws AutoFillException {
+		MapAttr srcAttr = source.getMapAttr();
+		
 		if (srcAttr == null)
 			throw new AutoFillException("Attributes are null.", srcAttr, tgtStage);
 		
@@ -178,7 +207,12 @@ public class Pipeline {
 				}
 				else if (tgtAttrs[i].getDataType() != DataBuffer.TYPE_UNDEFINED &&
 						tgtAttrs[i].getDataType() == DataBuffer.TYPE_BYTE){
-					Stage s = (new GrayscaleStageSettings()).createStage();
+					// grayscalestage only handles one band inputs anyway, so
+					// assume the first ignore value component is the only
+					// ignore value component
+					GrayscaleStageSettings settings = new GrayscaleStageSettings();
+					settings.setIgnore(source.getIgnoreValue()[0]);
+					Stage s = settings.createStage();
 					list.add(list.size()-1, s);
 					srcAttr = s.produces();
 					break;

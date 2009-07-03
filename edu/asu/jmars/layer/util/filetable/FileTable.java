@@ -25,9 +25,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -41,9 +39,8 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableCellRenderer;
 
 import edu.asu.jmars.Main;
-import edu.asu.jmars.layer.util.features.Field;
+import edu.asu.jmars.layer.util.features.FeatureCollection;
 import edu.asu.jmars.layer.util.features.MultiFeatureCollection;
-import edu.asu.jmars.layer.util.features.SingleFeatureCollection;
 import edu.asu.jmars.util.History;
 
 /**
@@ -65,26 +62,21 @@ import edu.asu.jmars.util.History;
  * A flag that indicates that the Feature has been set as the default
  * receiver for the add Feature operations.  
  * </ul>
- * The FileTable maintains an untitled SingleFeatureCollection which is
- * never removed. This SingleFeatureCollection is there as the initial default
- * SingleFeatureCollection.
  * 
  * @author saadat
  *
  */
-public class FileTable extends JTable
-	implements DefaultChangedListener
-{
-	FileTableModel ftm = new FileTableModel();
-	MultiFeatureCollection mfc = new MultiFeatureCollection();
-	SingleFeatureCollection untitledFeatureCollection;
-	History history;
-
-	public FileTable() {
+public class FileTable extends JTable implements DefaultChangedListener {
+	private final FileTableModel ftm = new FileTableModel();
+	private final MultiFeatureCollection mfc = new MultiFeatureCollection();
+	private final FileTableListSelectionListener selListener;
+	
+	public FileTable(History history) {
 		super();
 		setModel(ftm);
-		//getSelectionModel().addListSelectionListener(mfcul);
-		getSelectionModel().addListSelectionListener(new FileTableListSelectionListener(ftm, mfc));
+		ftm.setHistory(history);
+		selListener = new FileTableListSelectionListener(ftm, mfc);
+		getSelectionModel().addListSelectionListener(selListener);
 		ftm.addDefaultChangedListener(this);
 
 		for(int i=0; i<FileTableModel.columns.length; i++)
@@ -95,11 +87,6 @@ public class FileTable extends JTable
 			else {
 				getColumnModel().getColumn(i).setPreferredWidth(((Integer)FileTableModel.columns[i][2]).intValue());
 			}
-
-		// Add the Untitled SingleFeatureCollection to the SingleFeatureCollections.
-		untitledFeatureCollection = new SingleFeatureCollection();
-		SingleFeatureCollection.addDefaultFields(untitledFeatureCollection);
-		add(untitledFeatureCollection);
 
 		/*
 		 *  Change default SingleFeatureCollection on double-click on a row at the first column.
@@ -113,146 +100,22 @@ public class FileTable extends JTable
 					int col = columnAtPoint(e.getPoint());
 					if (col == FileTableModel.COL_IDX_DEFAULT_INDICATOR){
 						int row = rowAtPoint(e.getPoint());
-						ftm.setDefaultFeatureCollection(row);
+						ftm.setDefaultFeatureCollection(ftm.getAll().get(row));
 					}
 				}
 			}
 		});
 	}
-
-	/**
-	 * Adds a SingleFeatureCollection to the FileTable. If this is the first
-	 * SingleFeatureCollection added, it automatically becomes the default.
-	 * 
-	 * @param fc SingleFeatureCollection to add.
-	 */
-	public void add(SingleFeatureCollection fc){
-		ftm.add(fc);
+	
+	public FileTableModel getFileTableModel() {
+		return ftm;
 	}
-
-	/**
-	 * Removes a SingleFeatureCollection from the FileTable. If the removed
-	 * SingleFeatureCollection was the defaultFeatureCollection, the TableModel
-	 * choses a new default automatially and broadcasts it via the
-	 * DefaultChangedListener interface. This call does not remove the
-	 * untitled SingleFeatureCollection.
-	 * 
-	 * @param fc SingleFeatureCollection to remove.
-	 * @return true for successful removal, false otherwise.
-	 */
-	public boolean remove(SingleFeatureCollection fc){
-		// Disallow removal of the untitledFeatureCollection
-		if (fc == untitledFeatureCollection)
-			return false;
-		return ftm.remove(fc);
+	
+	/** @return The selected FeatureCollection objects, in the order the user selected them. */
+	public List<FeatureCollection> getSelectedFeatureCollections() {
+		return new ArrayList<FeatureCollection>(selListener.getSelections());
 	}
-
-	/**
-	 * Remove selected rows from the FileTable. It will not, however, remove
-	 * the untitled SingleFeatureCollection.
-	 * 
-	 * @return true if everything got removed correctly, false otherwise.
-	 */
-	public boolean removeSelected(){
-		int[] selectedRows = getSelectedRows();
-
-		List removeList = new ArrayList();
-		for(int i=0; i<selectedRows.length; i++)
-			removeList.add(get(selectedRows[i]));
-
-		return removeAll(removeList);
-	}
-
-	/**
-	 * Return selected SingleFeatureCollections. In theory we could also get the
-	 * supporting SingleFeatureCollections behind the MultiFeatureCollection and
-	 * it would be the same thing.
-	 * 
-	 * @return A list of SingleFeatureCollection objects corresponding to the 
-	 *         selected rows in the FileTable.
-	 */
-	public List getSelectedFeatureCollections(){
-		int[] selectedRows = getSelectedRows();
-
-		List list = new ArrayList();
-		for(int i=0; i<selectedRows.length; i++)
-			list.add(get(selectedRows[i]));
-
-		return list;
-	}
-
-	/**
-	 * Return all FetureCollections that make up this FileTable.
-	 * @return A list of FeatureCollection objects corresponding to all
-	 *         rows in the FileTable.
-	 */
-	public List getFeatureCollections(){
-		return Arrays.asList(ftm.getAll());
-	}
-	/**
-	 * Removes the given list of SingleFeatureCollection objects from the FileTable.
-	 * If the defaultFeatureCollection is removed, a new default is selected
-	 * if one is available. This selection is broadcast via the 
-	 * DefaultChangedListener. This call does not remove the untitled 
-	 * SingleFeatureCollection. Note that even if the untitledFeatureCollection is
-	 * a part of the input list, it is not deleted.
-	 * 
-	 * @param fcl List of SingleFeatureCollection objects to remove.
-	 * @return true if everything in the fcl got removed, false otherwise.
-	 */
-	public boolean removeAll(List fcl){
-		boolean result = false;
-		for (Iterator it=fcl.iterator(); it.hasNext(); )
-			result |= remove((SingleFeatureCollection)it.next());
-		return result;
-	}
-
-	/**
-	 * Makes the given SingleFeatureCollection the default SingleFeatureCollection
-	 * for add Feature operations. The SingleFeatureCollection must already be
-	 * a part of the FileTable, otherwise, exceptions are thrown.
-	 * 
-	 * @param fc SingleFeatureCollection to set as default.
-	 */
-	public void setDefault(SingleFeatureCollection fc){
-		ftm.setDefaultFeatureCollection(fc);
-	}
-
-	/**
-	 * Returns the default SingleFeatureCollection as set in the MultiFeatureCollection.
-	 * @return The defaultFeatureCollection.
-	 */
-	public SingleFeatureCollection getDefault(){
-		return ftm.getDefaultFeatureCollection();
-	}
-
-	/**
-	 * Returns the SingleFeatureCollection at the specified index or null
-	 * for an invalid index.
-	 */
-	public SingleFeatureCollection get(int index){
-		return ftm.get(index);
-	}
-
-	/**
-	 * Returns whether the specified SingleFeatureCollection has been modified.
-	 * @return true if the SingleFeatureCollection is known to be modified, false
-	 *          otherwise. The result is false even when the FileTable has
-	 *          no knowledge of this SingleFeatureCollection.
-	 */
-	public boolean getTouched(SingleFeatureCollection fc){
-		return ftm.getTouched(fc);
-	}
-
-	/**
-	 * Sets the <em>modified</em> status of a SingleFeatureCollection. The request
-	 * is silently ignored if the SingleFeatureCollection is not a part of this
-	 * FileTable.
-	 */
-	public void setTouched(SingleFeatureCollection fc, boolean flag) {
-		ftm.setTouched(fc, flag);
-	}
-
+	
 	/**
 	 * Returns the MultiFeatureCollection produced by this FileTable. There
 	 * is a single instance of this collection in the FileTable, thus
@@ -284,10 +147,10 @@ public class FileTable extends JTable
 			addSet.removeAll(existing);
 
 			for(Iterator i=removeSet.iterator(); i.hasNext(); ){
-				mfc.removeFeatureCollection((SingleFeatureCollection)i.next());
+				mfc.removeFeatureCollection(i.next());
 			}
 			for(Iterator i=addSet.iterator(); i.hasNext(); ){
-				mfc.addFeatureCollection((SingleFeatureCollection)i.next());
+				mfc.addFeatureCollection(i.next());
 			}
 			// NOTE: There is not deselect event.
 		}
@@ -302,9 +165,16 @@ public class FileTable extends JTable
 	 * @author saadat
 	 *
 	 */
-	public class FileTableListSelectionListener implements ListSelectionListener {
-		FileTableModel ftm;
-		MultiFeatureCollection mfc;
+	public static class FileTableListSelectionListener implements ListSelectionListener {
+		/**
+		 * Tracks which collections are selected in the file table; we do not simply
+		 * use the list of collections in the MultiFeatureCollection so that it can
+		 * be a superset of the FileTable contents, and also this retains the order of
+		 * selection which affects the order of columns in the feature table.
+		 */
+		private final Set<FeatureCollection> lastSelections = new LinkedHashSet<FeatureCollection>();
+		private final FileTableModel ftm;
+		private final MultiFeatureCollection mfc;
 
 		/**
 		 * Constructs a FileTableListSelectionListener which ties the FileTable, 
@@ -318,7 +188,11 @@ public class FileTable extends JTable
 			this.ftm = ftm;
 			this.mfc = mfc;
 		}
-
+		
+		public List<FeatureCollection> getSelections() {
+			return new ArrayList<FeatureCollection>(lastSelections);
+		}
+		
 		/**
 		 * Returns an array of row indices corresponding to the rows selected in
 		 * the table. The array is guaranteed to be non-null.
@@ -358,27 +232,29 @@ public class FileTable extends JTable
 				return;
 			if (!(e.getSource() instanceof ListSelectionModel))
 				return;
-
+			
 			int[] selectedRows = getSelectedRows(e);
-			Set selected = new HashSet();
-			for(int i=0; i<selectedRows.length; i++)
+			Set<FeatureCollection> selected = new LinkedHashSet<FeatureCollection>();
+			for(int i=0; i<selectedRows.length; i++) {
 				selected.add(ftm.get(selectedRows[i]));
-
-			Set existing = new HashSet(mfc.getSupportingFeatureCollections());
-			Set removeSet = new HashSet(existing);
-			removeSet.removeAll(selected);
-			Set addSet = new HashSet(selected);
-			addSet.removeAll(existing);
-
-			for(Iterator i=removeSet.iterator(); i.hasNext(); ){
-				mfc.removeFeatureCollection((SingleFeatureCollection)i.next());
 			}
-			for(Iterator i=addSet.iterator(); i.hasNext(); ){
-				mfc.addFeatureCollection((SingleFeatureCollection)i.next());
+			
+			for (FeatureCollection fc: new ArrayList<FeatureCollection>(lastSelections)) {
+				if (!selected.contains(fc)) {
+					mfc.removeFeatureCollection(fc);
+					lastSelections.remove(fc);
+				}
+			}
+			
+			for (FeatureCollection fc: selected) {
+				if (!lastSelections.contains(fc)) {
+					mfc.addFeatureCollection(fc);
+					lastSelections.add(fc);
+				}
 			}
 		}
 	}
-
+	
 	/**
 	 * Tie-up class that links the defaultFeatureCollection selected by
 	 * the user to the MultiFeatureCollection. This default value is
@@ -435,17 +311,5 @@ public class FileTable extends JTable
 
 			return this;
 		}
-	}
-
-	/* Versionable Interface */
-
-	/**
-	 * Sets the history object.
-	 * @param history History object to send historical changes to.
-	 */
-	public void setHistory(History history){
-		ftm.setHistory (history);
-		untitledFeatureCollection.setHistory(history);
-		ftm.setHistory(history);
 	}
 }

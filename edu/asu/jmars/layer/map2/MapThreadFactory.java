@@ -28,27 +28,23 @@ import java.util.concurrent.atomic.AtomicInteger;
  * lowers the priority.
  */
 public class MapThreadFactory implements ThreadFactory {
-    static final AtomicInteger poolNumber = new AtomicInteger(1);
-    final ThreadGroup group;
-    final AtomicInteger threadNumber = new AtomicInteger(1);
-    final String namePrefix;
+	static final AtomicInteger poolNumber = new AtomicInteger(1);
+	final ThreadGroup group;
+	final AtomicInteger threadNumber = new AtomicInteger(1);
+	final String namePrefix;
 
-    public MapThreadFactory() {
-        SecurityManager s = System.getSecurityManager();
-        group = (s != null)? s.getThreadGroup() :
-                             Thread.currentThread().getThreadGroup();
-        namePrefix = "pool-" + 
-                      poolNumber.getAndIncrement() + 
-                     "-thread-";
-    }
+	public MapThreadFactory(String name) {
+		SecurityManager s = System.getSecurityManager();
+		group = (s != null)? s.getThreadGroup() : Thread.currentThread().getThreadGroup();
+		namePrefix = name + "-" + poolNumber.getAndIncrement() + "-thread-";
+	}
 
-    public Thread newThread(Runnable r) {
-        Thread t = new Thread(group, r, 
-                              namePrefix + threadNumber.getAndIncrement(),
-                              0);
-        if (t.isDaemon())
-            t.setDaemon(false);
-        t.setPriority(Thread.MIN_PRIORITY);
-        return t;
-    }
+	public Thread newThread(Runnable r) {
+		Thread t = new Thread(group, r, namePrefix + threadNumber.getAndIncrement(), 0);
+		// do NOT want a hung Stage to keep the JVM open
+		t.setDaemon(true);
+		// do NOT want threads killing the AWT thread
+		t.setPriority(Thread.MIN_PRIORITY);
+		return t;
+	}
 }

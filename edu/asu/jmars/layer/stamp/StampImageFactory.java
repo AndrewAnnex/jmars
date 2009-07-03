@@ -20,78 +20,145 @@
 
 package edu.asu.jmars.layer.stamp;
 
-import edu.asu.jmars.util.*;
-import java.awt.*;
-import java.awt.image.*;
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.awt.Image;
+import java.awt.Toolkit;
+import java.awt.image.BufferedImage;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.Socket;
+import java.net.URL;
+import java.net.URLConnection;
 
+import edu.asu.jmars.Main;
+import edu.asu.jmars.util.DebugLog;
+import edu.asu.jmars.util.Util;
+import edu.asu.msff.Stamp;
 
 /**
- * Abstract factory defining framework for creating instances of 
- * {@link StampImage} subclasses from image data contained in 
+ * Factory for creating instances of StampImages from image data contained in
  * files, URLs, and any {@link Stamp} which contains a valid URL. 
- * 
- * @author hoffj MSFF-ASU
  */
-public abstract class StampImageFactory
+public class StampImageFactory
 {
     private static final DebugLog log = DebugLog.instance();
     private static final Toolkit toolkit = Toolkit.getDefaultToolkit();
     
-    protected HashSet timeoutHosts = new HashSet();
+    static {
+    	File cache = new File(StampImage.STAMP_CACHE);
+    	if (!cache.exists()) {
+    		if (!cache.mkdirs()) {
+    			throw new IllegalStateException("Unable to create stamp cache directory, check permissions in " + Main.getJMarsPath());
+    		}
+    	} else if (!cache.isDirectory()) {
+    		throw new IllegalStateException("Stamp cache cannot be created, found regular file at " + StampImage.STAMP_CACHE);
+    	}
+    	File srcCache = new File(StampImage.STAMP_CACHE+"/src");
+    	if (!srcCache.exists()) {
+    		if (!srcCache.mkdirs()) {
+    			throw new IllegalStateException("Unable to create stamp cache directory, check permissions in " + Main.getJMarsPath());
+    		}
+    	} else if (!srcCache.isDirectory()) {
+    		throw new IllegalStateException("Stamp cache cannot be created, found regular file at " + StampImage.STAMP_CACHE+"/src");
+    	}
+    }
     
     /**
+     * Loads image from URL reference contained in {@link Stamp} instance; 
+     * pops up progress monitor dialog as needed.  Supports
+     * specialized tile-based caching mechanism used in {@link MocImage}.
      * 
+     * @param s stamp containing valid URL.
      */
-    public StampImageFactory()
+    public static StampImage load(StampShape s, String instrument, String type)
     {
-    }
-    
-    /**
-     **  Loads image from URL.
-     **/
-    public StampImage load(URL url) throws Exception
-    {
-        return null;
-    }
-    
-    /**
-     ** Loads image from file.
-     **/
-    public StampImage load(String fname)
-    {
-        return null;
-    }
-    
-    /**
-     ** Loads image from stamp information.
-     **/
-    public StampImage load(Stamp s)
-    {
-        return null;
-    }
+        StampImage stampImage = null;
 
-    
-    /**
-     * Loads image from file.
-     * 
-     * @param fname Any valid filename.
-     */
-    protected static BufferedImage loadImage(String fname)
-    {
-        return loadImage(fname, null);
-    }
-    
+    	if (instrument.equalsIgnoreCase("CTX")||
+    			instrument.equalsIgnoreCase("HIRISE")||
+    			instrument.equalsIgnoreCase("MOC")||
+    			instrument.equalsIgnoreCase("VIKING")||
+    			instrument.equalsIgnoreCase("HRSC")||
+    			instrument.equalsIgnoreCase("MOSAIC")||
+    			instrument.equalsIgnoreCase("MAP")||
+    			instrument.equalsIgnoreCase("CRISM")||
+//    			instrument.equalsIgnoreCase("THEMIS")||
+    			instrument.equalsIgnoreCase("ASTER") ||
+    			instrument.equalsIgnoreCase("APOLLO")) {
+    	    return new StampImage(s, null, s.getId(), instrument, type);                            
+    	}
+    	
+        try {
+            BufferedImage image = loadImage(getStrippedFilename(s.getId()));
+            
+            if (image == null) {
+            	String urlStr=StampLayer.stampURL+"ImageServer?instrument="+instrument+"&id="+s.getId()+StampLayer.versionStr;
+            	
+            	if (type!=null && type.length()>=0) {
+            		urlStr+="&imageType="+type;
+            	}
+            	
+            	urlStr+="&zoom="+Main.testDriver.mainWindow.getMagnification();
+            	
+            	log.println("Image being loaded from : " + urlStr);
+
+            	URL url = new URL(urlStr);
+            	
+            	String cacheFileName = StampImage.STAMP_CACHE + "src/"+getStrippedFilename(urlStr);
+
+        		if ((s.getId().startsWith("I") && (type.contains("BTR") || type.contains("PBT"))) || (s.getId().startsWith("V") && type.contains("ABR"))) {
+                	File cacheFile = new File(cacheFileName);
+                	
+                	if (cacheFile.exists()) {
+                		return new PdsImage(s, cacheFile, s.getId(), type, Instrument.THEMIS);
+                	} else {                	
+	        			InputStream in = url.openConnection().getInputStream();
+	        		
+	        			FileOutputStream out = new FileOutputStream(cacheFileName);
+	        			
+	        	        byte[] temp = new byte[40960];
+	        	        
+	    	            int count;
+	    	            while((count = in.read(temp)) >= 0) {
+	    	            	out.write(temp, 0, count);
+	    	            }
+	
+	        	        in.close();
+	        	        out.close();
+	        	        
+	        			return new PdsImage(s, cacheFile, s.getId(), type, Instrument.THEMIS);
+                	}
+        		}
+
+        		// This is currently reachable for THEMIS BWS and DCS images
+            	image = loadImage(cacheFileName);
+            	
+            	if (image==null) {            	
+            		image = loadImage(url);
+            	}
+            }
+            
+            if (image != null) {
+           		stampImage = new StampImage(s, image, s.getId(), instrument, type);
+            }
+        }
+        catch (Throwable e) {
+            log.aprintln(e);
+        }
+        
+        return stampImage;
+    }    
     /**
      * Loads image from file; pops up progress monitor dialog as needed.
      * 
      * @param fname Any valid filename.
-     * @param parentComponent UI component to reference for dialog creation 
-     * purposes; may be null.
      */
-    protected static BufferedImage loadImage(String fname, Component parentComponent)
+    protected static BufferedImage loadImage(String fname)
     {
         BufferedImage image = null;
         
@@ -101,7 +168,7 @@ public abstract class StampImageFactory
             Image img;
             
             try {
-                byte[] buf = loadImageWithProgress(parentComponent, new FileInputStream(fname));
+                byte[] buf = loadImage(new FileInputStream(fname));
                 if (buf != null)
                     img = toolkit.createImage(buf);
                 else {
@@ -124,16 +191,23 @@ public abstract class StampImageFactory
         return image;
     }
     
-    /**
-     * Loads image from URL.
-     * 
-     * @param url Any valid URL supported by {@link URL} class.
-     */
-    protected static BufferedImage loadImage(URL url)
-    {
-        return loadImage(url,  null);
+    protected static void saveSrcImage(String fname, byte b[]) {
+        if (fname != null &&
+                toolkit != null) {
+                
+                try {
+                	
+                	FileOutputStream fos = new FileOutputStream(StampImage.STAMP_CACHE+"src/"+getStrippedFilename(fname));
+                	fos.write(b);
+                	fos.close();
+                }
+                catch (Exception e) {
+                	e.printStackTrace();
+                }
+                
+    	}    	
     }
-    
+              
     /**
      * Loads image from URL; pops up progress monitor dialog as needed.
      * 
@@ -141,7 +215,7 @@ public abstract class StampImageFactory
      * @param parentComponent UI component to reference for dialog creation 
      * purposes; may be null.
      */
-    protected static BufferedImage loadImage(URL url, Component parentComponent)
+    protected static BufferedImage loadImage(URL url)
     {
         BufferedImage image = null;
         
@@ -161,10 +235,11 @@ public abstract class StampImageFactory
                 if (uc != null) {
                     int size = uc.getContentLength();
                     log.println("content length = " + size);
-                    byte[] buf = loadImageWithProgress(parentComponent, uc.getInputStream(), size);
-                    if (buf != null)
+                    byte[] buf = loadImage(uc.getInputStream());
+                    if (buf != null) {
+                    	saveSrcImage(url.toString(), buf);
                         img = toolkit.createImage(buf);
-                    else {
+                    } else {
                         log.println("image load cancelled or failed");
                         return null;
                     }
@@ -187,31 +262,11 @@ public abstract class StampImageFactory
         
         return image;
     }
-    
+        
     /**
-     ** Loads image via passed input stream into returned byte array; displays
-     ** progress dialog as needed.
-     **
-     ** @param parentComponent UI component to reference for dialog creation 
-     ** purposes; may be null.
+     ** Loads image via passed input stream into returned byte array
      **/
-    protected static byte[] loadImageWithProgress(Component parentComponent, InputStream inStream)
-    {
-        return loadImageWithProgress(parentComponent, inStream, -1);
-    }
-    
-    /**
-     ** Loads image via passed input stream into returned byte array; displays
-     ** progress dialog as needed.
-     **
-     ** @param parentComponent UI component to reference for dialog creation 
-     ** purposes; may be null.
-     **
-     ** @param imageSize size of image to be loaded if known; used for progress
-     ** monitor; value is ignored if it is non-positive.
-     **/
-    protected static byte[] loadImageWithProgress(Component parentComponent, InputStream inStream,
-                                                  int imageSize)
+    protected static byte[] loadImage(InputStream inStream)
     {
         int BUFF_SIZE = 512000;
         ByteArrayOutputStream outBuf = new ByteArrayOutputStream();
@@ -222,14 +277,10 @@ public abstract class StampImageFactory
         if (inStream == null ||
             outBuf == null ||
             inBuf == null) {
-            log.aprintln("failed to create buffers for loading image");
+            log.println("failed to create buffers for loading image");
             return  null;
         }
         
-        StampProgressMonitor pm = new StampProgressMonitor(parentComponent,
-                                                           "Loading Image",
-                                                           "", 0, imageSize, 0,
-                                                           400, 700);
         try {
             int count = 0;
             int total = 0;
@@ -238,19 +289,13 @@ public abstract class StampImageFactory
             
             while((count = bin.read(inBuf)) >= 0) {
                 total += count;
-                outBuf.write(inBuf, 0, count);
-                
-                pm.setProgress(total);
-                if (pm.isCanceled())
-                    return null;
-                
+                outBuf.write(inBuf, 0, count);                
             }
         }
         catch(IOException e) {
-            log.aprintln("error loading image: " + e);
+            log.println("error loading image: " + e);
         }
         
-        pm.close();
         return outBuf.toByteArray();
     }
     
@@ -299,5 +344,40 @@ public abstract class StampImageFactory
         log.println("webserver " + host + " is not alive");
         return false;
     }
-    
+    /**
+     * Returns a filename that has been stripped of any
+     * '/' characters; useful for converting stamp IDs
+     * that may contain such characters into useable
+     * base filenames.
+     */
+    protected static String getStrippedFilename(String fname)
+    {
+//        String stripped = null;
+
+    	fname=fname.replaceAll(StampLayer.stampURL, "");
+        fname=fname.replaceAll(StampLayer.versionStr, "");
+        fname=fname.replaceAll("/", "");
+        fname=fname.replaceAll("&","");
+        fname=fname.replaceAll("http:", "");
+        fname=fname.replaceAll("\\?", "");
+        fname=fname.replaceAll("=", "");
+        fname=fname.replaceAll(":","");
+        fname=fname.replaceAll("-","");
+        
+//        if (fname != null) {
+//            StringBuffer buf = new StringBuffer();
+//            if (buf != null) {
+//                char c;
+//                
+//                for (int i=0; i < fname.length(); i++)
+//                    if ( (c = fname.charAt(i)) != '/' )
+//                        buf.append(c);
+//                    
+//                stripped = buf.toString();
+//            }
+//        }
+//        
+//        return stripped;
+        return fname;
+    }    
 }

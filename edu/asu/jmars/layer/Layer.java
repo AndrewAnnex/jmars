@@ -409,7 +409,7 @@ public abstract class Layer implements ProjectionListener
 	 **/
 	public static abstract class LView
 	 extends JPanel
-	 implements DataReceiver, ConfigListener
+	 implements DataReceiver
 	 {
 		private Layer layer;
 
@@ -704,47 +704,7 @@ public abstract class Layer implements ProjectionListener
 		     else
 		         return(true);
 		 }
-		 
-		 
-		 /**
-		  * Handles change to JMARS configuration parameters; such notifications
-          * are primarily sent by instances of {@link LViewManager}.  The
-          * default implementation is to do nothing; subclasses must implement
-          * for this method to have any effect.
-          * <p>
-          * If this view has a child view, it must notify the child of the
-          * change.
-		  * 
-		  * @see Config
-		  * @see LViewManager#configChanged()
-		  * @see edu.asu.jmars.layer.ConfigListener#configChanged()
-		  */
-		 public void configChanged()
-		 {
-		 }
-		 
-		 /**
-          * Handles change to JMARS configuration parameters that are
-          * specific to particular view types; such notifications
-          * are primarily sent by instances of {@link LViewManager}.  The
-          * default implementation is to do nothing; subclasses must implement
-          * for this method to have any effect.
-          * <p>
-          * If this view has a child view, it must notify the child of the
-          * change.
-		  * 
-		  * @param cls Class/superclass of which only views that are instances
-		  * should respond to the configuration change.
-		  * 
-		  * @see Config
-		  * @see LViewManager#configChanged(Class)
-		  * @see edu.asu.jmars.layer.ConfigListener#configChanged(Class)
-		  */
-		 public void configChanged(Class cls)
-		 {
-		 }
-
-         
+		 		 
 		/**
 		 ** Suspends the current thread until the view is no longer
 		 ** idle. Note that the thread will therefore lose all of its
@@ -842,18 +802,21 @@ public abstract class Layer implements ProjectionListener
                  * Stores the objects which represent any current view settings
                  * in order to save/restore state.
                  **/
-                protected Hashtable viewSettings = new Hashtable();
+                protected Hashtable<String,Object> viewSettings = new Hashtable<String,Object>();
 
                 /**
                  * Returns the current setting for this view
                  * in order to save/restore state. Override for view specific stuff.
                  **/
-                public Hashtable getViewSettings() {
+                public Hashtable<String,Object> getViewSettings() {
 
                    //Process common LView settings to be saved.
                    viewSettings.clear();
                    viewSettings.put("alpha", new Float(alpha));
 				   viewSettings.put("tooltipsDisabled", new Boolean(tooltipsDisabled));
+				   viewSettings.put("mainEnabled", new Boolean(isVisible()));
+				   if (getChild() != null)
+					   viewSettings.put("pannerEnabled", new Boolean(getChild().isVisible()));
 
                    //call to update subclass specific settings
                    updateSettings(true);
@@ -879,6 +842,14 @@ public abstract class Layer implements ProjectionListener
 				   Boolean b = (Boolean) viewSettings.get("tooltipsDisabled");
 				   if(b != null)
 					   tooltipsDisabled = b.booleanValue();
+				   
+				   b = (Boolean)viewSettings.get("mainEnabled");
+				   if (b != null)
+					   setVisible(b.booleanValue());
+				   
+				   b = (Boolean)viewSettings.get("pannerEnabled");
+				   if (b != null && getChild() != null)
+					   getChild().setVisible(b.booleanValue());
 
                   //call to update subclass specific settings
                    updateSettings(false);
@@ -1258,24 +1229,6 @@ public abstract class Layer implements ProjectionListener
 		 ** with an error message at the console.
 		 **/
 		public abstract void receiveData(Object layerData);
-
-		/**
-		 ** If we're in the time projection, wraps a given Graphics2D
-		 ** (which must draw in world coordinates) and returns a new
-		 ** Graphics2D which proxies to the passed g2, but which draws in
-		 ** longitude/latitude (spatial coordinates).
-		 **/
-		protected final Graphics2D spatialG2Hack(Graphics2D g2)
-		 {
-			if(g2 == null  ||  !Main.inTimeProjection())
-				return  g2;
-
-			MultiProjection proj = getProj();
-			if(proj == null)
-				return  null;
-
-			return  proj.createSpatialGraphics(g2);
-		 }
 
 		/**
 		 ** Creates a graphics context that paints to off-screen

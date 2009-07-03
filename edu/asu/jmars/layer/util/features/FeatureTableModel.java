@@ -57,10 +57,9 @@ public class FeatureTableModel
 	 * Fields that can be part of the FeatureCollection schema that should
 	 * not be part of the TableModel columns.
 	 */
-	public static final Set defaultHiddenFields;
+	public static final Set<Field> defaultHiddenFields;
 	static {
-		Set hidden = new HashSet();
-		hidden.add (Field.FIELD_SELECTED);
+		Set<Field> hidden = new HashSet<Field>();
 		hidden.add (Field.FIELD_PATH);
 		defaultHiddenFields = Collections.unmodifiableSet(hidden);
 	}
@@ -68,10 +67,10 @@ public class FeatureTableModel
 	private FeatureCollection fc;
 	private FilteringColumnModel columnModel;
 	private FeatureSelectionListener fsa;
-	int[] modelToSchema;
+	private int[] modelToSchema;
 	private boolean sending;
-	private Map compMap = new HashMap ();
-	private final Set hiddenFields;
+	private Map<Class<?>, Comparator<?>> compMap = new HashMap<Class<?>,Comparator<?>> ();
+	private final Set<Field> hiddenFields;
 
 	/**
 	 * Initializes the Fields from the FeatureCollection schema to show as columns
@@ -89,27 +88,40 @@ public class FeatureTableModel
 			FeatureCollection fc,
 			FilteringColumnModel columnModel,
 			FeatureSelectionListener fsa,
-			Set hiddenFields)
+			Set<Field> hiddenFields)
 	{
 		this.fc = fc;
 		this.columnModel = columnModel;
 		this.fsa = fsa;
-		this.hiddenFields = new HashSet(hiddenFields);
+		this.hiddenFields = new HashSet<Field>(hiddenFields);
 
-		compMap.put (String.class, new StringComp ());
+		compMap.put (String.class, String.CASE_INSENSITIVE_ORDER);
 
 		buildColumnLookups();
-		for (Iterator ai = visibleFields (fc.getSchema()).iterator(); ai.hasNext(); ) {
-			TableColumn tc = fieldToColumn((Field)ai.next());
-			columnModel.addColumn (tc);
+		
+		// merge the fc schema with the given table column model by adding
+		// columns for each field in the visible and schema sets that is not
+		// already identified in the table column model, and removing each
+		// column whose identifier is not in the schema and visible sets
+		Set<Field> toShow = new LinkedHashSet<Field>(visibleFields (fc.getSchema()));
+		for (Field f: toShow) {
+			if (columnModel.getColumn(f) == null) {
+				TableColumn tc = fieldToColumn(f);
+				columnModel.addColumn (tc);
+			}
+		}
+		for (TableColumn tc: new ArrayList<TableColumn>(columnModel.getAllColumns())) {
+			if (!toShow.contains(tc.getIdentifier())) {
+				columnModel.removeColumn(tc);
+			}
 		}
 	}
-
+	
 	/**
 	 * Filters the given List down to Field objects that are not hidden. 
 	 */
-	private List visibleFields (List fields) {
-		List visible = new LinkedList (fields);
+	private List<Field> visibleFields (List<Field> fields) {
+		List<Field> visible = new LinkedList<Field> (fields);
 		visible.removeAll (hiddenFields);
 		return visible;
 	}
@@ -120,16 +132,15 @@ public class FeatureTableModel
 	 * some are inappropriate for a JTable and so are hidden here.
 	 */
 	private void buildColumnLookups () {
-		List schema = fc.getSchema();
-		List visible = visibleFields (schema);
-		modelToSchema = new int[visible.size()];
+		List<Field> schema = fc.getSchema();
+		modelToSchema = new int[visibleFields(schema).size()];
 		int tableModelIndex = 0;
 		int schemaIndex = 0;
-		for (Iterator it=schema.iterator(); it.hasNext(); schemaIndex++) {
-			Field f = (Field) it.next();
+		for (Field f: schema) {
 			if (! hiddenFields.contains (f)) {
 				modelToSchema[tableModelIndex++] = schemaIndex;
 			}
+			schemaIndex ++;
 		}
 	}
 
@@ -138,10 +149,8 @@ public class FeatureTableModel
 	 * added or removed from the schema, so find and fix them.
 	 */
 	private void setColumnModelIndices() {
-		List visible = visibleFields (fc.getSchema ());
-		List columns = columnModel.getAllColumns();
-		for (Iterator it = columns.iterator(); it.hasNext(); ) {
-			TableColumn column = (TableColumn)it.next();
+		List<Field> visible = visibleFields (fc.getSchema ());
+		for (TableColumn column: columnModel.getAllColumns()) {
 			int modelIndex = visible.indexOf (column.getIdentifier());
 			if (column.getModelIndex() != modelIndex)
 				column.setModelIndex(modelIndex);
@@ -153,7 +162,7 @@ public class FeatureTableModel
 	 * the identifier for later use. Custom styling (such as Field-specific
 	 * column sizing) should be done here.
 	 */
-	private TableColumn fieldToColumn (Field f)
+	protected TableColumn fieldToColumn (Field f)
 	{
 		int modelIndex = visibleFields(fc.getSchema()).indexOf(f);
 		Comparator comp = compForField (f);
@@ -308,20 +317,6 @@ public class FeatureTableModel
 		return ((Field)fc.getSchema().get(modelToSchema[col])).name;
 	}
 
-	class StringComp implements Comparator {
-		public int compare (Object o1, Object o2) {
-			if (o1 == o2) {
-				return 0;
-			} else if (o1 == null || !(o1 instanceof String)) {
-				return -1;
-			} else if (o2 == null || !(o2 instanceof String)) {
-				return 1;
-			} else {
-				return ((String)o1).compareToIgnoreCase((String)o2);
-			}
-		}
-	}
-	
 	/**
 	 * Returns the FeatureCollection backing this FeatureTableModel.
 	 * 

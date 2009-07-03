@@ -71,7 +71,7 @@
  *
  * This license is based on the BSD license adopted by the Apache Foundation.
  *
- * $Id: VerticalLayout.java 8525 2008-04-23 18:26:31Z eengle $
+ * $Id: VerticalLayout.java 2670 2003-10-10 19:53:52Z jwinburn $
  */  
 package edu.asu.jmars.ruler;
 

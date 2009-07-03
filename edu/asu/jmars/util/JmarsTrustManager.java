@@ -33,9 +33,11 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
+import org.apache.commons.httpclient.protocol.Protocol;
+
 /**
- * For now this actually disables trust assertions by accepting any certificate.
- * TODO: use a java keystore repository once our server certs stabilize.
+ * This trust manager disables validating the server certificate, using it for
+ * encryption but not endpoint validation.
  */
 public class JmarsTrustManager implements X509TrustManager {
 	/**
@@ -52,13 +54,18 @@ public class JmarsTrustManager implements X509TrustManager {
 		br.close();
 	}
 	
-	/** Replace the default SSL session's trust manager with an instance of this class */
+	/** Configures HttpUrlConnection and HttpClient over SSL/TLS to use JmarsTrustManager */
 	public static void install() {
 		try {
+			// install JMARS-specific trust policy for HttpUrlConnection
 			SSLContext context = SSLContext.getInstance("TLS");
 			TrustManager jmarsTrust = new JmarsTrustManager();
 			context.init(null, new TrustManager[]{jmarsTrust}, null);
 			HttpsURLConnection.setDefaultSSLSocketFactory(context.getSocketFactory());
+
+			// install JMARS-specific trust policy for HttpClient
+			Protocol easyhttps = new Protocol("https", new HttpClientJmarsTrustManagerFactory(), 443);
+			Protocol.registerProtocol("https", easyhttps);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

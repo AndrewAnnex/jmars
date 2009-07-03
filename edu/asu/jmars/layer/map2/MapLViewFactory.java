@@ -101,7 +101,7 @@ public class MapLViewFactory extends LViewFactory {
 					source.getMapAttr(onMapResolved);
 				} else {
 					error(MessageFormat.format(
-							"Unable to find default map named '{0}' in server named '{1}'",
+							"Unable to find default map named ''{0}'' in server named ''{1}''",
 							MapSource.DEFAULT_NAME, MapServer.DEFAULT_NAME),
 						"Error loading default map!");
 				}
@@ -130,6 +130,30 @@ public class MapLViewFactory extends LViewFactory {
 			}
 		} catch(Exception ex) {
 			error(ex.getMessage(), "Error creating "+getName()+".");
+			log.aprintln(ex);
+		}
+	}
+	
+	/** Update the given model with fresh map source objects */
+	private void fixSources(PipelineModel model) {
+		for (int i = 0; i < model.getSourceCount(); i++) {
+			WrappedMapSource wrapper = model.getSource(i);
+			MapSource sessionSource = wrapper.getWrappedSource();
+			MapServer sessionServer = sessionSource.getServer();
+			// live server will be changed to a server in the factory if it can
+			// be found, otherwise the session server will be preserved
+			MapServer liveServer = MapServerFactory.getServerByName(sessionServer.getName());
+			if (liveServer == null) {
+				liveServer = sessionServer;
+			}
+			// source must be found in the live server
+			MapSource liveSource = liveServer.getSourceByName(sessionSource.getName());
+			if (liveSource == null) {
+				throw new IllegalStateException("Saved map used map named " + sessionSource.getName() + " that is no longer on the server");
+			}
+			wrapper.setWrappedSource(liveSource);
+			liveSource.setOffset(sessionSource.getOffset());
+			model.getPipelineLeg(i).setMapSource(liveSource);
 		}
 	}
 	
@@ -165,34 +189,21 @@ public class MapLViewFactory extends LViewFactory {
 			public void run() {
 				try {
 					// coordinate maps loaded from server and maps just loaded from the session file
-					for (WrappedMapSource wrapper: p.lviewPPM.getSources()) {
-						MapSource sessionSource = wrapper.getWrappedSource();
-						MapServer sessionServer = sessionSource.getServer();
-						MapServer liveServer = MapServerFactory.getServerByName(sessionServer.getName());
-						if (liveServer == null) {
-							throw new IllegalStateException("Saved map used deleted server named " + sessionServer.getName());
-						}
-						MapSource liveSource = liveServer.getSourceByName(sessionSource.getName());
-						if (liveSource == null) {
-							throw new IllegalStateException("Saved map used map named " + liveSource.getName() + " that is no longer on the server");
-						}
-						wrapper.setWrappedSource(liveSource);
-						liveSource.setOffset(sessionSource.getOffset());
-					}
+					fixSources(p.lviewPPM);
+					fixSources(p.chartPPM);
 					
-					final Set<MapSource> toResolve = new HashSet<MapSource>();
-					toResolve.addAll(Arrays.asList(PipelineModel.unwrap(p.lviewPPM.getSources())));
-					toResolve.addAll(Arrays.asList(PipelineModel.unwrap(p.chartPPM.getSources())));
-					
-					final CountDownLatch latch = new CountDownLatch(toResolve.size());
+					Set<WrappedMapSource> sources = new HashSet<WrappedMapSource>();
+					sources.addAll(Arrays.asList(p.lviewPPM.getSources()));
+					sources.addAll(Arrays.asList(p.chartPPM.getSources()));
+					final CountDownLatch latch = new CountDownLatch(sources.size());
 					final MapAttrReceiver attrReceiver = new MapAttrReceiver(){
 						public void receive(MapAttr attr) {
 							latch.countDown();
 						}
 					};
 					
-					for(final MapSource s: toResolve) {
-						s.getMapAttr(attrReceiver);
+					for(final WrappedMapSource s: sources) {
+						s.getWrappedSource().getMapAttr(attrReceiver);
 					}
 					
 					latch.await();
@@ -303,21 +314,24 @@ public class MapLViewFactory extends LViewFactory {
 				parent.add(createMenuPicker(cb, paths.get(path)));
 			}
 			
-			// if for some reason we have more than the expected number of
-			// map-related menu items, shove them all into a single common menu
-			if (roots.size() > 6) {
+			// If all categories start with 'By ', as in 'By Instrument' or 'By
+			// Type', prefix 'Maps ' in front of each category. If any category
+			// does not start with 'By ', then move all top level items into a
+			// new menu called 'Maps'.
+			boolean allTopNames = true;
+			for (JMenuItem root: roots) {
+				allTopNames &= root.getText().startsWith("By ");
+			}
+			if (allTopNames) {
+				for (JMenuItem root: roots) {
+					root.setText("Maps " + root.getText());
+				}
+			} else {
 				JMenu proxyRoot = new JMenu("Map");
 				for (JMenuItem item: roots)
 					proxyRoot.add(item);
 				roots.clear();
 				roots.add(proxyRoot);
-			}
-			
-			// make sure 'By Instrument' and 'By Type' have 'Maps' prefixed
-			for (JMenuItem root: roots) {
-				String text = root.getText();
-				if (text.startsWith("By "))
-					root.setText("Maps " + text);
 			}
 			
 			// create custom menuitem
@@ -526,7 +540,7 @@ public class MapLViewFactory extends LViewFactory {
 		}
 	}
 	
-	/** Creates and returns a MapLayer, configured for the given source if not null */
+	/** Creates and returns an empty MapLayer */
 	private static MapLayer createLayer() {
 		return new MapLayer(new MapSettingsDialog(Main.getLManager()));
 	}

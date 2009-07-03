@@ -37,13 +37,12 @@ import edu.asu.jmars.layer.map2.msd.PipelineModel;
 import edu.asu.jmars.layer.map2.msd.PipelineModelEvent;
 import edu.asu.jmars.layer.map2.msd.PipelineModelListener;
 import edu.asu.jmars.layer.map2.stages.composite.CompositeStage;
-import edu.asu.jmars.util.DebugLog;
 
 public class MapFocusPanel extends FocusPanel implements PipelineEventListener, PipelineProducer {
 	private static final long serialVersionUID = 1L;
-
-	private static DebugLog log = DebugLog.instance();
 	
+	final String chartTabName = "Chart";
+		
 	final MapLView mapLView;
 	
 	JButton configButton;
@@ -55,7 +54,6 @@ public class MapFocusPanel extends FocusPanel implements PipelineEventListener, 
 	EventListenerList eventListenersList = new EventListenerList();
 	// Current LView piplineModel
 	private PipelineModel pipelineModel = new PipelineModel(new Pipeline[0]);
-	
 	
 	public MapFocusPanel(LView parent) {
 		super(parent);
@@ -70,13 +68,13 @@ public class MapFocusPanel extends FocusPanel implements PipelineEventListener, 
 
 			public void forwardedEventOccurred(PipelineModelEvent e) {
 				PipelineLegModelEvent le = e.getWrappedEvent();
-				switch(le.getEventType()){
+				switch(le.getEventType()) {
 					case PipelineLegModelEvent.STAGES_ADDED:
 					case PipelineLegModelEvent.STAGES_REMOVED:
-						firePipelineEvent();
+						firePipelineEvent(true, false);
 						break;
 					case PipelineLegModelEvent.STAGE_PARAMS_CHANGED:
-						fireStageChangedEvent(new StageChangedEvent((Stage)le.getWrappedEvent().getSource()));
+						firePipelineEvent(true, true);
 						break;
 				}
 			}
@@ -86,6 +84,21 @@ public class MapFocusPanel extends FocusPanel implements PipelineEventListener, 
 		// pipeline configuration changes sent down from the MapSettingsDialog.
 		mapLView.getLayer().mapSettingsDialog.addPipelineEventListener(this);
 		mapLView.getLayer().mapSettingsDialog.addPipelineEventListener(chartView);
+		mapLView.getLayer().mapSettingsDialog.addPipelineEventListener(new PipelineEventListener(){
+			public void pipelineEventOccurred(PipelineEvent e) {
+				// By the time this particular listener is called, the chartView already
+				// has the updated pipeline.
+				int chartTabIdx = tabbedPane.indexOfTab(chartTabName); 
+				if (chartView.hasEmptyPipeline()){
+					if (chartTabIdx >= 0)
+						tabbedPane.removeTabAt(tabbedPane.indexOfComponent(chartView));
+				}
+				else {
+					if (chartTabIdx < 0)
+						tabbedPane.insertTab(chartTabName, null, chartView, null, 0);
+				}
+			}
+		});
 		// TODO: This is not a good way of doing things.
 		//mapLView.getLayer().mapSettingsDialog.firePipelineEvent();
 	}
@@ -119,7 +132,9 @@ public class MapFocusPanel extends FocusPanel implements PipelineEventListener, 
 		
 		// Add tab for the chart view
 		chartView = new ChartView(mapLView);
-		tabbedPane.add("Chart", chartView);
+		if (!chartView.hasEmptyPipeline())
+			tabbedPane.add(chartTabName, chartView);
+		
 		
 		// Add it all together
 		setLayout(new BorderLayout());
@@ -132,7 +147,7 @@ public class MapFocusPanel extends FocusPanel implements PipelineEventListener, 
 	}
 
 	/*
-	 * We receive these events MapSettingsDialog in response to an Ok button push.
+	 * We receive these events from MapSettingsDialog in response to an Ok button push.
 	 * This means that we have a new pipeline, we should update our pipelineModel
 	 * and the dialogs showing the stage panels.
 	 * 
@@ -156,19 +171,22 @@ public class MapFocusPanel extends FocusPanel implements PipelineEventListener, 
 		pipelineModel.setFromPipeline(newPipeline, Pipeline.getCompStage(newPipeline));
 		
 		int selectedTab = tabbedPane.getSelectedIndex();
-		while(tabbedPane.getComponentCount() > 1)
-			tabbedPane.removeTabAt(tabbedPane.getComponentCount()-1);
+		for(int i=0; i<tabbedPane.getComponentCount();){
+			if (tabbedPane.getComponent(i) != chartView)
+				tabbedPane.removeTabAt(i);
+			else
+				i++;
+		}
 		
 		CompositeStage aggStage = pipelineModel.getCompStage();
 		for(int i=0; i<pipelineModel.getSourceCount(); i++){
 			PipelinePanel pp = new PipelinePanel(pipelineModel.getPipelineLeg(i));
 			tabbedPane.addTab(aggStage.getInputName(i), new JScrollPane(pp));
 		}
-		tabbedPane.setSelectedIndex(Math.min(selectedTab, tabbedPane.getTabCount()-1));
 		
-		firePipelineEvent();
+		firePipelineEvent(e.userInitiated, e.settingsChange);
 	}
-
+	
 	public void addPipelineEventListener(PipelineEventListener l){
 		eventListenersList.add(PipelineEventListener.class, l);
 	}
@@ -176,14 +194,19 @@ public class MapFocusPanel extends FocusPanel implements PipelineEventListener, 
 		eventListenersList.remove(PipelineEventListener.class, l);
 	}
 	
-	public void firePipelineEvent() {
-		PipelineEvent e = new PipelineEvent(this);
+	/**
+	 * Fires a new pipeline event from this PipelineProducer.
+	 * @param user If true, this is a user-initiated change
+	 * @param settings If true, this is a stage settings change, otherwise a pipeline structure change.
+	 */
+	public void firePipelineEvent(boolean user, boolean settings) {
+		PipelineEvent e = new PipelineEvent(this, user, settings);
 		EventListener[] listeners = eventListenersList.getListeners(PipelineEventListener.class);
 		for(int i=0; i<listeners.length; i++){
 			((PipelineEventListener)listeners[i]).pipelineEventOccurred(e);
 		}
 	}
-
+	
 	// Unused, this does not produce chart pipeline
 	public Pipeline[] buildChartPipeline() {
 		throw new UnsupportedOperationException();
@@ -203,30 +226,4 @@ public class MapFocusPanel extends FocusPanel implements PipelineEventListener, 
 	public PipelineModel getLViewPipelineModel(){
 		return pipelineModel;
 	}
-	
-	/**
-	 * Listen to Stage parameter changes. These are fast changes that should not
-	 * cause the whole pipeline to be rebuilt, but should ping the MapProcessor
-	 * to reprocess the data.
-	 */
-	public void userInitiatedStageChangedEventOccurred(StageChangedEvent e) {
-		// Forward fast changes from stages to listeners
-		fireStageChangedEvent(e);
-	}
-
-	/**
-	 * Forwards a Stage parameters change (or a fast change) to the ChangeListeners.
-	 * These changes are supposed to be fast changes that don't require a pipeline rebuild.
-	 */
-	public void fireStageChangedEvent(StageChangedEvent e){
-		log.println("Firing Stage change event.");
-		
-		Object[] listeners = eventListenersList.getListeners(PipelineEventListener.class);
-		for(int i=0; i<listeners.length; i++){
-			((PipelineEventListener)listeners[i]).userInitiatedStageChangedEventOccurred(e);
-		}
-	}
-
-	
-
 }

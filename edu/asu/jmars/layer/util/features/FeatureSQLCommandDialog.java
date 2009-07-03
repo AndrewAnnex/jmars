@@ -23,12 +23,13 @@ package edu.asu.jmars.layer.util.features;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
+import java.util.Set;
 
 import javax.swing.*;
 
 public class FeatureSQLCommandDialog extends JDialog {
-
 	FeatureCollection fc;
+	Set<Feature> selections;
 	FeatureProvider provider = new ScriptFileChooser.FeatureProviderScript();
 
 	// panel stuff.
@@ -40,10 +41,11 @@ public class FeatureSQLCommandDialog extends JDialog {
 	JLabel        statusBar             = new JLabel(" ");
 	ScriptFileChooser scriptFileChooser;
 
-	public FeatureSQLCommandDialog(FeatureCollection fc) {
+	public FeatureSQLCommandDialog(FeatureCollection fc, Set<Feature> selections) {
 		super( (Frame)null, "Script", false);
 
 		this.fc = fc;
+		this.selections = selections;
 		scriptFileChooser = new ScriptFileChooser();
 
 		initPropertyBehavior();
@@ -100,7 +102,7 @@ public class FeatureSQLCommandDialog extends JDialog {
 				String text = commandArea.getText();
 				String [] lines = text.split("\n");
 				for (int i=0; i< lines.length; i++){
-					new FeatureSQL( lines[i], fc, statusBar);
+					new FeatureSQL( lines[i], fc, selections, statusBar);
 				}
 			}
 		});

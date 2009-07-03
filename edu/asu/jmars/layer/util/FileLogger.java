@@ -133,6 +133,7 @@ final class LogOutputStream extends OutputStream {
 		this.logger = logger;
 		writerThread = new Thread(new WriterActivity());
 		writerThread.setPriority(Thread.MIN_PRIORITY);
+		writerThread.setDaemon(true);
 		writerThread.setName("LogOutputStream.writerThread");
 		writerThread.start();
 	}

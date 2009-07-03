@@ -20,24 +20,6 @@
 
 package edu.asu.jmars.layer;
 
-import edu.asu.jmars.*;
-import edu.asu.jmars.util.*;
-/**
- * Please do not put a debug log reference in this file. It makes it very difficult to serialize
- * unless we want to serialize the debug object - which I do not think is a good thing.
- */
-
-
-import java.net.InetAddress;
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.geom.*;
-import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.border.*;
-import java.util.*;
-import java.net.*;
-import java.io.*;
 
 public abstract class DialogParameterBlock extends Object implements SerializedParameters
  {

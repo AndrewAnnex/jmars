@@ -20,23 +20,49 @@
 
 package edu.asu.jmars.layer.util.features;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.geom.*;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Cursor;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.Point;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.MouseEvent;
+import java.awt.geom.Line2D;
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.text.DecimalFormat;
-
-import javax.swing.*;
-import javax.swing.event.*;
-
-import edu.asu.jmars.*;
-import edu.asu.jmars.ProjObj.Projection_OC;
-import edu.asu.jmars.layer.*;
-import edu.asu.jmars.util.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
+import javax.swing.ButtonGroup;
+import javax.swing.ImageIcon;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JRadioButtonMenuItem;
+import javax.swing.event.MouseInputAdapter;
 
-
+import edu.asu.jmars.Main;
+import edu.asu.jmars.ProjObj.Projection_OC;
+import edu.asu.jmars.layer.Layer;
+import edu.asu.jmars.layer.MultiProjection;
+import edu.asu.jmars.layer.WrappedMouseEvent;
+import edu.asu.jmars.layer.shape2.ShapeLayer;
+import edu.asu.jmars.util.HVector;
+import edu.asu.jmars.util.Util;
 
 
 /**
@@ -48,9 +74,8 @@ import java.util.List;
  */
 
 public class FeatureMouseHandler extends MouseInputAdapter {
-	private FeatureCollection   fc;
+	private final ShapeLayer shapeLayer;
 	private Layer.LView         lview;
-	private History             history;
 
 	// various and sundry variables used by the class.
 	private Point2D             mouseLast       = null;
@@ -78,9 +103,6 @@ public class FeatureMouseHandler extends MouseInputAdapter {
 
 	private boolean             changeModeOK        = false;
 	private boolean             zorderOK            = false;
-
-	
-	
 
 	// context menu items.
 	private JRadioButtonMenuItem popupButton;
@@ -194,8 +216,7 @@ public class FeatureMouseHandler extends MouseInputAdapter {
 	public interface SelColor {
 		Color getColor();
 	}
-	SelColor selectedColor;
-
+	
 	/**
 	 * constructor
 	 * @param fc - the FeatureCollection to be added to.     Cannot be null.
@@ -206,18 +227,10 @@ public class FeatureMouseHandler extends MouseInputAdapter {
 	 *            be sensitive to.
 	 * @param history - History or undo log.
 	 */
-	public FeatureMouseHandler(
-					FeatureCollection   fc, 
-				    Layer.LView         lview, 
-				    SelColor            selectColor,
-				    int                 definedBehavior,
-				    History             history){
-
-		this.fc    = fc;
+	public FeatureMouseHandler(ShapeLayer shapeLayer, Layer.LView lview, int definedBehavior) {
+		this.shapeLayer = shapeLayer;
 		this.lview = lview;
-		this.selectedColor= selectColor;
-		this.history = history;
-
+		
 		addPointsOK = (definedBehavior & ALLOW_ADDING_POINTS)==ALLOW_ADDING_POINTS;
 		addLinesOK = (definedBehavior & ALLOW_ADDING_LINES)==ALLOW_ADDING_LINES;
 		addPolysOK = (definedBehavior & ALLOW_ADDING_POLYS)==ALLOW_ADDING_POLYS;
@@ -283,8 +296,7 @@ public class FeatureMouseHandler extends MouseInputAdapter {
 		else if (getMode()==SELECT_FEATURE_MODE && (e.getModifiers() & InputEvent.CTRL_MASK) == 0){
 			Rectangle2D rect = getProj().getClickBox(getProj().spatial.toWorld(mouseDown), PROXIMITY_BOX_SIDE);
 
-			for (Iterator it=FeatureUtil.getSelectedFeatures((fc)).iterator(); it.hasNext(); ) {
-				Feature f = (Feature) it.next();
+			for (Feature f: shapeLayer.getSelections()) {
 				// if the cursor is over a vertex, it is to be moved or deleted.
 				Point2D vertex = getIntersectingVertex( f, rect);
 				if ((moveVertexOK || deleteVertexOK) && vertex != null){
@@ -342,9 +354,8 @@ public class FeatureMouseHandler extends MouseInputAdapter {
 
 			// If moving vertices is permitted and any features are selected 
 			// in the table, check if the cursor is hovering over a vertex or an outline.
-			for (Iterator it = FeatureUtil.getSelectedFeatures((fc)).iterator(); it.hasNext(); ) {
-				Feature f = (Feature) it.next ();
-				if (f.getPathType() != Feature.TYPE_POINT) {
+			for (Feature f: shapeLayer.getSelections()) {
+				if (f.getPath().getType() != FPath.TYPE_POINT) {
 					if ((deleteVertexOK || moveVertexOK) && getIntersectingVertex( f, rect) != null){
 						setCursor( VERTEX_CURSOR);
 						return;
@@ -359,7 +370,7 @@ public class FeatureMouseHandler extends MouseInputAdapter {
 			// no vertex operation detected.  set cursor to a simple selection.
 			setCursor( SELECT_CURSOR);
 			break;
-		}	
+		}
 		mouseLast = mouseCurr;
 	}
 	
@@ -393,7 +404,7 @@ public class FeatureMouseHandler extends MouseInputAdapter {
 			// Feature/vertex is being dragged.
 			if ( selectedVertex != null && selectedVertexFeature != null){
 				// vertex drag
-				if (selectedVertexFeature.getPathType()==Feature.TYPE_POINT){ // point
+				if (selectedVertexFeature.getPath().getType()==FPath.TYPE_POINT){ // point
 					moveVertex( selectedVertexFeature, selectedVertex, mouseCurr);
 				} 
 				else {  // polylines and polygones
@@ -428,19 +439,19 @@ public class FeatureMouseHandler extends MouseInputAdapter {
 		
 		switch (getMode()) {
 		case ADD_FEATURE_MODE:
-			int featureType = Feature.TYPE_NONE;
+			int featureType = FPath.TYPE_NONE;
 			
 			// If there is only one point defined and the user clicked on it, insert a point.
 			if (addPointsOK && points.size()==1 && intersects(mouseCurr, (Point2D)points.get(0), TOLERANCE/ppd))
-				featureType = Feature.TYPE_POINT; 
+				featureType = FPath.TYPE_POINT; 
 			
 			// if the user clicked on the last point, insert a polyline.
 			else if (addLinesOK && points.size() > 0 && intersects(mouseCurr, (Point2D)points.get(points.size()-1), TOLERANCE/ppd))
-				featureType = Feature.TYPE_POLYLINE;
+				featureType = FPath.TYPE_POLYLINE;
 			
 			// if the user clicked on the first point, complete the polygon.
 			else if (addPolysOK && points.size() > 0 && intersects(mouseCurr, (Point2D)points.get(0), TOLERANCE/ppd))
-				featureType = Feature.TYPE_POLYGON;
+				featureType = FPath.TYPE_POLYGON;
 			
 			// if we can add polys or lines, add the point to the array of points.
 			else if (addLinesOK || addPolysOK)
@@ -451,28 +462,27 @@ public class FeatureMouseHandler extends MouseInputAdapter {
 				Toolkit.getDefaultToolkit().beep();
 			
 			// Make a new history frame.
-			if (featureType != Feature.TYPE_NONE){
-				if (history != null)
-					history.mark();
+			if (featureType != FPath.TYPE_NONE){
+				if (shapeLayer.getHistory() != null)
+					shapeLayer.getHistory().mark();
 				addFeature(featureType, points);
 			}
 			break;
 			
 			
 		case MOVE_FEATURE_MODE:
-			// Make a new history frame.
-			if (history != null)
-				history.mark();
-
 			Map features = new HashMap();
-			for (Iterator it = FeatureUtil.getSelectedFeatures((fc)).iterator(); it.hasNext(); ) {
-				Feature f = (Feature) it.next();
+			for (Feature f: shapeLayer.getSelections()) {
 				Point2D[] vertices = f.getPath().getSpatialWest().getVertices();
 				vertices = this.offsetVertices(vertices, mouseDown, mouseCurr);
 				features.put(f, new FPath(vertices, FPath.SPATIAL_WEST, f.getPath().getClosed()));
 			}
-			if (features.size() > 0)
-				fc.setAttributes( Field.FIELD_PATH, features);
+			if (features.size() > 0) {
+				// Make a new history frame.
+				if (shapeLayer.getHistory() != null)
+					shapeLayer.getHistory().mark();
+				shapeLayer.getFeatureCollection().setAttributes( Field.FIELD_PATH, features);
+			}
 			mouseLast = null;
 			setMode( SELECT_FEATURE_MODE);
 			break;
@@ -481,8 +491,8 @@ public class FeatureMouseHandler extends MouseInputAdapter {
 			// If we are editing a vertex, process appropriately.
 			if (moveVertexOK && selectedVertex != null && selectedVertexFeature != null){
 				// Make a new history frame.
-				if (history != null)
-					history.mark();
+				if (shapeLayer.getHistory() != null)
+					shapeLayer.getHistory().mark();
 
 				moveVertex(selectedVertexFeature, selectedVertex, mouseCurr);
 				selectedVertex = null;
@@ -698,10 +708,6 @@ public class FeatureMouseHandler extends MouseInputAdapter {
 	 */
 	public void deleteVertex(Feature f, Point2D spatialPoint)
 	{
-		// Make a new history frame.
-		if (history != null)
-			history.mark();
-
 		// Get world coordinate vertices
 		Point2D[] vertices = f.getPath().getSpatialWest().getVertices();
 
@@ -714,6 +720,9 @@ public class FeatureMouseHandler extends MouseInputAdapter {
 		FPath path = new FPath (vertices, FPath.SPATIAL_WEST, f.getPath().getClosed());
 
 		// Set the new FPath
+		// Make a new history frame.
+		if (shapeLayer.getHistory() != null)
+			shapeLayer.getHistory().mark();
 		f.setPath(path.getSpatialWest());
 	}
 
@@ -729,10 +738,6 @@ public class FeatureMouseHandler extends MouseInputAdapter {
 		if (indices==null)
 			return;
 
-		// Make a new history frame.
-		if (history != null)
-			history.mark();
-
 		// Get List of world-coordinate vertices
 		Point2D[] vertArray = f.getPath().getWorld().getVertices();
 		List vertices = new ArrayList (Arrays.asList(vertArray));
@@ -743,6 +748,11 @@ public class FeatureMouseHandler extends MouseInputAdapter {
 
 		// Create new spatial-west-coordinate FPath and set it
 		FPath path = new FPath (newPoints, FPath.WORLD, f.getPath().getClosed());
+		
+		// Make a new history frame.
+		if (shapeLayer.getHistory() != null)
+			shapeLayer.getHistory().mark();
+
 		f.setPath(path.getSpatialWest());
 	}
 
@@ -761,7 +771,7 @@ public class FeatureMouseHandler extends MouseInputAdapter {
 		for(int i=0; i<vertices.length; i++)
 			vertices[i] = getProj().spatial.toWorld(vertices[i]);
 		
-		g2world.setColor(selectedColor.getColor());
+		g2world.setColor(shapeLayer.getStyles().lineColor.getValue(null));
 		g2world.setStroke( new BasicStroke(((float)STROKE_WIDTH)/getProj().getPPD()));
 		if (vertices.length==2){
 			
@@ -815,14 +825,12 @@ public class FeatureMouseHandler extends MouseInputAdapter {
 		g2world.setStroke( new BasicStroke(((float)STROKE_WIDTH)/getProj().getPPD()));
 		//g2world.translate( deltaX, deltaY);
 		
-		for(Iterator it = FeatureUtil.getSelectedFeatures((fc)).iterator(); it.hasNext(); ) {
-			Feature feature = (Feature) it.next();
-			
+		for(Feature feature: shapeLayer.getSelections()) {
 			FPath path = feature.getPath();
 			Point2D[] vertices = offsetVertices(path.getSpatialWest().getVertices(), mouseDown, mouseCurr);
 			path = new FPath(vertices, FPath.SPATIAL_WEST, path.getClosed());
 			
-			if (feature.getPathType() == Feature.TYPE_POINT) {
+			if (feature.getPath().getType() == FPath.TYPE_POINT) {
 				Point2D p = FeatureUtil.getStartPoint(feature);
 				p = path.getWorld().getVertices()[0];
 				Rectangle2D box = getProj().getClickBox( p, VERTEX_BOX_SIDE);
@@ -843,7 +851,7 @@ public class FeatureMouseHandler extends MouseInputAdapter {
 	 * This is called by ShapeLView's paintComponent().
 	 */
 	public void drawSelectionLine( Graphics2D g2world){
-		g2world.setColor( selectedColor.getColor() );
+		g2world.setColor(shapeLayer.getStyles().lineColor.getValue(null));
 		g2world.setStroke( new BasicStroke(((float)STROKE_WIDTH)/getProj().getPPD()));
 
 		if (points.size() > 0){
@@ -896,32 +904,28 @@ public class FeatureMouseHandler extends MouseInputAdapter {
 
 	// adds a feature to the FeatureCollection.
 	void addFeature( int type, List points){
-		// Make a new history frame.
-		if (history != null)
-			history.mark();
-
 		Feature feature = new Feature();
 
 		// Can only close polygons
-		boolean closed = (type == Feature.TYPE_POLYGON);
+		boolean closed = (type == FPath.TYPE_POLYGON);
 
 		// Convert List to array, and get world-coordinates if in JMars
 		Point2D[] vertices = (Point2D[])points.toArray(new Point2D[0]);
 		for (int i = 0; i < vertices.length; i++) {
 			vertices[i] = getProj().spatial.toWorld(vertices[i]);
 		}
-
+		
 		// Convert vertices to FPath and set spatial west version
 		FPath path = new FPath (vertices, FPath.WORLD, closed);
 		feature.setPath (path.getSpatialWest());
+		feature.setAttribute( Field.FIELD_FEATURE_TYPE, FeatureUtil.getFeatureTypeString(feature.getPath().getType()));
+		
+		// Make a new history frame.
+		if (shapeLayer.getHistory() != null)
+			shapeLayer.getHistory().mark();
 
-		feature.setAttribute( Field.FIELD_SELECTED, Boolean.FALSE);
-		feature.setAttribute( Field.FIELD_FEATURE_TYPE, FeatureUtil.getFeatureTypeString(feature.getPathType()));
-		
-		// TODO: Fold in attributes from the Layer defaults
-		
 		try {
-			fc.addFeature( feature);
+			shapeLayer.getFeatureCollection().addFeature( feature);
 		}
 		catch(UnsupportedOperationException ex){
 			JOptionPane.showMessageDialog(lview,
@@ -931,9 +935,7 @@ public class FeatureMouseHandler extends MouseInputAdapter {
 		}
 		initializeSelectionLine();
 	}
-
-
-
+	
 	/**
 	 * selects features via a bounding box.  The rectangle is a
 	 * rubber band type rectangle drawn by the user. Any
@@ -966,44 +968,38 @@ public class FeatureMouseHandler extends MouseInputAdapter {
 	// @param rectangle (assumed never to be null)
 	private  void _selectFeature(Rectangle2D rectangle, boolean multipleSelections, boolean toggleIt)
 	{
-		// multi-select, toggle, 
-		Map featMap = new HashMap ();
-		boolean oldSel, newSel, testingDone = false;
-		for (Iterator it = fc.getFeatures().iterator(); it.hasNext(); ) {
-			Feature feature = (Feature) it.next();
-			Boolean selected = (Boolean)feature.getAttribute(Field.FIELD_SELECTED);
-			oldSel = selected == null ? false : selected.booleanValue();
-			if (testingDone)
-				// just deselect features
-				newSel = false;
-			else if (feature.getPath().getWorld().intersects(rectangle)) {
-				// select, or toggle value if in toggle mode
-				newSel = !(toggleIt && oldSel);
-			} else if (!toggleIt) {
-				// deselect features outside 'rectangle' in non-toggle mode
-				newSel = false;
-			} else {
-				// don't change features ouside 'rectangle' in toggle mode
-				newSel = oldSel;
+		Iterator<Feature> it = shapeLayer.getIndex().queryUnwrappedWorld(rectangle);
+		List<Feature> hits = new ArrayList<Feature>();
+		while (it.hasNext()) {
+			Feature f = it.next();
+			if (f.getPath().getWorld().intersects(rectangle)) {
+				hits.add(f);
 			}
-			if (oldSel != newSel) {
-				// selection changed
-				featMap.put (feature, newSel ? Boolean.TRUE : Boolean.FALSE);
-				if (!multipleSelections && toggleIt)
-					// one feature to toggle, so get out
-					break;
-			}
-			if (newSel && !multipleSelections && !toggleIt)
-				// one feature to select, so deselect everything else
-				testingDone = true;
 		}
-
-		// If nothing was selected or unselected, repaint to clear
-		// any selection rectangle that might be lying around.
-		if (featMap.size() > 0)
-			fc.setAttributes (Field.FIELD_SELECTED, featMap);
-		else
-			repaint();
+		
+		if (!multipleSelections && hits.size() > 0) {
+			Feature f = hits.get(hits.size()-1);
+			hits.clear();
+			hits.add(f);
+		}
+		
+		Set<Feature> selections = shapeLayer.getSelections();
+		
+		if (toggleIt) {
+			// remove hits that were selected
+			Set<Feature> selectedHits = new HashSet<Feature>(hits);
+			selectedHits.retainAll(selections);
+			selections.removeAll(selectedHits);
+			hits.removeAll(selectedHits);
+		} else {
+			// retain only hits
+			selections.retainAll(hits);
+		}
+		
+		// add hits that were not selected
+		selections.addAll(hits);
+		
+		repaint();
 	}
 
 	/**
@@ -1017,7 +1013,7 @@ public class FeatureMouseHandler extends MouseInputAdapter {
 	 *         world and spatial coordinates looses precision.
 	 */
 	public Point2D getIntersectingVertex( Feature feature, Rectangle2D worldRect){
-		if (feature.getPathType()== Feature.TYPE_POINT){
+		if (feature.getPath().getType()== FPath.TYPE_POINT){
 			return null;
 		}
 		Rectangle2D rect1 = new Rectangle2D.Double( worldRect.getX() + 360, worldRect.getY(), worldRect.getWidth(), worldRect.getHeight());
@@ -1062,7 +1058,7 @@ public class FeatureMouseHandler extends MouseInputAdapter {
 	 */
 	public Point2D[] getBoundingVertices( Feature f, Point2D centerVertex)
 	{
-		if (f.getPathType() == Feature.TYPE_POINT)
+		if (f.getPath().getType() == FPath.TYPE_POINT)
 			return null;
 
 		Point2D[] vertices = f.getPath().getSpatialWest().getVertices();
@@ -1073,7 +1069,7 @@ public class FeatureMouseHandler extends MouseInputAdapter {
 		// The index is known so now get the vertices on either side.
 		// Special cases if index is the first or last element of the array.
 		if(index == 0) {
-			if (f.getPathType()==Feature.TYPE_POLYLINE){
+			if (f.getPath().getType()==FPath.TYPE_POLYLINE){
 				Point2D[] boundingVertices = new Point2D[1];
 				boundingVertices[0] = vertices[index+1];
 				return boundingVertices;
@@ -1085,7 +1081,7 @@ public class FeatureMouseHandler extends MouseInputAdapter {
 			}
 		}
 		else if(index == vertices.length-1) {
-			if (f.getPathType()== Feature.TYPE_POLYLINE){
+			if (f.getPath().getType()== FPath.TYPE_POLYLINE){
 				Point2D[] boundingVertices = new Point2D[1];
 				boundingVertices[0] = vertices[index-1];
 				return boundingVertices;
@@ -1111,12 +1107,12 @@ public class FeatureMouseHandler extends MouseInputAdapter {
 	// after the delete.
 	public boolean canDeleteVertex(Feature f) {
 		int numPoints = f.getPath().getVertices().length;
-		switch (f.getPathType()) {
-		case Feature.TYPE_POLYGON:
+		switch (f.getPath().getType()) {
+		case FPath.TYPE_POLYGON:
 			return numPoints > 3;
-		case Feature.TYPE_POLYLINE:
+		case FPath.TYPE_POLYLINE:
 			return numPoints > 2;
-		case Feature.TYPE_POINT:
+		case FPath.TYPE_POINT:
 		default:
 			return false;
 		}
@@ -1148,7 +1144,7 @@ public class FeatureMouseHandler extends MouseInputAdapter {
 			}
 			// need to check the last segment of a polygon, which is 
 			// the closing line segment
-			else if( f.getPathType() == Feature.TYPE_POLYGON && i == vertices.length -1) {
+			else if( f.getPath().getType() == FPath.TYPE_POLYGON && i == vertices.length -1) {
 				line = new Line2D.Double(vertices[vertices.length-1], vertices[0]);
 				if(rect.intersectsLine(line) ||
 				   rect1.intersectsLine(line) ||
@@ -1174,10 +1170,8 @@ public class FeatureMouseHandler extends MouseInputAdapter {
 		this.worldPt = wp;
 		this.rect    = getProj().getClickBox( worldPt, PROXIMITY_BOX_SIDE);
 		
-		java.util.List selectedFeatures = FeatureUtil.getSelectedFeatures((fc));
-		
 		// build the list of menu items.
-		java.util.List menuList = new ArrayList();
+		List<JMenuItem> menuList = new ArrayList<JMenuItem>();
 		if (changeModeOK){
 			// Determine which mode the menu should be in.
 			if (getMode() == ADD_FEATURE_MODE){
@@ -1198,7 +1192,7 @@ public class FeatureMouseHandler extends MouseInputAdapter {
 		if (deleteFeaturesOK){
 			// One should only be able to delete a selected row if there is
 			// in fact at least one row selected.
-			if (selectedFeatures.size() >0){
+			if (shapeLayer.getSelections().size() >0){
 				deleteRowMenuItem.setEnabled(true);
 			} else {
 				deleteRowMenuItem.setEnabled(false);
@@ -1208,52 +1202,42 @@ public class FeatureMouseHandler extends MouseInputAdapter {
 
 		if (zorderOK){
 		  // The Zorder menu should only be enabled if there is one selection.
-		  if (selectedFeatures.size() >0){
+		  if (shapeLayer.getSelections().size() >0){
 		     zOrderMenuItem.setEnabled(true);
 		  } else {
 		     zOrderMenuItem.setEnabled(false);
 		  }
 		  menuList.add(zOrderMenuItem);
 		}
-
-		if (addVertexOK){
-			// test whether the add vertex should be enabled.
-			addPointMenuItem.setEnabled(false);
-			for (int i=0; i< selectedFeatures.size(); i++){
-				Feature f = (Feature)selectedFeatures.get(i);
-				if (f.getPathType() != Feature.TYPE_POINT) {
-					if (f.getPath().getWorld().intersects(rect)) {
-						if (getIntersectingVertex(f, rect) == null) {
-							addPointMenuItem.setEnabled(true);
-						}
+		
+		if (addVertexOK || deleteVertexOK) {
+			boolean addPoints = false;
+			boolean delPoints = false;
+			for (Iterator<? extends Feature> it = shapeLayer.getIndex().queryUnwrappedWorld(rect); it.hasNext(); ) {
+				Feature f = it.next();
+				if (shapeLayer.getSelections().contains(f) &&
+						f.getPath().getType() != FPath.TYPE_POINT &&
+						f.getPath().getWorld().intersects(rect)) {
+					if (getIntersectingVertex(f, rect) == null) {
+						addPoints = true;
+					} else {
+						delPoints = true;
 					}
 				}
 			}
-			menuList.add( addPointMenuItem);
-		}
-		if (deleteVertexOK){
-			// test whether the delete vertex should be enabled.
-			deletePointMenuItem.setEnabled(false);
-			for (int i=0; i< selectedFeatures.size(); i++){
-				Feature f = (Feature)selectedFeatures.get(i);
-				if (f.getPathType() != Feature.TYPE_POINT) {
-					if (f.getPath().getWorld().intersects(rect)) {
-						if (getIntersectingVertex(f, rect) != null) {
-							deletePointMenuItem.setEnabled(true);
-						}
-					}
-				}
+			if (addVertexOK) {
+				addPointMenuItem.setEnabled(addPoints);
+				menuList.add( addPointMenuItem);
 			}
-			menuList.add( deletePointMenuItem);
+			if (deleteVertexOK) {
+				deletePointMenuItem.setEnabled(delPoints);
+				menuList.add( deletePointMenuItem);
+			}
 		}
 		
 		Component[] menuItems = (Component [])menuList.toArray( new Component[0]);
 		return menuItems;
 	}
-    
-
-
-
     
 	// The constructor for the class that sets up the components and 
 	// all the behavior for those components.
@@ -1261,7 +1245,7 @@ public class FeatureMouseHandler extends MouseInputAdapter {
 		// set up the context menu items.
 		addModeRadioButton       = new JRadioButtonMenuItem( "Add Features");
 		selectModeRadioButton    = new JRadioButtonMenuItem( "Select Features");
-		zOrderMenuItem           = new ZOrderMenu("Z-order", fc);
+		zOrderMenuItem           = new ZOrderMenu("Z-order", shapeLayer.getFeatureCollection(), shapeLayer.getSelections());
 		deletePointMenuItem      = new JMenuItem( "Delete Point");
 		addPointMenuItem         = new JMenuItem( "Add Point");
 		deleteRowMenuItem        = new JMenuItem( "Delete Selected Features");
@@ -1289,7 +1273,7 @@ public class FeatureMouseHandler extends MouseInputAdapter {
 						popupButton = addModeRadioButton;
 						addModeRadioButton.setSelected(true);
 						setMode( FeatureMouseHandler.ADD_FEATURE_MODE);
-						FeatureUtil.deselectAllFeatures (fc);
+						shapeLayer.getSelections().clear();
 					}
 				}
 			}
@@ -1311,58 +1295,54 @@ public class FeatureMouseHandler extends MouseInputAdapter {
 			
 		deleteRowMenuItem.addActionListener( new ActionListener() {
 			public void actionPerformed(ActionEvent e){
-				if (history != null)
-					history.mark();
-				
-				java.util.List fl = FeatureUtil.getSelectedFeatures((fc));
-				fc.removeFeatures(fl);			
+				if (shapeLayer.getHistory() != null)
+					shapeLayer.getHistory().mark();
+				// if this action is legal for the dataset, it will cascade into
+				// removing the features from the selections set as well
+				shapeLayer.getFeatureCollection().removeFeatures(shapeLayer.getSelections());
 			}
 		});
 		
 		deletePointMenuItem.addActionListener( new ActionListener(){
-				public void actionPerformed(ActionEvent e){
-					if (rect==null){
-						return;
-					}
-					java.util.List selectedFeatures = FeatureUtil.getSelectedFeatures((fc));
-					for (int i=0; i< selectedFeatures.size(); i++){
-						Feature feature = (Feature)selectedFeatures.get(i);
-						if (feature.getPath().getWorld().intersects(rect)) {
-							Point2D vertex = getIntersectingVertex( feature,rect);
-							if (vertex!=null){
-								if (canDeleteVertex( feature)) {
-								        deleteVertex( feature, vertex);
-								} else {
-									String message = "Cannot delete point. \n";
-									switch (feature.getPathType())
-										{
-										case Feature.TYPE_POLYGON:
-											message += "Polygons must have at least three vertices.";
-											break;
-										case Feature.TYPE_POLYLINE:
-											message += "Polylines must have at least two vertices.";
-											break;
-										case Feature.TYPE_POINT:
-											message += "Points must consist of one vertex";
-											break;
-										}
-									JOptionPane.showMessageDialog(Main.getLManager(), message);
+			public void actionPerformed(ActionEvent e){
+				if (rect==null){
+					return;
+				}
+				for (Feature feature: shapeLayer.getSelections()) {
+					if (feature.getPath().getWorld().intersects(rect)) {
+						Point2D vertex = getIntersectingVertex( feature,rect);
+						if (vertex!=null){
+							if (canDeleteVertex( feature)) {
+								deleteVertex( feature, vertex);
+							} else {
+								String message = "Cannot delete point. \n";
+								switch (feature.getPath().getType())
+								{
+								case FPath.TYPE_POLYGON:
+									message += "Polygons must have at least three vertices.";
+									break;
+								case FPath.TYPE_POLYLINE:
+									message += "Polylines must have at least two vertices.";
+									break;
+								case FPath.TYPE_POINT:
+									message += "Points must consist of one vertex";
+									break;
 								}
+								JOptionPane.showMessageDialog(Main.getLManager(), message);
 							}
 						}
 					}
 				}
-			});
-		
+			}
+		});
+
 		addPointMenuItem.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (rect == null || worldPt == null)
 					return;
 
-				List selectedFeatures = FeatureUtil.getSelectedFeatures((fc));
-				for (Iterator it = selectedFeatures.iterator(); it.hasNext();) {
-					Feature feature = (Feature) it.next();
-					if (feature.getPathType() != Feature.TYPE_POINT) {
+				for (Feature feature: shapeLayer.getSelections()) {
+					if (feature.getPath().getType() != FPath.TYPE_POINT) {
 						if (feature.getPath().getWorld().intersects(rect)) {
 							addVertex(feature, worldPt, rect);
 							break;

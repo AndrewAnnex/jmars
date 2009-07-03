@@ -20,55 +20,45 @@
 
 package edu.asu.jmars.layer.stamp;
 
-import edu.asu.jmars.Main;
-import edu.asu.jmars.ProjObj;
-import edu.asu.jmars.layer.*;
-import edu.asu.jmars.swing.*;
-import edu.asu.jmars.util.Config;
-import edu.asu.jmars.util.DebugLog;
-import edu.asu.jmars.util.HVector;
-
-import java.awt.geom.*;
-import java.io.*;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.HashMap;
+import java.awt.geom.Point2D;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.net.URL;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import edu.asu.jmars.Main;
+import edu.asu.jmars.layer.SerializedParameters;
+import edu.asu.jmars.swing.ColorMapOp;
+import edu.asu.jmars.swing.ColorMapper;
+import edu.asu.jmars.util.DebugLog;
 
 
 public class FilledStamp
 {
 	private static DebugLog log = DebugLog.instance();
 
-    public Stamp stamp;
+    public StampShape stamp;
     public StampImage pdsi;
+    
     /** Offset in east-lon ocentric-lat */
     private Point2D offset = null;
-    public int band = -1;
     public ColorMapper.State colors = ColorMapper.State.DEFAULT;
 
-    private static final String dbUrl = Config.get("stamps.offsetdb");
-    
     public ColorMapOp getColorMapOp()
     {
 	return  colors.getColorMapOp();
     }
 
-    public FilledStamp(Stamp stamp, StampImage pdsi)
-    {
-		this.stamp = stamp;
-		this.pdsi = pdsi;
-		
-		offset = loadOffset();
+    public String toString() {
+    	return stamp.getId() + " : " + pdsi.imageType;
     }
-
-    public FilledStamp(Stamp stamp, StampImage pdsi, State state)
+    
+    public FilledStamp(StampShape stamp, StampImage pdsi, State state)
     {
 		this.stamp = stamp;
 		this.pdsi = pdsi;
@@ -76,8 +66,6 @@ public class FilledStamp
 		offset = loadOffset();
 		
 		if (state != null) {
-		    band = state.band;
-
 		    // Slightly bizarre means for restoring colors since our
 		    // internal representation cannot be serialized.
 		    ColorMapper mapper = new ColorMapper();
@@ -128,63 +116,35 @@ public class FilledStamp
     }
     
     private Point2D.Double loadOffset() {
-    	java.sql.Connection conn = null;
-
-    	String dbUserName = Main.DB_USER;
-    	String dbPassword = Main.DB_PASS;
-
     	// This is the id that this offset will be stored with
     	String userID = Main.USER;
 
-    	double x = 0.0;
-    	double y = 0.0;
+    	Point2D.Double offset = null;
     	
     	try
     	{
-    		conn = DriverManager.getConnection(dbUrl, dbUserName, dbPassword);
+    		
+            URL url = new URL(StampLayer.stampURL+"OffsetFetcher?user="+userID+"&stamp="+stamp.getId()+StampLayer.versionStr);
+                            
+            ObjectInputStream ois = new ObjectInputStream(url.openStream());
 
-    		Statement s = conn.createStatement();
-
-    		String queryStr = "select xOffset, yOffset from themis2.stamps_offset where userid = '"+userID+"' and stampid='"+stamp.id+"'";
-
-    		log.println(queryStr);
-    		ResultSet rs = s.executeQuery(queryStr);
-
-    		if (rs.next()) {
-    			x = rs.getDouble("xOffset");
-    			y = rs.getDouble("yOffset");
-    			log.println("Previous values set");
-    		} else {
-    			log.println("No prestored values found");
-    		}    		
+            double pt[] = (double[]) ois.readObject();
+            offset = new Point2D.Double(pt[0], pt[1]);
+            ois.close();
     	}
-    	catch(SQLException sqle)
+    	catch(Exception e)
     	{
-    		log.aprintln(sqle.getMessage());
-    	}
-    	finally
-    	{
-    		// Should this be closed every time, or returned?
-    		try { conn.close(); } catch(Throwable exception) { }
+    		log.aprintln(e.getMessage());
     	}
     	
-    	return new Point2D.Double(x,y);
+    	return offset;
     }
     
     public void saveOffset() {
     	stampUpdates.add(this);
     	lastOffsetUpdateTime = System.currentTimeMillis();
     }
-    
-    private void addSaveStatement(Statement s) throws SQLException {    	
-		// This is the id that this offset will be stored with
-		String userID = Main.USER;
-		String queryStr = "replace into themis2.stamps_offset (stampid, userid, xoffset, yoffset) " +
-				"values ('" + stamp.id + "', '"+userID+"', "+offset.getX()+","+offset.getY()+")";
-		log.println(queryStr);
-		s.addBatch(queryStr);
-    }
-    
+        
     static Timer saveTimer = new Timer("Stamp Save Timer");
     static TimerTask timerTask = null;
     static long lastOffsetUpdateTime = Long.MAX_VALUE;
@@ -194,7 +154,6 @@ public class FilledStamp
     static {    	    	
     	timerTask = new TimerTask() {	
  			public void run() {
- 				
  				// Wait until 10 seconds after the last update to commit offset
  				// values to the database.
  				if (System.currentTimeMillis()-lastOffsetUpdateTime < 10000) {
@@ -205,34 +164,25 @@ public class FilledStamp
  				if (stampUpdates.size()==0) return;
  				
 				log.println("FilledStamp TimerTask Running...");
-				
-				java.sql.Connection conn = null;
-				
-				String dbUserName = Main.DB_USER;
-				String dbPassword = Main.DB_PASS;
-				
+								
 				try
 				{
-					conn = DriverManager.getConnection(dbUrl, dbUserName, dbPassword);
-					
-					Statement s = conn.createStatement();
-					
 					for(FilledStamp stamp : stampUpdates) {				
-						stamp.addSaveStatement(s);
-					} 
+						String updateStr = StampLayer.stampURL+"OffsetUpdater?user="+Main.USER+"&stamp="+stamp.stamp.getId()+StampLayer.versionStr;
+						
+						updateStr += "&xoffset="+stamp.offset.getX()+"&yoffset="+stamp.offset.getY();
+		 	            URL url = new URL(updateStr);
 
-					s.executeBatch();
+		 	            url.openStream();		 	            
+					} 
+					
 		   			stampUpdates.clear();
 		   			lastOffsetUpdateTime = System.currentTimeMillis();
 				}
-				catch(SQLException sqle)
+				catch(Exception e)
 				{
-					log.aprintln(sqle.getMessage());
+					log.aprintln(e.getMessage());
 				}
-				finally
-				{
-					try { conn.close(); } catch(Throwable exception) { }
-				}				
 			}			
 		};
     	
@@ -241,40 +191,50 @@ public class FilledStamp
     
     public State getState()
     {
-	State state = new State();
+		State state = new State();
+		
+		if (stamp != null)
+		    state.id = stamp.getId();
 	
-	if (stamp != null)
-	    state.id = stamp.id;
+		// Slightly bizarre means for storing colors since our
+		// internal representation cannot be serialized.
+		ColorMapper mapper = new ColorMapper();
+		ByteArrayOutputStream buf = new ByteArrayOutputStream();
+		if (mapper != null &&
+		    buf != null) {
+		    try {
+			mapper.setState(colors);
+			mapper.saveColors(buf);
+			state.colorMap = buf.toByteArray();
+		    }
+		    catch (Exception e) {
+			// ignore
+		    }
+		}
 
-	state.band = band;
-
-	// Slightly bizarre means for storing colors since our
-	// internal representation cannot be serialized.
-	ColorMapper mapper = new ColorMapper();
-	ByteArrayOutputStream buf = new ByteArrayOutputStream();
-	if (mapper != null &&
-	    buf != null) {
-	    try {
-		mapper.setState(colors);
-		mapper.saveColors(buf);
-		state.colorMap = buf.toByteArray();
-	    }
-	    catch (Exception e) {
-		// ignore
-	    }
-	}
-
-	return state;
+		state.imageType = pdsi.imageType;
+		return state;
     }
 
     /**
-     ** Minimal description of state needed to recreate
-     ** a FilledStamp.
-     **/
-    public static class State implements SerializedParameters
-    {
-	String id;
-	int    band;
-	byte[] colorMap;
+     * Minimal description of state needed to recreate
+     * a FilledStamp.
+     */
+    public static class State implements SerializedParameters {
+    	private static final long serialVersionUID = -2396089407110933527L;
+    	String id;
+    	byte[] colorMap;
+    	String imageType;
+    	private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+    		ois.defaultReadObject();
+    	}
+    	
+    	public String getImagetype() {
+    		return imageType;
+    	}
+    	
+    	public void setImageType(String newType) {
+    		imageType=newType;
+    	}
     }
 }

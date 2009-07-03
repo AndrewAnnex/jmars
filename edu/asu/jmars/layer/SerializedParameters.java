@@ -20,8 +20,6 @@
 
 package edu.asu.jmars.layer;
 
-import edu.asu.jmars.*;
-import edu.asu.jmars.util.*;
 import java.io.Serializable;
 
 public interface SerializedParameters extends Serializable

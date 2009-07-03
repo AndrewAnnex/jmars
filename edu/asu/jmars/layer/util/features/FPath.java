@@ -21,8 +21,17 @@
 package edu.asu.jmars.layer.util.features;
 
 import java.awt.Shape;
-import java.awt.geom.*;
-import java.util.*;
+import java.awt.geom.GeneralPath;
+import java.awt.geom.Line2D;
+import java.awt.geom.PathIterator;
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.collections.ReferenceMap;
 
@@ -38,10 +47,19 @@ import edu.asu.jmars.util.Util;
  * between the world and spatial east/west coordinate systems. Several common
  * computations are also provided.
  */
-public class FPath {
+public final class FPath {
 	// NOTE! To disable caching, just set this to false
 	private static final boolean caching = true;
-
+	
+	/** This Feature represents an undefined shape. */
+	public static final int TYPE_NONE = 0;
+	/** This Feature represents a single point. */
+	public static final int TYPE_POINT = 1;
+	/** This Feature represents an unclosed polyline with 2 or more points. */
+	public static final int TYPE_POLYLINE = 2;
+	/** This Feature represents a closed polygon with 3 or more points. */
+	public static final int TYPE_POLYGON = 3;
+	
 	public static final int WORLD = 0;
 	public static final int SPATIAL_EAST = 1;
 	public static final int SPATIAL_WEST = 2;
@@ -61,6 +79,8 @@ public class FPath {
 	static Map newCache () {
 		return Collections.synchronizedMap(new ReferenceMap (ReferenceMap.WEAK, ReferenceMap.SOFT));
 	}
+	
+	private static final NumberFormat nf = new DecimalFormat("0.###");
 
 	private final int coordSystem;
 	private final Point2D[] vertices;
@@ -177,7 +197,30 @@ public class FPath {
 
 		return latLons;
 	}
-
+	
+	/**
+	 * Returns the current type of the Feature's path attribute.
+	 * The GeneralPath is examined each time this method is called, so the
+	 * result should be retained externally if it is needed in many places.
+	 * @return One of the public field values:
+	 * <ul>
+	 * <li>TYPE_NONE
+	 * <li>TYPE_POINT
+	 * <li>TYPE_POLYLINE
+	 * <li>TYPE_POLYGON
+	 * </ul>
+	 */
+	public int getType () {
+		if (vertices.length < 1)
+			return TYPE_NONE;
+		else if (vertices.length < 2)
+			return TYPE_POINT;
+		else if (closed)
+			return TYPE_POLYGON;
+		else
+			return TYPE_POLYLINE;
+	}
+	
 	/**
 	 * Returns the vector average for spatial paths, or the positional average
 	 * for world paths.
@@ -223,7 +266,7 @@ public class FPath {
 		switch (coordSystem) {
 		case SPATIAL_EAST:
 		case SPATIAL_WEST:
-			return closed ? Util.sphericalArea(vertices) * 3386 * 3386 : 0.0;
+			return closed ? Util.sphericalArea(vertices) * Util.MARS_MEAN * Util.MARS_MEAN : 0.0;
 		case WORLD:
 			// TODO
 		default:
@@ -446,12 +489,29 @@ public class FPath {
 		return newPoints;
 	}
 
+	/** converts this path to world coordinates, where x values are in the range [0,540) and y values are in the range [-90,90] */
 	private final Point2D[] spatialToWorld(Point2D[] points, boolean east) {
 		Point2D[] newPoints = new Point2D[points.length];
 		if (east)
 			points = toggleLonEastWest (points);
-		for (int i = 0; i < points.length; i++)
+		double lastX = 0;
+		double minX = Double.POSITIVE_INFINITY;
+		for (int i = 0; i < points.length; i++) {
 			newPoints[i] = Main.PO.convSpatialToWorld(points[i]);
+			double x = newPoints[i].getX();
+			if (i > 0 && Math.abs(lastX - x) > 180) {
+				x += Math.signum(lastX - x) * 360;
+				minX = Math.min(minX, x);
+				newPoints[i].setLocation(x, newPoints[i].getY());
+			}
+			lastX = x;
+		}
+		if (minX < 0) {
+			minX = (int)Math.ceil(-minX/360)*360;
+			for (Point2D p: newPoints) {
+				p.setLocation(p.getX() + minX, p.getY());
+			}
+		}
 		return newPoints;
 	}
 
@@ -460,5 +520,27 @@ public class FPath {
 		for (int i = 0; i < points.length; i++)
 			newPoints[i] = Main.PO.convWorldToSpatial(points[i]);
 		return east ? toggleLonEastWest (newPoints) : newPoints;
+	}
+	
+	public String toString(){
+		StringBuffer sbuf = new StringBuffer("FPath[");
+		
+		String coordSys = "UNKNOWN";
+		switch(getCoordSystem()){
+		case WORLD: coordSys = "world"; break;
+		case SPATIAL_EAST: coordSys = "east"; break;
+		case SPATIAL_WEST: coordSys = "west"; break;
+		}
+		sbuf.append("coordSys="+coordSys+";");
+		
+		sbuf.append("coords=");
+		float[] coords = getCoords(false);
+		for(int i=0; i<coords.length; i++){
+			if (i > 0)
+				sbuf.append(",");
+			sbuf.append(nf.format(coords[i]));
+		}
+		sbuf.append("]");
+		return sbuf.toString();
 	}
 }

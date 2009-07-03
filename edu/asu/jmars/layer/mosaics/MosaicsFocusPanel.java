@@ -69,16 +69,15 @@ public class MosaicsFocusPanel extends FocusPanel {
 		table = new STable();
 		table.setAutoCreateColumnsFromModel(false);
 		table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-
+		
 		FeatureCollection fc = ((MosaicsLayer)lview.getLayer()).getFeatures();
-		selectionListener = new FeatureSelectionListener(table, fc);
+		selectionListener = new FeatureSelectionListener(table, fc, lview.layer.selections);
 		tableModel = new ROFeatureTableModel(fc, (FilteringColumnModel)table.getColumnModel(), selectionListener);
 		table.setUnsortedTableModel(tableModel);
 		table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		fc.addListener(new FeatureListener(){
 			public void receive(FeatureEvent e) {
 				tableModel.receive(e);
-				selectionListener.receive(e);
 			}
 		});
 		TableColumn tc = table.getColumn(FeatureProviderWMS.FIELD_ABSTRACT);

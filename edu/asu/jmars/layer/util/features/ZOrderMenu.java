@@ -20,16 +20,16 @@
 
 package edu.asu.jmars.layer.util.features;
 
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
-import edu.asu.jmars.layer.util.features.FeatureCollection;
 import edu.asu.jmars.util.DebugLog;
 
 
@@ -43,15 +43,17 @@ public class ZOrderMenu extends JMenu implements ActionListener {
     private static DebugLog log = DebugLog.instance();
 
     private FeatureCollection fc;
-
+    private Set<Feature> selections;
+    
 	JMenuItem bottomMenuItem = new JMenuItem("Send to Bottom");
 	JMenuItem lowerMenuItem = new JMenuItem("Lower");
 	JMenuItem raiseMenuItem = new JMenuItem("Raise");
 	JMenuItem topMenuItem = new JMenuItem("Bring to Top");
 
-	public ZOrderMenu(String title, FeatureCollection fc) {
+	public ZOrderMenu(String title, FeatureCollection fc, Set<Feature> selections) {
 		super(title);
 		this.fc = fc;
+		this.selections = selections;
 
 		add(bottomMenuItem);
 		add(lowerMenuItem);
@@ -69,12 +71,11 @@ public class ZOrderMenu extends JMenu implements ActionListener {
     }
 
 	public void actionPerformed(ActionEvent e) {
-		List selected = FeatureUtil.getSelectedFeatures(fc);
-		if (selected.size() == 0)
+		if (selections.size() == 0)
 			return;
-		Map feat2idx = FeatureUtil.getFeatureIndices(fc.getFeatures(), selected);
-		int rows[] = new int[selected.size()];
-		Iterator selIt = selected.iterator();
+		Map feat2idx = FeatureUtil.getFeatureIndices(fc.getFeatures(), selections);
+		int rows[] = new int[selections.size()];
+		Iterator selIt = selections.iterator();
 		for (int i = 0; i < rows.length; i++)
 			rows[i] = ((Integer)feat2idx.get(selIt.next())).intValue();
 		Arrays.sort(rows);

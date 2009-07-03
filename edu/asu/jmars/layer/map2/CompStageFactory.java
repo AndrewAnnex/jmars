@@ -24,19 +24,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 import edu.asu.jmars.layer.map2.stages.composite.CompositeStage;
-import edu.asu.jmars.layer.map2.stages.composite.HSVComposite;
 import edu.asu.jmars.layer.map2.stages.composite.HSVCompositeSettings;
-import edu.asu.jmars.layer.map2.stages.composite.NoComposite;
 import edu.asu.jmars.layer.map2.stages.composite.NoCompositeSettings;
-import edu.asu.jmars.layer.map2.stages.composite.RGBComposite;
 import edu.asu.jmars.layer.map2.stages.composite.RGBCompositeSettings;
-import edu.asu.jmars.layer.map2.stages.composite.SingleComposite;
 import edu.asu.jmars.layer.map2.stages.composite.SingleCompositeSettings;
 
 /**
@@ -45,19 +40,18 @@ import edu.asu.jmars.layer.map2.stages.composite.SingleCompositeSettings;
 public class CompStageFactory {
 	private static CompStageFactory instance;
 
-	private List compStages;
-	private Map stagesByName;
+	private List<CompositeStage> compStages;
+	private Map<String,CompositeStage> stagesByName;
 	
 	protected CompStageFactory(){
-		compStages = new ArrayList();
-		compStages.add((new SingleCompositeSettings()).createStage());
-		compStages.add((new NoCompositeSettings()).createStage());
-		compStages.add((new RGBCompositeSettings()).createStage());
-		compStages.add((new HSVCompositeSettings()).createStage());
-
-		stagesByName = new HashMap();
-		for(Iterator li=compStages.iterator(); li.hasNext(); ){
-			CompositeStage s = (CompositeStage)li.next();
+		compStages = new ArrayList<CompositeStage>();
+		compStages.add((CompositeStage)new SingleCompositeSettings().createStage());
+		compStages.add((CompositeStage)new NoCompositeSettings().createStage());
+		compStages.add((CompositeStage)new RGBCompositeSettings().createStage());
+		compStages.add((CompositeStage)new HSVCompositeSettings().createStage());
+		
+		stagesByName = new HashMap<String,CompositeStage>();
+		for(CompositeStage s: compStages) {
 			stagesByName.put(s.getStageName(), s);
 		}
 	}
@@ -71,9 +65,9 @@ public class CompStageFactory {
 	}
 	
 	public String[] getSupportedNames() {
-		List names = new LinkedList();
-		for (Iterator it=compStages.iterator(); it.hasNext(); ) {
-			names.add(((CompositeStage)it.next()).getStageName());
+		List<String> names = new LinkedList<String>();
+		for (CompositeStage stage: compStages) {
+			names.add(stage.getStageName());
 		}
 		return (String[])names.toArray(new String[0]);
 	}
@@ -95,7 +89,7 @@ public class CompStageFactory {
 		return null;
 	}
 	
-	public List getCompStages(){
+	public List<CompositeStage> getCompStages(){
 		return Collections.unmodifiableList(compStages);
 	}
 	
@@ -106,16 +100,12 @@ public class CompStageFactory {
 	/**
 	 * Compares Stages by their names.
 	 */
-	public static class StageComparatorByName implements Comparator {
-		public int compare(Object arg0, Object arg1) {
-			CompositeStage s1 = (CompositeStage)arg0;
-			CompositeStage s2 = (CompositeStage)arg1;
-			
+	public static class StageComparatorByName implements Comparator<CompositeStage> {
+		public int compare(CompositeStage s1, CompositeStage s2) {
 			if (s1 == null && s2 != null)
 				return 1;
-			else if (s1 != null && s2 == null)
+			if (s1 != null && s2 == null)
 				return -1;
-			
 			return s1.getStageName().compareTo(s2.getStageName());
 		}
 	}

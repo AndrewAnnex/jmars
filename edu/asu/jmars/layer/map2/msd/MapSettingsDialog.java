@@ -25,11 +25,14 @@ import java.awt.Cursor;
 import java.awt.Frame;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.geom.GeneralPath;
+import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.net.URI;
@@ -44,10 +47,13 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.JPopupMenu;
 import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
@@ -88,6 +94,7 @@ import edu.asu.jmars.layer.map2.stages.composite.BandAggregator;
 import edu.asu.jmars.layer.map2.stages.composite.BandAggregatorSettings;
 import edu.asu.jmars.layer.map2.stages.composite.CompositeStage;
 import edu.asu.jmars.layer.map2.stages.composite.SingleCompositeSettings;
+import edu.asu.jmars.layer.util.features.FPath;
 import edu.asu.jmars.util.DebugLog;
 import edu.asu.jmars.util.Util;
 
@@ -166,9 +173,7 @@ public class MapSettingsDialog implements PipelineProducer {
 			throw new RuntimeException("Really bad configurationg");
 		}
 		
-		KeyStroke esc = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0, false);
-		dialog.getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(esc, "ESCAPE");
-		dialog.getRootPane().getActionMap().put("ESCAPE", cancelAction);
+		Util.addEscapeAction(dialog);
 		
 		dialog.addWindowListener(new WindowAdapter(){
 			public void windowClosing(WindowEvent e) {
@@ -180,6 +185,27 @@ public class MapSettingsDialog implements PipelineProducer {
 		availModel = new AvailableMapsModel();
 		availTree.setCellRenderer(new MapTreeCellRenderer());
 		availTree.getSelectionModel().addTreeSelectionListener(new AvailableMapSelected());
+		availTree.addMouseListener(new MouseAdapter() {
+			public void mousePressed(MouseEvent e) {
+				final MapServer server = availTree.getSelectedMapServer();
+				if (server != null && SwingUtilities.isRightMouseButton(e)) {
+					JPopupMenu menu = new JPopupMenu();
+					JMenuItem refresh = new JMenuItem("Refresh Server");
+					refresh.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent e) {
+							try {
+								dialog.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+								refreshServer(server);
+							} finally {
+								dialog.setCursor(Cursor.getDefaultCursor());
+							}
+						}
+					});
+					menu.add(refresh);
+					menu.show(e.getComponent(), e.getX(), e.getY());
+				}
+			}
+		});
 		
 		if (availModel.getChildCount(availTree.getModel().getRoot()) > 0){
 			availTree.expandPath(new TreePath(new Object[]{
@@ -304,6 +330,9 @@ public class MapSettingsDialog implements PipelineProducer {
 		});
 	}
 	
+	public void refreshServer(MapServer server) {
+		server.loadCapabilities(false);
+	}
 	
 	private int[] mkIntSeq(int n){
 		int[] seq = new int[n];
@@ -469,9 +498,9 @@ public class MapSettingsDialog implements PipelineProducer {
 		pipelineEventListeners.remove(l);
 	}
 	
-	public void firePipelineEvent(){
-		PipelineEvent e = new PipelineEvent(this);
-		for(PipelineEventListener l: pipelineEventListeners){
+	public void firePipelineEvent() {
+		PipelineEvent e = new PipelineEvent(this, true, false);
+		for(PipelineEventListener l: pipelineEventListeners) {
 			l.pipelineEventOccurred(e);
 		}
 	}
@@ -671,10 +700,12 @@ public class MapSettingsDialog implements PipelineProducer {
 		}
 	}
 	
+	static JFileChooser fileChooser;
+	
 	static class UploadFileAction extends AbstractAction implements TreeSelectionListener {
 		private static final long serialVersionUID = 1L;
 
-		AvailableMapsTree availMapsTree;
+		private AvailableMapsTree availMapsTree;
 		private FileUploadDialog fileUploadDialog = null;
 		
 		public UploadFileAction(AvailableMapsTree availMapsTree){
@@ -685,16 +716,23 @@ public class MapSettingsDialog implements PipelineProducer {
 		}
 		
 		public void actionPerformed(ActionEvent e) {
-			if (fileUploadDialog == null)
-				fileUploadDialog = new FileUploadDialog((Frame)Util.getNearest(availMapsTree, Frame.class), MapServerFactory.getCustomMapServer());
-			
-			String fileUploaded = fileUploadDialog.uploadFile();
-			
-			if (fileUploaded != null){
-				enableDisableAction();
+			if (fileUploadDialog == null) {
+				if (fileChooser == null) {
+					fileChooser = FileUploadDialog.createDefaultChooser();
+				}
+				fileUploadDialog = new FileUploadDialog(
+					(Frame)Util.getNearest(availMapsTree, Frame.class),
+					fileChooser,
+					MapServerFactory.getCustomMapServer());
 			}
+			
+			fileUploadDialog.uploadFile(new Runnable() {
+				public void run() {
+					enableDisableAction();
+				}
+			});
 		}
-
+		
 		private void enableDisableAction(){
 			MapServerFactory.whenMapServersReady(new Runnable() {
 				public void run() {
@@ -721,34 +759,47 @@ public class MapSettingsDialog implements PipelineProducer {
 		}
 		
 		public void actionPerformed(ActionEvent e) {
-			MapSource mapSource = availMapsTree.getSelectedMapSource();
-			CustomMapServer mapServer = (CustomMapServer)mapSource.getServer();
-			
-			int option = JOptionPane.showConfirmDialog(Util.getNearest(availMapsTree, Window.class),
-				new String[]{
-					"Delete map source \""+mapSource.getTitle()+"\"",
-					"from server \""+mapServer.getTitle()+"\""
-				},
-				"Confirm Delete Map Source", JOptionPane.YES_NO_OPTION);
-			
-			if (option == JOptionPane.YES_OPTION){
-				try {
-					mapServer.deleteCustomMap(mapSource.getName());
-					enableDisableAction();
-				} catch(Exception ex) {
-					JOptionPane.showMessageDialog(
-						null,
-						"An error occurred deleting custom map titled " + mapSource.getTitle() + ": " + ex.getMessage(),
-						"Failure deleting custom map",
-						JOptionPane.ERROR_MESSAGE,
-						errorIcon);
+			MapSource[] sources = availMapsTree.getSelectedMapSources();
+			for (MapSource mapSource: sources) {
+				if (mapSource.getServer() instanceof CustomMapServer) {
+					CustomMapServer mapServer = (CustomMapServer)mapSource.getServer();
+					
+					int option = JOptionPane.showConfirmDialog(Util.getNearest(availMapsTree, Window.class),
+						new String[]{
+							"Delete map source \""+mapSource.getTitle()+"\"",
+							"from server \""+mapServer.getTitle()+"\""
+						},
+						"Confirm Delete Map Source", JOptionPane.YES_NO_OPTION);
+					
+					if (option == JOptionPane.YES_OPTION) {
+						try {
+							availMapsTree.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+							mapServer.deleteCustomMap(mapSource.getName());
+							enableDisableAction();
+						} catch(Exception ex) {
+							JOptionPane.showMessageDialog(
+									availMapsTree,
+									Util.foldText(
+											"An error occurred deleting custom map titled " +
+											mapSource.getTitle() + ": " + ex.getMessage(), 60, "\n"),
+									"Failure deleting custom map",
+									JOptionPane.ERROR_MESSAGE,
+									errorIcon);
+						} finally {
+							availMapsTree.setCursor(Cursor.getDefaultCursor());
+						}
+					}
 				}
 			}
 		}
 		
 		private void enableDisableAction() {
-			MapSource source = availMapsTree.getSelectedMapSource();
-			setEnabled(source != null && source.getServer() instanceof CustomMapServer);
+			MapSource[] sources = availMapsTree.getSelectedMapSources();
+			boolean enabled = false;
+			for (MapSource source: sources == null ? new MapSource[]{} : sources) {
+				enabled |= source.getServer() instanceof CustomMapServer;
+			}
+			setEnabled(enabled);
 		}
 		
 		public void valueChanged(TreeSelectionEvent e){
@@ -793,14 +844,9 @@ public class MapSettingsDialog implements PipelineProducer {
 	private static final ImageIcon errorIcon = Util.loadIcon("resources/error.gif");
 	
 	class AvailableMapSelected implements TreeSelectionListener, MapChannelReceiver {
-		private final Rectangle2D previewArea = new Rectangle2D.Double(160,-20,40,40);
-		private final int previewPPD = 2;
-		private final ProjObj previewProj = new ProjObj.Projection_OC(0,0);
 		private final JLabel previewLabel;
 		private final JTextArea mapAbstractTextArea;
-		//private final JLabel mapBandsLabel;
-		//private final JLabel mapUnitsLabel;
-		MapChannel previewRequest = new MapChannel(previewArea, previewPPD, previewProj, null);
+		MapChannel previewRequest = new MapChannel();
 		
 		public AvailableMapSelected() {
 			previewRequest.addReceiver(this);
@@ -808,14 +854,10 @@ public class MapSettingsDialog implements PipelineProducer {
 			previewLabel.setHorizontalAlignment(SwingConstants.CENTER);
 			
 			mapAbstractTextArea = (JTextArea)cookSwing.getId("mapAbstract").object;
-			//mapBandsLabel = (JLabel)cookSwing.getId("mapBands").object;
-			//mapUnitsLabel = (JLabel)cookSwing.getId("mapUnits").object;
 		}
 		
 		private void clearFields(){
 			mapAbstractTextArea.setText("");
-			//mapBandsLabel.setText("");
-			//mapUnitsLabel.setText("");
 			previewLabel.setText("");
 			previewLabel.setIcon(null);
 		}
@@ -825,8 +867,6 @@ public class MapSettingsDialog implements PipelineProducer {
 			if (source == null) {
 				clearFields();
 			} else {
-				//mapBandsLabel.setText("");
-				//mapUnitsLabel.setText("");
 				mapAbstractTextArea.setText(source.getAbstract());
 				mapAbstractTextArea.setCaretPosition(0);
 				previewLabel.setIcon(waitingIcon);
@@ -834,10 +874,69 @@ public class MapSettingsDialog implements PipelineProducer {
 				source.getMapAttr(new MapAttrReceiver(){
 					public void receive(MapAttr attr) {
 						try {
-							Pipeline[] pipes = Pipeline.buildAutoFilled(new MapSource[]{ source }, (CompositeStage)(new SingleCompositeSettings()).createStage());
+							// compute projection to be centered on data
+							Rectangle2D geoBounds = Util.swapRect(source.getLatLonBoundingBox());
+							double geoCenterLon = geoBounds.getCenterX();
+							double geoCenterLat;
+							if (geoBounds.getMaxY() >= 90 && geoBounds.getMinY() > -90) {
+								// if bounds go over north pole only use north pole as center
+								geoCenterLat = 90;
+							} else if (geoBounds.getMaxY() < 90 && geoBounds.getMinY() <= -90) {
+								// if bounds go over south pole only use south pole as center
+								geoCenterLat = -90;
+							} else {
+								// in all other cases just use bounds center
+								geoCenterLat = geoBounds.getCenterY();
+							}
+							ProjObj po = new ProjObj.Projection_OC(geoCenterLon,geoCenterLat);
+							
+							// create lon/lat rectangle with extra points, warp it into the data-centered
+							// projection, and use the bounding box as the request bounding box
+							double[][] corners = {
+								{geoBounds.getMinX(), geoBounds.getMinY()},
+								{geoBounds.getMaxX(), geoBounds.getMinY()},
+								{geoBounds.getMaxX(), geoBounds.getMaxY()},
+								{geoBounds.getMinX(), geoBounds.getMaxY()}
+							};
+							int interpSize = 10;
+							List<Point2D> interpolatedPoints = new ArrayList<Point2D>(interpSize*corners.length);
+							for (int i = 0; i < corners.length; i++) {
+								double[] p1 = corners[i];
+								double[] p2 = corners[(i+1)%corners.length];
+								for (int j = 0; j < interpSize; j++) {
+									double ratio = (double)j/interpSize;
+									// convert to east-leading longitude
+									interpolatedPoints.add(new Point2D.Float(
+										(float)((1-ratio)*p1[0] + ratio*p2[0]),
+										(float)((1-ratio)*p1[1] + ratio*p2[1])
+									));
+								}
+							}
+							Point2D[] points = interpolatedPoints.toArray(new Point2D[interpolatedPoints.size()]);
+							Rectangle2D worldExtent = new FPath(points,FPath.SPATIAL_WEST,true).getWorld().getGeneralPath().getBounds2D();
+							
+							// request 'pixSides' square pixels, from a square
+							// area centered on the world extent, at the
+							// smallest ppd value large enough to put the
+							// request extent inside the data extent, but not
+							// less than 8 ppd
+							int pixSides = 80;
+							double geoSides = Math.min(worldExtent.getWidth(), worldExtent.getHeight());
+							int ppd = (int)Math.round(Math.pow(2, Math.ceil(Math.log(pixSides / geoSides) / Math.log(2))));
+							ppd = Math.max(4, ppd);
+							geoSides = pixSides / (double)ppd;
+							Rectangle2D requestExtent = new Rectangle2D.Double(
+								worldExtent.getCenterX() - geoSides/2,
+								worldExtent.getCenterY() - geoSides/2,
+								geoSides, geoSides);
+							
+							// send the request
+							MapSource[] sources = new MapSource[]{source};
+							CompositeStage composite = (CompositeStage)(new SingleCompositeSettings()).createStage();
+							Pipeline[] pipes = Pipeline.buildAutoFilled(sources, composite);
 							previewRequest.setPipeline(pipes);
-						}
-						catch(AutoFillException ex) {
+							previewRequest.setMapWindow(requestExtent, ppd, po);
+						} catch(AutoFillException ex) {
 							log.println(ex.toString());
 							previewLabel.setIcon(errorIcon);
 						}
@@ -845,6 +944,7 @@ public class MapSettingsDialog implements PipelineProducer {
 				});
 			}
 		}
+		
 		public void mapChanged(MapData mapData) {
 			if (mapData.isFinished()) {
 				if (mapData.getImage() != null) {
@@ -856,4 +956,3 @@ public class MapSettingsDialog implements PipelineProducer {
 		}
 	}
 }
-

@@ -36,6 +36,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.AbstractList;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Observable;
@@ -45,7 +46,6 @@ import javax.swing.AbstractAction;
 import javax.swing.JLayeredPane;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
 import javax.swing.KeyStroke;
 import javax.swing.event.AncestorEvent;
 
@@ -98,7 +98,7 @@ import edu.asu.jmars.util.Util;
  **/
 public class LViewManager
  extends JLayeredPane
- implements LocationListener, ConfigListener
+ implements LocationListener
  {
 	private static DebugLog log = DebugLog.instance();
 
@@ -338,27 +338,6 @@ public class LViewManager
 	public void setLocationAndZoom(Point2D loc, int zoom)
 	 {
 		double maxPan = Math.floor((1<<23) * 20.0 / magnify);
-		if(Main.inTimeProjection()
-		   &&  childVMan != null
-		   &&  Math.abs(loc.getX()) > maxPan)
-			JOptionPane.showMessageDialog(
-				this,
-				( "At your current resolution (pixel per degree),\n" +
-				  "you may experience graphics glitches while\n" +
-				  "viewing this moment in time. A resolution of\n" +
-				  magnify + " ppd only permits you to pan up to:\n" +
-				  "        " + (long) maxPan + " seconds\n" +
-				  "from your base ET of:\n" +
-				  "        " + (long) Main.PO.getServerOffsetX() + "\n" +
-				  "\n" +
-				  "If you wish to view this moment properly, you\n" +
-				  "must re-start the app with a single command-\n" +
-				  "line parameter: a base ET time that's closer\n" +
-				  "to the time you wish to view."
-				),
-				"WARNING",
-				JOptionPane.WARNING_MESSAGE);
-
 		boolean locationChange = anchorPoint == null
 			||  !anchorPoint.equals(loc)
 			||  oldPO != Main.PO;
@@ -384,44 +363,39 @@ public class LViewManager
 	 ** Triggers a {@link Layer.LView#viewChanged} in every {@link
 	 ** Layer.LView LView} contained by this LViewManager.
 	 **/
-	public void viewChanged()
-	 {
-		Iterator iterViews = viewList.iterator();
-		while(iterViews.hasNext())
-			( (Layer.LView)iterViews.next() ).viewChanged();
+	public void viewChanged() {
+		List<Layer.LView> views = new ArrayList<Layer.LView>(viewList);
+		Collections.reverse(views);
+		for (Layer.LView view: views) {
+			view.viewChanged();
+		}
 
-                //Notify any active rulers that the view has changed - only need to do for one LManager
-      		if(childVMan == null)
-                  RulerManager.Instance.notifyRulerOfViewChange();
-
-//		repaint();
-	 }
+		// Notify any active rulers that the view has changed - only need to do
+		// for one LManager
+		if (childVMan == null)
+			RulerManager.Instance.notifyRulerOfViewChange();
+	}
 
 	public final Graphics2D wrapScreenGraphics(Graphics2D g2)
 	 {
-		if(Main.inTimeProjection())
-			return  g2;
-		else
-			return  new GraphicsWrapped(
-				g2,
-				360 * magnify,
-				magnify,
-				getProj().getScreenWindow(),
-				"wrapScreenGraphics"
-				);
+		return  new GraphicsWrapped(
+			g2,
+			360 * magnify,
+			magnify,
+			getProj().getScreenWindow(),
+			"wrapScreenGraphics"
+		);
 	 }
+	
 	public final Graphics2D wrapWorldGraphics(Graphics2D g2)
 	 {
-		if(Main.inTimeProjection())
-			return  g2;
-		else
-			return  new GraphicsWrapped(
-				g2,
-				360,
-				magnify,
-				getProj().getWorldWindow(),
-				"wrapWorldGraphics"
-				);
+		return  new GraphicsWrapped(
+			g2,
+			360,
+			magnify,
+			getProj().getWorldWindow(),
+			"wrapWorldGraphics"
+		);
 	 }
 
 	/**
@@ -547,50 +521,7 @@ public class LViewManager
             log.aprintln(e);
         }
 	}
-	
-    /**
-     * Notifies all managed instances of {@link Layer.LView} that
-     * are contained in {@link #viewList} of a change to JMARS 
-     * configuration parameters.
-     * 
-     * @see Config
-     * @see Layer.LView#configChanged()
-     * @see edu.asu.jmars.layer.ConfigListener#configChanged()
-     */
-    public void configChanged()
-    {
-        Iterator iterViews = viewList.iterator();
-        while(iterViews.hasNext())
-            ( (Layer.LView)iterViews.next() ).configChanged();
-
-    }
-    
-    /**
-     * Notifies all managed instances of {@link Layer.LView} that
-     * are contained in {@link #viewList} of a change to JMARS 
-     * configuration parameters that is specific to views that
-     * are instances of the specified class.
-     * 
-     * @param cls Class/superclass of which only views that are instances
-     * will be notified of the configuration change.
-     * 
-     * @see Config
-     * @see Layer.LView#configChanged(Class)
-     * @see edu.asu.jmars.layer.ConfigListener#configChanged(Class)
-     */
-    public void configChanged(Class cls)
-    {
-        if (cls != null) {
-            Iterator iterViews = viewList.iterator();
-            while(iterViews.hasNext()) {
-                Layer.LView view = (Layer.LView)iterViews.next();
-                if (cls.isInstance(view))
-                    view.configChanged(cls);
-            }
-        }
-    }
-
-    
+	        
 	/**
 	 ** Internal class that implements MovableList to proxy things to
 	 ** our JLayeredPane display.
@@ -762,12 +693,6 @@ public class LViewManager
 		 **/
 		private double screenToScreenLocal(double x)
 		 {
-			if(Main.inTimeProjection())
-			 {
-//				log.aprintln("BAD PROGRAMMER!!! INVALID CONVERSION CALL!");
-//				throw  new Error("BAD PROGRAMMER!!! INVALID CONVERSION CALL!");
-				return (x);
-			 }
 			final double ppd = magnify;
 			return  x - Math.floor(x / 360 / ppd) * 360 * ppd;
 		 }
@@ -839,10 +764,6 @@ public class LViewManager
 		public Shape getWorldWindowMod()
 		 {
 			Rectangle2D win = getWorldWindow();
-
-			// Short-circuit for the time projection
-			if(Main.inTimeProjection())
-				return  win;
 
 			// If we span more than 360, just return a 0->360 ranged rectangle
 			if(win.getWidth() >= 360)

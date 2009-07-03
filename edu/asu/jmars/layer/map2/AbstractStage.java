@@ -20,34 +20,20 @@
 
 package edu.asu.jmars.layer.map2;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
 
 
-public abstract class AbstractStage implements Stage, PropertyChangeListener, Cloneable, Serializable {
-	private transient List<PropertyChangeListener> propertyChangeListeners;
+public abstract class AbstractStage implements Stage, Cloneable, Serializable {
+	private static final long serialVersionUID = -6243770128040291243L;
+	
 	private StageSettings stageSettings;
 	
 	public AbstractStage(StageSettings stageSettings){
-		commonInit();
 		this.stageSettings = stageSettings;
-		this.stageSettings.addPropertyChangeListener(this);
 	}
 	
 	public StageSettings getSettings(){
 		return stageSettings;
-	}
-	
-	/*
-	 * Various transient data initializations.
-	 */
-	private void commonInit(){
-		propertyChangeListeners = new ArrayList<PropertyChangeListener>();
 	}
 	
 	/**
@@ -67,58 +53,13 @@ public abstract class AbstractStage implements Stage, PropertyChangeListener, Cl
 		return mapAttr.isCompatible(consumes(inputNumber));
 	}
 	
-	// Forward received events from StageSettings to whoever is listening.
-	public void propertyChange(PropertyChangeEvent e) {
-		firePropertyChangeEvent(new PropertyChangeEvent(this, e.getPropertyName(), e.getOldValue(), e.getNewValue()));
-	}
-	
-	/**
-	 * Adds a PropertyChangeListener to listen to the model changes.
-	 * These events are for the benefit of StageView that may be tied
-	 * to this stage.<p>
-	 * <em>If you would like to get notification of changes
-	 * to Stage state initiated by the user, register with the
-	 * {@link StageView#addChangeListener(javax.swing.event.ChangeListener)}
-	 * instead.</em>
-	 */
-	public void   addPropertyChangeListener(PropertyChangeListener l){
-		propertyChangeListeners.add(l);
-	}
-	
-	/**
-	 * Removes a PropertyChangeListener which was listening to model changes.
-	 */
-	public void   removePropertyChangeListener(PropertyChangeListener l){
-		propertyChangeListeners.remove(l);
-	}
-	
-	/**
-	 * Fires a {@link PropertyChangeEvent} to all listeners registered
-	 * with this stage.
-	 * @param e The event to be transmitted to all the listeners.
-	 */
-	public void firePropertyChangeEvent(final PropertyChangeEvent e){
-		final List<PropertyChangeListener> listeners =
-			new ArrayList<PropertyChangeListener>(propertyChangeListeners);
-
-		for(PropertyChangeListener l: listeners)
-			l.propertyChange(e);
-	}
-	
 	public String toString(){
 		return getStageName();
 	}
 	
 	public Object clone() throws CloneNotSupportedException {
 		AbstractStage s = (AbstractStage)super.clone();
-		s.commonInit();
 		s.stageSettings = (StageSettings)s.stageSettings.clone();
-		s.stageSettings.addPropertyChangeListener(s);
 		return s;
-	}
-	
-	private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
-		in.defaultReadObject();
-		commonInit();
 	}
 }

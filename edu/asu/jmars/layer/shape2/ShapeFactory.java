@@ -37,12 +37,12 @@ public class ShapeFactory extends LViewFactory {
 		return null;
 	}
 	
-	public void createLView(Callback callback){
+	public void createLView(Callback callback) {
 		LView lview = new ShapeLView(new ShapeLayer());
 		lview.originatingFactory = this;
 		callback.receiveNewLView(lview);
 	}
-
+	
 	public LView recreateLView(SerializedParameters parmBlock) {
 		LView lview = new ShapeLView(new ShapeLayer());
 		lview.originatingFactory = this;

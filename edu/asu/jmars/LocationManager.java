@@ -49,9 +49,11 @@ import javax.swing.event.EventListenerList;
 import javax.swing.plaf.basic.BasicComboBoxUI;
 
 import edu.asu.jmars.swing.PasteField;
+import edu.asu.jmars.swing.TimeField;
 import edu.asu.jmars.util.Config;
 import edu.asu.jmars.util.DebugLog;
 import edu.asu.jmars.util.HVector;
+import edu.asu.jmars.util.TimeException;
 import edu.asu.jmars.util.Util;
 
 public class LocationManager
@@ -71,24 +73,14 @@ public class LocationManager
 	private static DebugLog log = DebugLog.instance();
 
 	static {
-            if ( Main.isStudentApplication()  ) {
+		INITIAL_MAX_ZOOM_POWER = 16;
+		ZOOM_MULTIPLIER = 1;
+		INITIAL_ZOOM_SELECT = 5;
 
-              INITIAL_MAX_ZOOM_POWER = 5;
-              ZOOM_MULTIPLIER = 2;
-              INITIAL_ZOOM_SELECT = 2;
-
-            } else {
-
-              INITIAL_MAX_ZOOM_POWER = 14;
-              ZOOM_MULTIPLIER = 1;
-              INITIAL_ZOOM_SELECT = 5;
-
-            }
-
-            zoomFactors = new Integer[INITIAL_MAX_ZOOM_POWER];
-            for (int i = 0; i < INITIAL_MAX_ZOOM_POWER; i++){
-                    zoomFactors[i] = new Integer(1<<(i*ZOOM_MULTIPLIER));
-            }
+		zoomFactors = new Integer[INITIAL_MAX_ZOOM_POWER];
+		for (int i = 0; i < INITIAL_MAX_ZOOM_POWER; i++){
+			zoomFactors[i] = new Integer(1<<(i*ZOOM_MULTIPLIER));
+		}
 	}
 
 
@@ -188,11 +180,7 @@ public class LocationManager
 	private void bootStrap(){
 		loc.setLocation(INITIAL_X, INITIAL_Y);
 		log.println("bootStrap(): " + loc);
-
-                if ( Main.isStudentApplication() )
-                  zoomFactor = 16;
-                else
-  		  zoomFactor = 32;
+		zoomFactor = 32;
 	}
 
 	private void setSize(JComponent obj, int w, int h)
@@ -204,9 +192,7 @@ public class LocationManager
 	 }
 
 	private List converters = new ArrayList(
-		Collections.singleton(Main.inTimeProjection()
-							  ? null
-							  : (LocationConverter) new DefaultCylConverter ()));
+		Collections.singleton((LocationConverter) new DefaultCylConverter ()));
 
 	public void addConverter(LocationConverter tl)
 	 {
@@ -625,6 +611,83 @@ public class LocationManager
 						  f.format(lat) + "N");
 			Point2D newWorldPt = po.convSpatialToWorld(ctrLonLat);
 			return  newWorldPt;
+		 }
+	 }
+
+	private static class DefaultTimeConverter
+	 implements LocationConverter
+	 {
+		public Point2D getCenter()
+		 {
+			return  null;
+		 }
+
+		public boolean setCenter(Point2D c)
+		 {
+			return  false;
+		 }
+
+		public String getConverterName()
+		 {
+			return  "Time, Slew";
+		 }
+
+		public String worldToText(Point2D worldPt)
+		 {
+			double x = worldPt.getX();
+			double y = worldPt.getY();
+
+			return  TimeField.etToDefault(x + Main.PO.getServerOffsetX())
+				+ ", " + f.format(y);
+		 }
+
+		public Point2D textToWorld(String text)
+		 {
+			StringTokenizer t = new StringTokenizer(text, ",");
+			int   nTokens = t.countTokens();
+
+			final String illegalInputFormat =
+				"Illegal input format. Should be \"time, deg\".";
+
+			if(nTokens == 1  ||  nTokens == 2)
+			 {
+				try
+				 {
+					double x = TimeField.parseTimeToEt(t.nextToken().trim())
+						- Main.PO.getServerOffsetX();
+					double y = 0;
+					if(nTokens == 2)
+						y = Double.parseDouble(t.nextToken().trim());
+			
+					return  new Point2D.Double(x, y);
+				 }
+				catch(TimeException e)
+				 {
+					log.println(e);
+					Toolkit.getDefaultToolkit().beep();
+					Main.setStatus(e.toString());
+					return  null;
+				 }
+				catch(NumberFormatException e)
+				 {
+					log.println(e);
+					Toolkit.getDefaultToolkit().beep();
+					Main.setStatus("Illegal input. " +
+								   "Bare number expected after comma.");
+					return  null;
+				 }
+			 }
+			else
+			 {
+				Toolkit.getDefaultToolkit().beep();
+				Main.setStatus(illegalInputFormat);
+				return  null;
+			 }
+		 }
+
+		public Point2D reprojectFromText(String rawText)
+		 {
+			return  null;
 		 }
 	 }
  }

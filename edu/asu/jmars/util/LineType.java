@@ -20,6 +20,8 @@
 
 package edu.asu.jmars.util;
 
+import java.io.Serializable;
+
 /**
  * A class for handling types of lines in a SortingTable.
  * This class holds a dashed-pattern. It came into being because
@@ -28,12 +30,11 @@ package edu.asu.jmars.util;
  * LineType as an editable attribute as well as the Feature
  * object which needs it.
  * 
- * @see edu.asu.jmars.util.SortingTable
  * @see edu.asu.jmars.layer.util.features.Feature
  * 
  * @author James Winburn MSFF-ASU 4/06
  */
-public class LineType {
+public class LineType implements Serializable {
 	int patternId;
 
 	/**

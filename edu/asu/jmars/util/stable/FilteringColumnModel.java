@@ -33,12 +33,20 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
-import javax.swing.*;
+import javax.swing.AbstractAction;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JDialog;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.WindowConstants;
 import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.TableColumn;
+
+import edu.asu.jmars.Main;
 
 /**
  * Extends DefaultTableColumnModel to let the user filter which columns they
@@ -51,12 +59,12 @@ public class FilteringColumnModel extends DefaultTableColumnModel {
 	/**
 	 * All the columns, visible or not
 	 */
-	private List allColumns = new ArrayList();
+	private List<TableColumn> allColumns = new ArrayList<TableColumn>();
 
 	/**
 	 * Column dialog for selecting which columns are visible.
 	 */
-	private ColumnDialog columnDialog = new ColumnDialog((Frame)null, this);
+	private ColumnDialog columnDialog = new ColumnDialog((Frame)Main.testDriver.getLManager(), this);
 
 	// Convert from visible index to allColumns index; the 'first available'
 	// index in tableColumns is translated to the 'first available' index in
@@ -71,8 +79,8 @@ public class FilteringColumnModel extends DefaultTableColumnModel {
 	}
 
 	// return intersection of a and b, in a's order
-	private List intersection(List a, List b) {
-		List copyA = new ArrayList(a);
+	private List<?> intersection(List<?> a, List<?> b) {
+		List<?> copyA = new ArrayList<Object>(a);
 		copyA.retainAll(b);
 		return copyA;
 	}
@@ -80,7 +88,7 @@ public class FilteringColumnModel extends DefaultTableColumnModel {
 	/**
 	 * Returns unmodifiable List of all columns, visible or not.
 	 */
-	public List getAllColumns () {
+	public List<TableColumn> getAllColumns () {
 		return Collections.unmodifiableList (allColumns);
 	}
 
@@ -91,11 +99,9 @@ public class FilteringColumnModel extends DefaultTableColumnModel {
 	 * reference to the first one found.
 	 */
 	public TableColumn getColumn (Object identifier) {
-		for (Iterator it = allColumns.iterator(); it.hasNext(); ) {
-			TableColumn column = (TableColumn)it.next();
+		for (TableColumn column: allColumns)
 			if (column.getIdentifier().equals(identifier))
 				return column;
-		}
 		return null;
 	}
 
@@ -130,6 +136,14 @@ public class FilteringColumnModel extends DefaultTableColumnModel {
 		}
 	}
 
+	public void removeAllColumns() {
+        for (Object tc : allColumns) {
+            super.removeColumn((TableColumn)tc);
+        }
+		allColumns.clear();		
+		columnDialog.buildCheckboxes();
+	}
+	
 	public void removeColumn(TableColumn column) {
 		allColumns.remove(column);
 		super.removeColumn(column);
@@ -266,8 +280,7 @@ public class FilteringColumnModel extends DefaultTableColumnModel {
 
 		public void buildCheckboxes() {
 			columnPanel.removeAll();
-			for (Iterator it = columnModel.getAllColumns().iterator(); it.hasNext();) {
-				final TableColumn column = (TableColumn) it.next();
+			for (final TableColumn column: columnModel.getAllColumns()) {
 				String name = column.getHeaderValue().toString();
 				boolean visible = (null != columnModel.getVisColumn(column.getIdentifier()));
 				JCheckBox cb = new JCheckBox (name, null, visible);

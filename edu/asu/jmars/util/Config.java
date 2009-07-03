@@ -39,7 +39,7 @@ import javax.swing.*;
  ** </ol>
  **
  ** System properties are read with the prefix "jmars.", to prevent
- ** naming collisions. Mmost JVMs let you pass these with a -D flag on
+ ** naming collisions. Most JVMs let you pass these with a -D flag on
  ** the command-line... our runme and jmars scripts automatically add
  ** the "jmars." prefix for you. When reading a config file, if it
  ** looks executable (magic bytes "#!"), then it will be executed and
@@ -112,8 +112,7 @@ public class Config
 			log.aprintln("****            W A R N I N G !              ****");
 			log.aprintln("*************************************************");
 			log.aprintln("**** You're using an outdated version of the ****");
-			log.aprintln("**** Java runtime. Upgrade to at least Java  ****");
-			log.aprintln("**** 1.4, or else you risk incompatibility.  ****");
+			log.aprintln("**** Java runtime. Java 1.5 is required.     ****");
 			log.aprintln("*************************************************");
 			log.aprintln("");
 		 }
@@ -298,7 +297,7 @@ public class Config
 		String val = get(key,defaultValue);
 		
 		long time = Main.ABOUT().SECS;
-		if (time == -1)
+		if (time <= 0)
 			time = new Date().getTime();
 		
 		val = val.replaceAll("_timestamp_", ""+time);
@@ -544,16 +543,20 @@ public class Config
 				   fin.read() == '!')
 				 {
 					String cmd = url.getFile();
+					String os = System.getProperty("os.name");
+					if (os.startsWith("Windows")) {
+						cmd = "bash '" + cmd.replaceAll("^\\/", "") + "'";
+					}
 					String params = System.getProperty("jmars-config");
 					if(params != null)
 						cmd += " " + params;
 					try
 					 {
 						log.println("ATTEMPTING TO EXECUTE " + cmd);
-						InputStream tmp =
-							Runtime.getRuntime().exec(cmd).getInputStream();
-						if(tmp != null)
+						InputStream tmp = Runtime.getRuntime().exec(cmd).getInputStream();
+						if(tmp != null) {
 							log.println("EXECUTED SUCCESSFULLY!");
+						}
 						return  tmp;
 					 }
 					catch(IOException e)

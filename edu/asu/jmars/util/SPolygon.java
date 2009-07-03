@@ -1942,7 +1942,7 @@ public final class SPolygon
 	// Open a database connection
 	//
 
-	Util.loadSqlDriver();
+	Util.loadSqlDrivers();
 	Connection conn = DriverManager.getConnection(dbUrl, USER, PASS);
 	String sql;
 	boolean row;

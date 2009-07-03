@@ -142,8 +142,7 @@ public class DebugLog
 	static private boolean showParseErrors = true;
 
 	// Show cheesy colorized output (using ANSI escape codes)
-	static private boolean showColors =
-		!System.getProperty("os.name").startsWith("Windows");
+	static private boolean showColors = false;
 
 	static private final String ESC = "\033";
 

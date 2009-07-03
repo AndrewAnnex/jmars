@@ -436,44 +436,39 @@ public class LManager	extends JFrame implements LViewFactory.Callback
 	mainPanel=new JPanel();
 	mainPanel.setLayout(new BorderLayout());
 
-	if (! Main.isStudentApplication() ) {
+	JPanel	grouper=new JPanel();
+	add=new JButton("Add");
+	del=new JButton("Del");
 
-	   JPanel	grouper=new JPanel();
-	   add=new JButton("Add");
-	   del=new JButton("Del");
+	grouper.add(add);
+	grouper.add(del);
+	mainPanel.add(grouper, BorderLayout.NORTH);
+	log.println("Building the AddDialog");
 
-	   grouper.add(add);
-	   grouper.add(del);
-	   mainPanel.add(grouper, BorderLayout.NORTH);
-	   log.println("Building the AddDialog");
+	del.addActionListener(new ActionListener(){
+		public void actionPerformed(ActionEvent e) {
+			removeView((Layer.LView)
+					allViews.viewList.get(length - selectedItem - 1));
+		}
+	});
 
-	   del.addActionListener(new ActionListener(){
-	      public void actionPerformed(ActionEvent e) {
-		 removeView((Layer.LView)
-			    allViews.viewList.get(length - selectedItem - 1));
-	      }
-	    });
+	add.addActionListener(new ActionListener(){
+		public void actionPerformed(ActionEvent e) {
+			log.println("You have selected to ADD...creating the AddDialog");
+			addDialog=new AddDialog(LManager.this,true);
+			log.println("You have selected item "+addDialog.getSelectionIndex());
 
+			if (addDialog.getSelectionIndex() != -1) {
+				LViewFactory factory =
+					(LViewFactory) LViewFactory.factoryList.get(
+							addDialog.getSelectionIndex());
 
-	   add.addActionListener(new ActionListener(){
-	      public void actionPerformed(ActionEvent e) {
-		 log.println("You have selected to ADD...creating the AddDialog");
-		 addDialog=new AddDialog(LManager.this,true);
-		 log.println("You have selected item "+addDialog.getSelectionIndex());
+				log.println("This results in Factory: "+factory.getName());
 
-		 if (addDialog.getSelectionIndex() != -1) {
-		    LViewFactory factory =
-			(LViewFactory) LViewFactory.factoryList.get(
-			    addDialog.getSelectionIndex());
-
-		    log.println("This results in Factory: "+factory.getName());
-
-		    factory.createLView(LManager.this);
-		 }
-	      }
-	    });
-
-	}
+				factory.createLView(LManager.this);
+			}
+		}
+	});
 
 	addWindowListener(new WindowAdapter(){
 	   public void windowClosing(WindowEvent e){

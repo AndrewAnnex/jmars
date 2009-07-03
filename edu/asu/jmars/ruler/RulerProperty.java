@@ -25,18 +25,13 @@
  **/
 package edu.asu.jmars.ruler;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.text.*;
-import java.util.*;
-import javax.swing.*;
-
+import java.awt.Color;
+import java.awt.Component;
+import java.util.Hashtable;
 
 public  class RulerProperty {
 	private Object   prop;
-	private String   className;
 	private String   name;
-	private boolean   boolValue;
 
 	/**
 	 ** Constructor
@@ -49,7 +44,6 @@ public  class RulerProperty {
 	public RulerProperty( String name, Object property){
 		this.prop = property;
 		this.name = name;
-		this.className = prop.getClass().getName();
 	}
 	
 	
@@ -74,7 +68,7 @@ public  class RulerProperty {
 	 ** @return the boolean value of a JCheckBox component.
 	 **/
 	public boolean getBool(){
-		if (className.equals("edu.asu.jmars.ruler.RulerCheckBox") ){
+		if (prop instanceof RulerCheckBox) {
 			return ((RulerCheckBox)prop).isSelected();
 		} else {
 			return false;
@@ -89,8 +83,8 @@ public  class RulerProperty {
 	 ** @return the color of the ColorButton component.
 	 **/
 	public Color getColor(){
-		if (className.equals("edu.asu.jmars.ruler.ColorButton") ){
-			return ((ColorButton)prop).getColor();
+		if (prop instanceof RulerColorButton) {
+			return ((RulerColorButton)prop).getColor();
 		} else {
 			return null;
 		}
@@ -101,7 +95,7 @@ public  class RulerProperty {
 	 * @return Slider's current value.
 	 */
 	public int getIntValue(){
-		if (className.equals("edu.asu.jmars.ruler.RulerStepSlider")){
+		if (prop instanceof RulerStepSlider) {
 			return ((RulerStepSlider)prop).getValue();
 		}
 		return 0;
@@ -123,17 +117,17 @@ public  class RulerProperty {
 	 **
 	 **  @return N/A
 	 **/
-	public void loadSettings( Hashtable rulerSettings){
-		if (className.equals("edu.asu.jmars.ruler.ColorButton") &&  rulerSettings.containsKey( name) ) {
-			((ColorButton)prop).setColor( (Color)rulerSettings.get( name));
+	public void loadSettings( Hashtable<String,Object> rulerSettings){
+		if (prop instanceof RulerColorButton && rulerSettings.containsKey(name)) {
+			((RulerColorButton)prop).setColor((Color) rulerSettings.get(name));
 		}
-		if (className.equals("edu.asu.jmars.ruler.RulerCheckBox") &&  rulerSettings.containsKey( name) ) {
+		if (prop instanceof RulerCheckBox && rulerSettings.containsKey(name)) {
 			boolean boolValue = ((Boolean)rulerSettings.get(name)).booleanValue();
-			((RulerCheckBox)prop).setSelected( boolValue );
-		} 
-		if (className.equals("edu.asu.jmars.ruler.RulerStepSlider") && rulerSettings.containsKey(name)){
+			((RulerCheckBox) prop).setSelected(boolValue);
+		}
+		if (prop instanceof RulerStepSlider && rulerSettings.containsKey(name)) {
 			RulerStepSlider.Settings s = (RulerStepSlider.Settings)rulerSettings.get(name);
-			RulerStepSlider slider = (RulerStepSlider)prop;
+			RulerStepSlider slider = (RulerStepSlider) prop;
 			slider.restoreSettings(s);
 		}
 	}
@@ -146,14 +140,14 @@ public  class RulerProperty {
 	 **
 	 ** @return N/A
 	 **/
-	public void saveSettings( Hashtable rulerSettings){
-		if (className.equals("edu.asu.jmars.ruler.ColorButton") ){
-			rulerSettings.put(name,  (Object)( ((ColorButton)prop).getColor()));
+	public void saveSettings( Hashtable<String,Object> rulerSettings){
+		if (prop instanceof RulerColorButton) {
+			rulerSettings.put(name,  (Object)( ((RulerColorButton)prop).getColor()));
 		}
-		if (className.equals("edu.asu.jmars.ruler.RulerCheckBox") ){
+		if (prop instanceof RulerCheckBox) {
 			rulerSettings.put(name,  new Boolean( ((RulerCheckBox)prop).isSelected()) );
 		}
-		if (className.equals("edu.asu.jmars.ruler.RulerStepSlider")){
+		if (prop instanceof RulerStepSlider) {
 			rulerSettings.put(name, ((RulerStepSlider)prop).getSettings());
 		}
 	}

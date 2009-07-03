@@ -20,15 +20,17 @@
 
 package edu.asu.jmars.util;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Set;
 
 /**
  ** This interface represents the current state of the selection,
  ** without regard to row numbers or indices. The selection is modeled
  ** as a set of object references... calls which result in changes to
  ** the Set trigger notifications to the list of registered listeners.
+ * @param <T>
  **/
-public interface SetSelectionModel extends Set
+public interface SetSelectionModel<T> extends Set<T>
 {
 	/**
 	 ** This property is true if upcoming changes to the set should be
@@ -80,5 +82,5 @@ public interface SetSelectionModel extends Set
 	 ** addAll(c);
 	 ** </code>
 	 **/
-	boolean setTo(Collection c);
+	boolean setTo(Collection<T> c);
 }

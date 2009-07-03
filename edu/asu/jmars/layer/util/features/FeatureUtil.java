@@ -86,7 +86,7 @@ public class FeatureUtil  {
 		
 		for(Iterator i=features.iterator(); i.hasNext(); ){
 			Feature f = (Feature)i.next();
-			int pathType = f.getPathType();
+			int pathType = f.getPath().getType();
 			
 			if (pathType < 0 || pathType >= rep.length)
 				throw new Error("Unhandled pathType encountered "+pathType);
@@ -107,40 +107,10 @@ public class FeatureUtil  {
 		return repTypes;
 	}
 
-	public static List getSelectedFeatures (FeatureCollection fc) {
-		return getSelectedFeatures(fc.getFeatures());
-	}
-
-	public static List getUnselectedFeatures (FeatureCollection fc) {
-		return getUnselectedFeatures(fc.getFeatures());
-	}
-	
-	public static List getSelectedFeatures(Collection features){
-		ArrayList selected = new ArrayList(features.size());
-		for (Iterator it=features.iterator(); it.hasNext(); ) {
-			Feature f = (Feature) it.next();
-			if (f.getAttribute (Field.FIELD_SELECTED) == Boolean.TRUE)
-				selected.add (f);
-		}
-		selected.trimToSize();
-		return selected;
-	}
-	
-	public static List getUnselectedFeatures(Collection features){
-		ArrayList unselected = new ArrayList(features.size());
-		for (Iterator it=features.iterator(); it.hasNext(); ) {
-			Feature f = (Feature) it.next();
-			if (f.getAttribute (Field.FIELD_SELECTED) != Boolean.TRUE)
-				unselected.add (f);
-		}
-		unselected.trimToSize();
-		return unselected;
-	}
-	
 	/**
 	 * Returns the count of Features that are of the specified type.
 	 * @param features List of Feature objects.
-	 * @param featureType Type of feature as returned by {@link Feature#getPathType()}.
+	 * @param featureType Type of feature as returned by {@link Feature#getType()}.
 	 * @return Total number of features of the specified featureType found in the
 	 *         given collection.
 	 */
@@ -148,20 +118,10 @@ public class FeatureUtil  {
 		int count = 0;
 		for(Iterator i=features.iterator(); i.hasNext(); ){
 			Feature f = (Feature)i.next();
-			if (f.getPathType() == featureType)
+			if (f.getPath().getType() == featureType)
 				count++;
 		}
 		return count;
-	}
-
-	public static void deselectAllFeatures (FeatureCollection fc) {
-		Map deselMap = new HashMap();
-		for (Iterator it = fc.getFeatures().iterator(); it.hasNext(); ) {
-			Feature f = (Feature) it.next();
-			if (((Boolean)f.getAttribute(Field.FIELD_SELECTED)) == Boolean.TRUE)
-				deselMap.put (f, Boolean.FALSE);								
-		}
-		fc.setAttributes (Field.FIELD_SELECTED, deselMap);
 	}
 
 	/**
@@ -244,17 +204,17 @@ public class FeatureUtil  {
     public static final String TYPE_STRING_INVALID = "invalid";
     
     /**
-     * Returns string giving the type of Feature given the Feature.TYPE_*
+     * Returns string giving the type of Feature given the FPath.TYPE_*
      * value as input.
      * 
-     * @param type One of the Feature.TYPE_* values.
+     * @param type One of the FPath.TYPE_* values.
      * @return String representations of the TYPE_*.
      */
     public static String getFeatureTypeString(int type){
     	switch(type){
-    		case Feature.TYPE_POINT: return TYPE_STRING_POINT;
-    		case Feature.TYPE_POLYLINE: return TYPE_STRING_POLYLINE;
-    		case Feature.TYPE_POLYGON: return TYPE_STRING_POLYGON;
+    		case FPath.TYPE_POINT: return TYPE_STRING_POINT;
+    		case FPath.TYPE_POLYLINE: return TYPE_STRING_POLYLINE;
+    		case FPath.TYPE_POLYGON: return TYPE_STRING_POLYGON;
     	}
     	return TYPE_STRING_INVALID;
     }

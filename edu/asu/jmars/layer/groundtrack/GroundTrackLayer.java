@@ -20,14 +20,24 @@
 
 package edu.asu.jmars.layer.groundtrack;
 
-import edu.asu.jmars.*;
-import edu.asu.jmars.layer.*;
-import edu.asu.jmars.util.*;
-import java.awt.*;
-import java.awt.geom.*;
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.awt.Color;
+import java.awt.geom.Line2D;
+import java.awt.geom.Point2D;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.HashMap;
+
+import edu.asu.jmars.Main;
+import edu.asu.jmars.layer.DataReceiver;
+import edu.asu.jmars.layer.Layer;
+import edu.asu.jmars.layer.SerializedParameters;
+import edu.asu.jmars.util.Config;
+import edu.asu.jmars.util.DebugLog;
+import edu.asu.jmars.util.HVector;
 
 public class GroundTrackLayer
  extends Layer
@@ -82,10 +92,10 @@ public class GroundTrackLayer
 		setStatus(Color.red);
 
 		int sectionSecs = sectionSize * delta;
-		long begSect = begET / sectionSecs;
-		long endSect = endET / sectionSecs;
-		int begIdx = (int) (begET % sectionSecs) / delta;
-		int endIdx = (int) (endET % sectionSecs) / delta;
+		long begSect = (long)Math.floor(begET / (double)sectionSecs);
+		long endSect = (long)Math.floor(endET / (double)sectionSecs);
+		int begIdx = (int) ((begET-begSect*sectionSecs) % sectionSecs) / delta;
+		int endIdx = (int) ((endET-endSect*sectionSecs) % sectionSecs) / delta;
 		int count = (int) (endET/delta*delta - begET/delta*delta) / delta;
 
 		Line2D[] segs = new Line2D[count];
@@ -149,10 +159,7 @@ public class GroundTrackLayer
 
 		if(section == null)
 		 {
-			URL url =
-				Main.isStudentApplication()
-				? getLocalUrl(key)
-				: getRemoteUrl(key);
+			URL url = getRemoteUrl(key);
 
 			if(url == null)
 				throw  new Error("CAN'T FORM PROPER GROUNDTRACK URL");

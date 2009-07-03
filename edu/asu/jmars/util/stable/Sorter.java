@@ -331,15 +331,12 @@ public class Sorter {
 				int result = 0;
 				Object cell1 = unsortedTableModel.getValueAt(row1, columns[i]);
 				Object cell2 = unsortedTableModel.getValueAt(row2, columns[i]);
-				if (comps[i] != null) {
+				if (cell1 == null) {
+					result = cell2 == null ? 0 : -1;
+				} else if (cell2 == null) {
+					result = cell1 == null ? 0 : 1;
+				} else if (comps[i] != null) {
 					result = comps[i].compare(cell1, cell2);
-				} else if (cell1 == null || cell2 == null) {
-					if (cell1 == cell2)
-						result = 0;
-					else if (cell1 == null)
-						result = -1;
-					else
-						result = 1;
 				} else if (cell1 instanceof Comparable) {
 					result = ((Comparable) cell1).compareTo(cell2);
 				}

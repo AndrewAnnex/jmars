@@ -88,10 +88,10 @@ public class SingleFeatureCollection implements FeatureCollection, Versionable {
 			return;
 		}
 		
-		features.add (index, f);
 		if (f.owner != null)
-			f = (Feature) f.clone ();
+			f = f.clone ();
 		f.owner = this;
+		features.add (index, f);
 		Set newSet = new LinkedHashSet (f.attributes.keySet ());
 		newSet.removeAll (schema);
 		if (newSet.size () > 0) {
@@ -107,15 +107,13 @@ public class SingleFeatureCollection implements FeatureCollection, Versionable {
 	 * @see edu.asu.jmars.layer.util.features.FeatureCollection#addFeatures(java.util.Collection)
 	 */
 	public void addFeatures (Collection c) {
-		Iterator cIt = c.iterator ();
 		Set addSet = new LinkedHashSet ();
-		features.addAll (c);
-		while (cIt.hasNext ()) {
-			Feature feature = (Feature) cIt.next ();
-			addSet.addAll (feature.attributes.keySet ());
-			if (feature.owner != null)
-				feature = (Feature) feature.clone ();
-			feature.owner = this;
+		for (Feature f: (Collection<Feature>)c) {
+			if (f.owner != null)
+				f = f.clone ();
+			f.owner = this;
+			features.add(f);
+			addSet.addAll (f.attributes.keySet ());
 		}
 		// subtract fields we have from the addSet and add the remainder
 		addSet.removeAll (schema);
@@ -568,7 +566,7 @@ public class SingleFeatureCollection implements FeatureCollection, Versionable {
 		if (history != null)
 			history.addChange(this, e);
 
-		for (Iterator iter = listeners.iterator (); iter.hasNext (); )
+		for (Iterator iter = new ArrayList(listeners).iterator (); iter.hasNext (); )
 			((FeatureListener) iter.next ()).receive (e);
 	}
 
@@ -605,27 +603,19 @@ public class SingleFeatureCollection implements FeatureCollection, Versionable {
 					(Feature[])e.features.toArray(new Feature[0]));
 			break;
 		case FeatureEvent.CHANGE_FEATURE:
-			// Revert changes made to the Feature by replacing the attributes of 
-			// the Feature with the old copy of the attributes. 
-			// However, for selection only changes, make sure to revert the
-			// selected attribute only, otherwise, touched flag in the FileTable
-			// will be set needlessly.
-			
 			Map attrMap = new LinkedHashMap();
-			if (e.fields.equals(Collections.singletonList(Field.FIELD_SELECTED))){
-				for(Iterator ei=e.valuesBefore.entrySet().iterator(); ei.hasNext(); ){
-					Map.Entry me = (Map.Entry)ei.next();
-					attrMap.put(me.getKey(), ((Feature)me.getValue()).getAttribute(Field.FIELD_SELECTED));
+			for(Iterator ei=e.valuesBefore.entrySet().iterator(); ei.hasNext(); ){
+				Map.Entry me = (Map.Entry)ei.next();
+				Map<Field,Object> atts = ((Feature)me.getValue()).attributes;
+				Feature feat = (Feature)me.getKey();
+				for (Field f: feat.attributes.keySet()) {
+					if (!atts.containsKey(f)) {
+						atts.put(f, null);
+					}
 				}
-				setAttributes(Field.FIELD_SELECTED, attrMap);
+				attrMap.put(feat, atts);
 			}
-			else {
-				for(Iterator ei=e.valuesBefore.entrySet().iterator(); ei.hasNext(); ){
-					Map.Entry me = (Map.Entry)ei.next();
-					attrMap.put(me.getKey(), ((Feature)me.getValue()).attributes);
-				}
-				setAttributes(attrMap);
-			}
+			setAttributes(attrMap);
 			break;
 		case FeatureEvent.ADD_FIELD:
 			// Remove Fields.
@@ -656,14 +646,6 @@ public class SingleFeatureCollection implements FeatureCollection, Versionable {
 		s += "]";
 		
 		return s;
-	}
-
-	/**
-	 * Adds default fields to the specified FeatureCollection schema.
-	 */
-	public static void addDefaultFields(FeatureCollection fc){
-		for(int i=0; i<Field.DEFAULT_FIELDS.length; i++)
-			fc.addField(Field.DEFAULT_FIELDS[i]);
 	}
 
 	private String fileName;

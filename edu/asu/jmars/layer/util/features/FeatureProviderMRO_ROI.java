@@ -212,7 +212,6 @@ public class FeatureProviderMRO_ROI implements FeatureProvider {
 		// Setup schema
 		fc.addField(Field.FIELD_FEATURE_TYPE);
 		fc.addField(Field.FIELD_PATH);
-		fc.addField(Field.FIELD_SELECTED);
 		for(int i=SITEID_INDEX; i<=COMMENT_INDEX; i++)
 			fc.addField(fieldArray[i]);
 		
@@ -239,7 +238,6 @@ public class FeatureProviderMRO_ROI implements FeatureProvider {
 				// begin building a new feature.
 				Feature feature = new Feature();
 				feature.setAttribute( Field.FIELD_FEATURE_TYPE, FeatureUtil.TYPE_STRING_POLYGON);
-				feature.setAttribute( Field.FIELD_SELECTED, Boolean.FALSE);
 				
 				// parse out line into ROI row
 				String [] roiLine = inputLine.split("(?<!\\\\),");
@@ -322,7 +320,7 @@ public class FeatureProviderMRO_ROI implements FeatureProvider {
 	
 	public boolean isRepresentable(FeatureCollection fc){
 		int[] featTypes = FeatureUtil.getRepresentedFeatureTypes(fc.getFeatures());
-		return (featTypes.length == 1 && featTypes[0] == Feature.TYPE_POLYGON);
+		return (featTypes.length == 1 && featTypes[0] == FPath.TYPE_POLYGON);
 	}
 	public File[] getExistingSaveToFiles(FeatureCollection fc, String name) {
 		File file = filterFile(name);
@@ -353,7 +351,7 @@ public class FeatureProviderMRO_ROI implements FeatureProvider {
 				Feature feature = (Feature)fi.next();
 
 				// only process polygons.
-				if (feature.getPathType() != Feature.TYPE_POLYGON) {
+				if (feature.getPath().getType() != FPath.TYPE_POLYGON) {
 					notSaved++;
 					continue;
 				}

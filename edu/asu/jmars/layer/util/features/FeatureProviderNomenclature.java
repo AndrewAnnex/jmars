@@ -73,7 +73,7 @@ public class FeatureProviderNomenclature implements FeatureProvider {
 		final static int NUMBER_OF_FIELDS = 6;
 	}
 
-	public static final Field LABEL = Field.FIELD_LABEL;
+	public static final Field LABEL = new Field(Field.FIELD_LABEL.name, Field.FIELD_LABEL.type, false);
 	public static final Field LANDMARK_TYPE = new Field("landmark_type", String.class, false);
 	public static final Field DIAMETER = new Field("diameter", Double.class, false);
 	public static final Field ORIGIN_FIELD = new Field("Name Origin", String.class, false);
@@ -85,7 +85,6 @@ public class FeatureProviderNomenclature implements FeatureProvider {
 		// Setup default schema.
 		fc.addField(Field.FIELD_FEATURE_TYPE);
 		fc.addField(Field.FIELD_PATH);
-		fc.addField(Field.FIELD_SELECTED);
 		fc.addField(LABEL);
 		fc.addField(LANDMARK_TYPE);
 		fc.addField(DIAMETER);
@@ -118,7 +117,6 @@ public class FeatureProviderNomenclature implements FeatureProvider {
 				FPath path = new FPath (vertices, FPath.SPATIAL_EAST, false);
 				feature.setAttributeQuiet( Field.FIELD_FEATURE_TYPE,  FeatureUtil.TYPE_STRING_POINT);
 				feature.setAttributeQuiet( Field.FIELD_PATH,          path.getSpatialWest());
-				feature.setAttributeQuiet( Field.FIELD_SELECTED,      Boolean.FALSE);
 
 				// set the other fields.
 				feature.setAttributeQuiet( LABEL,                     tok[MarsFile.NAME]);

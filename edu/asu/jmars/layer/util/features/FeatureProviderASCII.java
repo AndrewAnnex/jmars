@@ -77,7 +77,6 @@ public class FeatureProviderASCII implements FeatureProvider{
 		// Setup default schema
 		fc.addField(Field.FIELD_FEATURE_TYPE);
 		fc.addField(Field.FIELD_PATH);
-		fc.addField(Field.FIELD_SELECTED);
 
 		// Build the List of Features for the FeatureCollection.
 		List featureList = new  ArrayList();
@@ -96,7 +95,6 @@ public class FeatureProviderASCII implements FeatureProvider{
 					Feature feature = new Feature();
 					feature.setAttributeQuiet( Field.FIELD_FEATURE_TYPE, FeatureUtil.TYPE_STRING_POLYGON);
 					feature.setAttributeQuiet( Field.FIELD_PATH, path);
-					feature.setAttributeQuiet( Field.FIELD_SELECTED, Boolean.FALSE);
 					featureList.add( feature);
 				}
 			} while (inputLine != null);
@@ -112,7 +110,7 @@ public class FeatureProviderASCII implements FeatureProvider{
 
 	public boolean isRepresentable(FeatureCollection fc){
 		int[] featTypes = FeatureUtil.getRepresentedFeatureTypes(fc.getFeatures());
-		return (featTypes.length == 1 && featTypes[0] == Feature.TYPE_POLYGON);
+		return (featTypes.length == 1 && featTypes[0] == FPath.TYPE_POLYGON);
 	}
 
 	public File[] getExistingSaveToFiles(FeatureCollection fc, String fileName) {
@@ -136,7 +134,7 @@ public class FeatureProviderASCII implements FeatureProvider{
 			while (fi.hasNext()){
 				Feature     shape = (Feature)fi.next();
 				
-				if ( shape.getPathType() == Feature.TYPE_POLYGON){
+				if ( shape.getPath().getType() == FPath.TYPE_POLYGON){
 					FPath path = (FPath) shape.getAttribute(Field.FIELD_PATH);
 					Point2D[] vertices = path.getSpatialEast().getVertices();
 

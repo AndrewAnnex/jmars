@@ -78,9 +78,9 @@ public class RulerManager
     // fields common to all rulers.
     public RulerProperty backgroundColor      = new RulerProperty( 
 				"backgroundColor",     
-				new ColorButton( "Background Color",  new Color(  0,0,0)));
+				new RulerColorButton( "Background Color",  new Color(  0,0,0)));
 	static public RulerProperty relFontSize = new RulerProperty(
-			"relFontSize", new RulerStepSlider(-2,8,1,0));
+			"relFontSize", new RulerStepSlider(-2,8,1,1));
 
     // The list of settings.  All rulers may have their own rulerSettings field.
     // This is public because Main.userProps.saveUserObject() looks for it.

@@ -25,7 +25,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringReader;
+import java.io.Reader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -45,9 +45,9 @@ import org.dom4j.io.XMLWriter;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 
+import edu.asu.jmars.LocationManager;
 import edu.asu.jmars.Main;
 import edu.asu.jmars.util.DebugLog;
-import edu.asu.jmars.util.Util;
 
 // TODO: at some point, this and the WMSLayer class need to handle more of the WMS standard.
 // Rules for e.g. property inheritance will go here.
@@ -67,19 +67,13 @@ public class WMSCapabilities {
 	/** The document */
 	final Document doc;
 	
-	/**
-	 * Returns a GetCapabilities result from the given URL
-	 * 
-	 * @throws IOException
-	 * @throws DocumentException
-	 * @throws URISyntaxException
-	 */
-	public WMSCapabilities(InputStream capabilitiesStream) throws DocumentException, IOException, URISyntaxException {
+	/** Returns a WMSCapabilities by parsing WMS GetCapabilities XML from the given reader. */
+	public WMSCapabilities(Reader xmlSource) throws DocumentException, IOException, URISyntaxException {
 		// Read DOM representation of XML
 		SAXReader reader = new SAXReader();
 		reader.setEntityResolver(resolver);
 		long startTime = System.currentTimeMillis();
-		doc = reader.read(new StringReader(Util.readResponse(capabilitiesStream)));
+		doc = reader.read(xmlSource);
 		log.println("Read document (took " + (System.currentTimeMillis() - startTime) + " ms)");
 		
 		// Parse the DOM to create the properties
@@ -134,7 +128,7 @@ public class WMSCapabilities {
 	private static List<WMSLayer> parseMapSources(Document doc, boolean jmarsCategories, String serverTitle) {
 		List<WMSLayer> layers = new LinkedList<WMSLayer>();
 		List<String> category = new ArrayList<String>(Collections.singletonList(serverTitle));
-		List nodes = doc.selectNodes("/WMT_MS_Capabilities/Capability/Layer");
+		List<?> nodes = doc.selectNodes("/WMT_MS_Capabilities/Capability/Layer");
 		parseLayers(layers, category, jmarsCategories, nodes);
 		return layers;
 	}
@@ -156,13 +150,13 @@ public class WMSCapabilities {
 	 * @param jmarsCategories
 	 * @param nodes
 	 */
-	private static void parseLayers(List<WMSLayer> layers, List<String> category, boolean usingJmarsCategories, List nodes) {
-		for (Iterator layerIt = nodes.iterator(); layerIt.hasNext(); ) {
+	private static void parseLayers(List<WMSLayer> layers, List<String> category, boolean usingJmarsCategories, List<?> nodes) {
+		for (Iterator<?> layerIt = nodes.iterator(); layerIt.hasNext(); ) {
 			Node node = (Node)layerIt.next();
 			Node title = node.selectSingleNode("Title");
 			Node name = node.selectSingleNode("Name");
 			Node abstractNode = node.selectSingleNode("Abstract");
-			List jmarsCategories = node.selectNodes("KeywordList/Keyword[contains(text(),\"jmarsCategory:\")]");
+			List<?> jmarsCategories = node.selectNodes("KeywordList/Keyword[contains(text(),\"jmarsCategory:\")]");
 			Node latLonBox = node.selectSingleNode("LatLonBoundingBox");
 			if (name != null) {
 				// this XML element is a map
@@ -213,8 +207,16 @@ public class WMSCapabilities {
 					}
 				}
 				
+				double maxPPD = Collections.max(Arrays.asList(LocationManager.zoomFactors));
+				Node maxPPDNode = node.selectSingleNode("KeywordList/Keyword[contains(text(),\"maxPPD:\")]");
+				if (maxPPDNode != null) {
+					String maxText = maxPPDNode.getText();
+					maxPPD = Double.parseDouble(maxText.substring(maxText.indexOf(":") + 1));
+				}
+				
 				// add a new MapSource
-				layers.add(new WMSLayer(name.getText(), title.getText(), abstractText, nodeCategory, hasNumericKeyword, latLonRect, ignoreValue));
+				layers.add(new WMSLayer(name.getText(), title.getText(), abstractText,
+						nodeCategory, hasNumericKeyword, latLonRect, ignoreValue, maxPPD));
 			} else if (title != null) {
 				// this XML element is a category node
 				
@@ -264,7 +266,9 @@ public class WMSCapabilities {
 		writer.write(doc);
 		writer.flush();
 		writer.close();
-		filename.setLastModified(modTime);
+		if (modTime != 0) {
+			filename.setLastModified(modTime);
+		}
 	}
 }
 
@@ -276,7 +280,9 @@ class WMSLayer {
 	private boolean isNumeric; // optional
 	private Rectangle2D latLonBBox; // optional
 	private double[] ignoreValue; // optional
-	public WMSLayer(String name, String title, String abstractText, String[][] categories, boolean isNumeric, Rectangle2D latLonBBox, double[] ignoreValue) {
+	private double maxPPD;
+	public WMSLayer(String name, String title, String abstractText, String[][] categories,
+			boolean isNumeric, Rectangle2D latLonBBox, double[] ignoreValue, double maxPPD) {
 		super();
 		this.name = name;
 		this.title = title;
@@ -285,6 +291,7 @@ class WMSLayer {
 		this.isNumeric = isNumeric;
 		this.latLonBBox = latLonBBox;
 		this.ignoreValue = ignoreValue;
+		this.maxPPD = maxPPD;
 	}
 	public String[][] getCategories() {
 		return categories;
@@ -306,6 +313,9 @@ class WMSLayer {
 	}
 	public double[] getIgnoreValue() {
 		return ignoreValue;
+	}
+	public double getMaxPPD() {
+		return maxPPD;
 	}
 	/** The layer identity, using the layer 'name' element */
 	public boolean equals(Object o) {

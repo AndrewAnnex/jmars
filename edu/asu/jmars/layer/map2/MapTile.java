@@ -20,48 +20,46 @@
 
 package edu.asu.jmars.layer.map2;
 
-import java.awt.geom.Rectangle2D;
+import java.awt.Point;
 import java.awt.image.BufferedImage;
 
 public final class MapTile {
 	private final MapRequest request;
-	private final Rectangle2D tileExtent;
 	private final int xtile;
 	private final int ytile;
+	private final MapRequest tileRequest;
 	private BufferedImage image;
 	private BufferedImage fuzzyImage;
+	private Exception exception=null;
 	
 	public boolean equals(Object o) {
-		return o instanceof MapTile &&
-			xtile == ((MapTile)o).xtile && ytile == ((MapTile)o).ytile;
+		if (o instanceof MapTile) {
+			return tileRequest.equals(((MapTile)o).tileRequest);
+		} else {
+			return false;
+		}
 	}
 	
 	public int hashCode() {
-		return xtile*31 + ytile;
+		return tileRequest.hashCode();
 	}
 	
-	public MapTile(MapRequest request, int i, int j) {
-		this.request = request;
-		xtile = i;
-		ytile = j;
-		
-		double xstep = MapRetriever.getLatitudeTileSize(request.getPPD());
-		double ystep = MapRetriever.getLongitudeTileSize(request.getPPD());
-		double x = xtile * xstep;
-		double y = ytile * ystep - 90;
-		tileExtent = new Rectangle2D.Double(x, y, xstep, ystep);
+	public MapTile(MapRequest entireRequest, MapRequest tileRequest, Point tilePosition) {
+		this.request = entireRequest;
+		xtile = tilePosition.x;
+		ytile = tilePosition.y;
+		this.tileRequest = tileRequest;
 	}
 	
 	public MapRequest getRequest() {
 		return request;
 	}
 	
-	public Rectangle2D getTileExtent() {
-		return tileExtent;
+	public BufferedImage getImage() {
+		return image;
 	}
 	
-	public BufferedImage getImage() {
-		if (image!=null) return image;
+	public BufferedImage getFuzzyImage() {
 		return fuzzyImage;
 	}
 	
@@ -96,24 +94,24 @@ public final class MapTile {
 	}
 	
 	public synchronized void setImage(BufferedImage newImage) {
-		if (image !=null) {
-			return;
+		if (image ==null) {
+			image = newImage;
 		}
-		image = newImage;
-	}
-		
-	String errorMessage=null;
-	
-	public void setErrorMessage(String msg) {
-		errorMessage = msg;
 	}
 	
-	public String getErrorMessage() {
-		return errorMessage;
+	public void setException(Exception e) {
+		exception = e;
+	}
+	
+	public Exception getException() {
+		return exception;
 	}
 	
 	public boolean hasError() {
-		if (errorMessage!=null) return true;
-		return false;
+		return exception!=null;
+	}
+	
+	public MapRequest getTileRequest() {
+		return tileRequest;
 	}
 }

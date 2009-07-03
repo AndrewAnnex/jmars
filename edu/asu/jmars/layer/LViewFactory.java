@@ -29,6 +29,7 @@ import java.util.StringTokenizer;
 
 import javax.swing.AbstractAction;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 
 import edu.asu.jmars.util.Config;
 import edu.asu.jmars.util.DebugLog;
@@ -161,9 +162,9 @@ public abstract class LViewFactory
 			}
 			catch(Throwable e)
 			{
-				log.println(e);
 				log.aprintln("Layer type " + i + "=" + name +
 						" unavailable, due to " + e);
+				log.aprintln(e);
 			}
 		}
 
@@ -237,44 +238,43 @@ public abstract class LViewFactory
 	 }
 
 	/**
-	 ** Used to populate the initial list of views on
-	 ** startup. Factories should implement this function to return an
-	 ** appropriate view with "default" parameters. Return null to
-	 ** prevent any view from being added to the initial list from
-	 ** this factory.
-	 **
-	 ** @return the new LView, or null
-	 **/
+	 * Used to populate the initial list of views on
+	 * startup. Factories should implement this function to return an
+	 * appropriate view with "default" parameters. Return null to
+	 * prevent any view from being added to the initial list from
+	 * this factory.
+	 *
+	 * @return the new LView, or null
+	 */
 	public abstract Layer.LView createLView();
 
 
 	/**
-	 ** Used to start a session using a serialized parameter block. Typically
-         *  after a session restart.
-         *
-         *  @return the new LView, or null
+	 * Used to start a session using a serialized parameter block. Typically
+     * after a session restart.
+     * 
+     * @return the new LView, or null
 	 **/
 	public abstract Layer.LView recreateLView(SerializedParameters parmBlock);
 
 
-        /**
-         * Iterates through the list of valid factory objects and returns the
-         * one of the same name.
-         *
-         * @return the new LViewFactory, or null
-         */
-        static public LViewFactory getFactoryObject(String className ) {
+	/**
+	 * Iterates through the list of valid factory objects and returns the
+	 * one of the same name.
+	 *
+	 * @return the new LViewFactory, or null
+	 */
+	static public LViewFactory getFactoryObject(String className ) {
+		Iterator iterFactory = factoryList.iterator();
 
-            Iterator iterFactory = factoryList.iterator();
+		while(iterFactory.hasNext()) {
+			LViewFactory lvf = (LViewFactory) iterFactory.next();
+			if ( lvf.getClass().getName().compareTo(className) == 0 )
+				return lvf;
+		}
 
-	    while(iterFactory.hasNext()) {
-              LViewFactory lvf = (LViewFactory) iterFactory.next();
-              if ( lvf.getClass().getName().compareTo(className) == 0 )
-                return lvf;
-            }
-
-            return null;
-        }
+		return null;
+	}
 
 
 	/**
@@ -312,8 +312,15 @@ public abstract class LViewFactory
 	protected JMenuItem[] createMenuItems(final Callback callback) {
 		return new JMenuItem[]{new JMenuItem(new AbstractAction(getName()) {
 			public void actionPerformed(ActionEvent e) {
+				try {
 					createLView(callback);
-				 }
+				}
+				catch(Exception ex) {
+					ex.printStackTrace();
+					JOptionPane.showMessageDialog(null, ex.getMessage(),
+							"Error creating \""+getName()+"\" layer.", JOptionPane.ERROR_MESSAGE);
+				}
+			}
 		})};
 	 }
  }

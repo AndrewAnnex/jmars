@@ -20,29 +20,112 @@
 
 package edu.asu.jmars.util;
 
-import edu.asu.jmars.*;
-import edu.asu.jmars.ProjObj.Projection_OC;
-import edu.asu.jmars.layer.MultiProjection;
-
-import edu.stanford.ejalbert.BrowserLauncher;
-
-import java.awt.*;
-import java.awt.color.*;
-import java.awt.event.*;
-import java.awt.geom.*;
-import java.awt.image.*;
-import java.io.*;
-import java.lang.reflect.*;
-import java.net.*;
-import java.sql.*;
+import java.awt.AlphaComposite;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Frame;
+import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Image;
+import java.awt.MediaTracker;
+import java.awt.Point;
+import java.awt.Shape;
+import java.awt.Toolkit;
+import java.awt.Transparency;
+import java.awt.color.ColorSpace;
+import java.awt.color.ICC_ColorSpace;
+import java.awt.color.ICC_Profile;
+import java.awt.color.ICC_ProfileGray;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseListener;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.GeneralPath;
+import java.awt.geom.Line2D;
+import java.awt.geom.PathIterator;
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.ComponentColorModel;
+import java.awt.image.ComponentSampleModel;
+import java.awt.image.DataBuffer;
+import java.awt.image.DataBufferByte;
+import java.awt.image.Raster;
+import java.awt.image.WritableRaster;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.CharArrayWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
-import java.text.*;
-import java.util.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.UndeclaredThrowableException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLEncoder;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.sql.Blob;
+import java.sql.Clob;
+import java.sql.Ref;
+import java.sql.ResultSet;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.StringTokenizer;
 
 import javax.imageio.ImageIO;
-import javax.swing.*;
-import com.keypoint.*;
+import javax.swing.AbstractAction;
+import javax.swing.ImageIcon;
+import javax.swing.JComponent;
+import javax.swing.JDialog;
+import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
+import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
+
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.httpclient.Header;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpException;
+import org.apache.commons.httpclient.URI;
+import org.apache.commons.httpclient.URIException;
+import org.apache.commons.httpclient.methods.PostMethod;
+
+import edu.asu.jmars.Main;
+import edu.asu.jmars.ProjObj.Projection_OC;
+import edu.asu.jmars.layer.MultiProjection;
+import edu.stanford.ejalbert.BrowserLauncher;
 
 /* Collection of useful things for jlayers... all methods are static,
    "Util" is just a handy namespace kludge, not a real object type */
@@ -53,6 +136,14 @@ public final class Util
     public static final Color darkGreen = Color.green.darker();
     public static final Color darkRed = Color.red.darker();
     public static final Color purple = new Color(128, 0, 128);
+    public static final Color green3 = new Color(0,205,0);
+    public static final Color darkViolet = new Color(148,0,211);
+    public static final Color cyan3 = new Color(0,205,205);
+    public static final Color chocolate4 = new Color(139,69,19);
+    public static final Color maroon = new Color(176,48,96);
+    public static final Color yellow3 = new Color(205,205,0);
+    public static final Color gray50 = new Color(128,128,128);
+    public static final Color darkOrange = new Color(255,140,0);
 
      // This is to prevent some ne'er-do-well from coming in and trying 
      // to instanciate what is supposed to be class of nothing but static methods.
@@ -611,20 +702,15 @@ public final class Util
 	return  Integer.toHexString(n).toUpperCase();
      }
 
-    /**
-     ** Returns an array of all lines from the given stream.
-     **/
-    public static String[] readLines(InputStream is)
-     throws IOException
-     {
-	BufferedReader br = new BufferedReader(new InputStreamReader(is));
-
-	List lines = new ArrayList();
-	String buff;
-	while((buff = br.readLine()) != null)
-	    lines.add(buff);
-	return	(String[]) lines.toArray(new String[0]);
-     }
+    /** Returns an array of all lines from the given stream */
+    public static String[] readLines(InputStream is) throws IOException {
+		BufferedReader br = new BufferedReader(new InputStreamReader(is));
+		List<String> lines = new ArrayList<String>();
+		String buff;
+		while ((buff = br.readLine()) != null)
+			lines.add(buff);
+		return lines.toArray(new String[lines.size()]);
+	}
 
     /**
      ** For every non-empty line in the given stream, returns an array
@@ -708,7 +794,7 @@ public final class Util
 	 * string composed of <code>items</code> separated by
 	 * <code>between</code>.
 	 */
-	public static String join(String between, String... items) {
+	public static <E extends Object> String join(String between, E ... items) {
 		String joined = "";
 		for (int i = 0; i < items.length; i++)
 			joined += i == 0 ? items[i] : between + items[i];
@@ -876,12 +962,15 @@ public final class Util
     /**
      ** The Mars polar radius, in km.
      **/
-    private static double MARS_POLAR = 3375;
-
+    public static double MARS_POLAR = 3376.20;
+    
+    /** The Mars mean radius */
+    public static double MARS_MEAN = 3386.0;
+    
     /**
      ** The Mars equatorial radius, in km.
      **/
-    private static double MARS_EQUAT = 3397;
+    public static double MARS_EQUAT = 3396.19;
 
     /**
      ** The flattening coefficient of the Mars ellipsoid.
@@ -1098,11 +1187,24 @@ public final class Util
 	 };
 	 
 	 /** Return the input world x value normalized into the 0-360 range */
-	 public static final double normWorldX(double x) {
+	 public static final double mod360(double x) {
 		 x -= Math.floor(x / 360.0) * 360.0;
 		 return x;
 	 }
 	 
+	 /**
+	  * Given a lon/lat rectangle, returns a new rectangle with the same lat
+	  * values, and the longitude value switched from east to west or west to
+	  * east.
+	  */
+	 public static Rectangle2D swapRect(Rectangle2D rect) {
+		 return new Rectangle2D.Double(
+			 Util.mod360(-rect.getMaxX()),
+			 rect.getMinY(),
+			 rect.getWidth(),
+			 rect.getHeight());
+	 }
+	
     /**
      ** ONLY FOR CYLINDRICAL: Given a shape in world coordinates,
      ** "normalizes" it. This ensures that its left-most x coordinate
@@ -1234,19 +1336,6 @@ public final class Util
 	int[] found2 = new int[count];
 	System.arraycopy(found, 0, found2, 0, count);
 	return  found2;
-     }
-
-    public static void main(String[] av)
-     {
-	Shape[] shapes = { new Rectangle(5, 5, 1, 1) };
-	for(int i=0; i<shapes.length; i++)
-	    shapes[i] = normalize360(shapes[i]);
-
-	Rectangle rect = new Rectangle(10, 0, 340, 10);
-
-	int[] ints = intersects360(rect, shapes);
-	for(int i=0; i<ints.length; i++)
-	    System.out.println(i);
      }
 
     /**
@@ -1662,8 +1751,13 @@ public final class Util
 	else
 	    return  javaType;
      }
+    
+    public static final String java2jdbc(Class javaType){
+    	return (String)revTypeMap.get(javaType);
+    }
 
     private static HashMap typeMap = new HashMap();
+    private static HashMap revTypeMap = new HashMap();
     static
      {
 	typeMap.put("CHAR", String.class);
@@ -1679,6 +1773,7 @@ public final class Util
 	typeMap.put("REAL", Float.class);
 	typeMap.put("FLOAT", Double.class);
 	typeMap.put("DOUBLE", Double.class);
+	typeMap.put("DOUBLE PRECISION", Double.class);
 	typeMap.put("BINARY", byte[].class);
 	typeMap.put("VARBINARY", byte[].class);
 	typeMap.put("LONGVARBINARY", byte[].class);
@@ -1689,57 +1784,54 @@ public final class Util
 	typeMap.put("CLOB", Clob.class);
 	typeMap.put("BLOB", Blob.class);
 	typeMap.put("ARRAY", java.sql.Array.class);
-	typeMap.put("STRUCT", Object.class); // not terribly precise
+	typeMap.put("STRUCT", java.sql.Struct.class); // not terribly precise
 	typeMap.put("REF", Ref.class);
 	typeMap.put("JAVA_OBJECT", Object.class);
+	
+	revTypeMap.put(String.class,  "VARCHAR");
+	revTypeMap.put(Double.class,  "DOUBLE PRECISION");
+	revTypeMap.put(Float.class,   "REAL");
+	revTypeMap.put(Boolean.class, "BOOLEAN");
+	revTypeMap.put(Integer.class, "INTEGER");
+	revTypeMap.put(Short.class,   "SHORT");
+	revTypeMap.put(Byte.class,    "BYTE");
+	revTypeMap.put(byte[].class, "VARBINARY");
+	revTypeMap.put(java.sql.Date.class, "DATE");
+	revTypeMap.put(java.sql.Time.class, "TIME");
+	revTypeMap.put(java.sql.Timestamp.class, "TIMESTAMP");
+	revTypeMap.put(Clob.class, "CLOB");
+	revTypeMap.put(Blob.class, "BLOB");
+	revTypeMap.put(java.sql.Array.class, "ARRAY");
+	revTypeMap.put(java.sql.Struct.class, "STRUCT");
+	revTypeMap.put(java.sql.Ref.class, "REF");
+	revTypeMap.put(Object.class, "JAVA_OBJECT");
+	
      }
 
-    private static final Object loadSqlDriverLock = new Object();
-    private static boolean sqlDriverLoaded = false;
     /**
-     ** Load the appropriate mySQL driver class definition as per the
-     ** mySQL driver documentation.
-     **/
-    public static final void loadSqlDriver()
-     {
-	if(Main.isStudentApplication())
-	    return;
-
-	String error = null;
-
-	synchronized(loadSqlDriverLock)
-	 {
-	    if(sqlDriverLoaded)
-		return;
-	    sqlDriverLoaded = true;
-
-	    try
-	     {
-		new org.gjt.mm.mysql.Driver();
-		log.println("mySQL driver loaded.");
-	     }
-	    catch(SQLException ex)
-	     {
-		error = ex.toString();
-		log.aprint("SQLException: "+ex.getMessage());
-		ex.printStackTrace();
-	     }
-	    finally
-	     {
-		if(error != null)
-		 {
-		    JOptionPane.showMessageDialog(
-			Main.mainFrame,
-			"The SQL driver failed to load. "
-			+ "You will be unable to access the database.",
-			"SQL DRIVER ERROR",
-			JOptionPane.ERROR_MESSAGE);
-		    throw  new Error("Unable to load mySQL driver (" +
-				     error + ")");
-		 }
-	     }
-	 }
-     }
+     * Loads the JDBC drivers specified in the jmars.config file.
+     */
+    public static final void loadSqlDrivers() {
+    	String[] driverNames = Config.getArray("dbDriver");
+    	log.println("Found a total of "+driverNames.length+" JDBC drivers to load.");
+    	
+    	for(int i=0; i<driverNames.length; i++){
+    		log.println("Loading JDBC driver: "+driverNames[i]);
+    		try {
+    			Class.forName(driverNames[i]);
+    			log.println("Loaded JDBC driver: "+driverNames[i]);
+    		}
+    		catch(Exception ex){
+    			log.aprintln(ex.toString());
+				JOptionPane.showMessageDialog(null,
+						"The SQL driver \""+driverNames[i]+"\" failed to load.",
+						"Error loading JDBC driver",
+						JOptionPane.ERROR_MESSAGE);
+    			throw new Error("Unable to load driver \""+driverNames[i]+"\".", ex);
+    		}
+    	}
+    	log.println("Done loading drivers.");
+    }
 
     private static final Component sComponent = new Component() {};
     private static final MediaTracker sTracker = new MediaTracker(sComponent);
@@ -1857,64 +1949,25 @@ public final class Util
 	f.setLocation(x, y);
      }
 
-    /** Returns an affine transform that maps from the given image's
-       pixel coordinates to the world coordinates of the given
-       rectangle */
-    public static final AffineTransform image2world(Image image, Rectangle2D rect)
-     {
-	if(image == null)
-	 {
-	    log.aprintln("-------------------- THE IMAGE IS NULL!!!");
-	    log.aprintln("-----------------------------------------");
-	    log.aprintln("-----------------------------------------");
-	    log.aprintln("-----------------------------------------");
-	    log.aprintln("-----------------------------------------");
-	    log.aprintln("-----------------------------------------");
-	    log.aprintStack(-1);
-//	    JOptionPane.showMessageDialog(null, "THE IMAGE IS NULL!!!");
-	    return  null;
-	 }
+    /** Returns an affine transform that maps pixel coordinates into world coordinates */
+    public static final AffineTransform image2world(int imageWidth, int imageHeight, Rectangle2D worldRect) {
+    	AffineTransform at = new AffineTransform();
+    	at.translate(worldRect.getX(), worldRect.getY());
+    	at.scale(worldRect.getWidth() / imageWidth, worldRect.getHeight() / imageHeight);
+    	at.translate(0, imageHeight);
+    	at.scale(1, -1);
+    	return	at;
+    }
 
-	if(waitForImage(image) == false
-	   ||  image.getWidth(null) <= 0
-	   ||  image.getHeight(null) <= 0)
-	    return  null;
-	
-	AffineTransform at = new AffineTransform();
-	at.translate(rect.getX(),
-		     rect.getY());
-	at.scale(rect.getWidth()  / image.getWidth(null),
-		 rect.getHeight() / image.getHeight(null));
-
-	// Correct for upside-down-ness
-	at.translate(0, image.getHeight(null));
-	at.scale(1, -1);
-
-	return	at;
-     }
-
-    /** Returns an affine transform that maps from the world
-       coordinates of the given rectangle to the given image's pixel
-       coordinates */
-    public static final AffineTransform world2image(Rectangle2D rect, Image image)
-     {
-	if(waitForImage(image) == false
-	   ||  image.getWidth(null) <= 0
-	   ||  image.getHeight(null) <= 0)
-	    return  null;
-
-	AffineTransform at = new AffineTransform();
-
-	// Correct for upside-down-ness
-	at.scale(1, -1);
-	at.translate(0, -image.getHeight(null));
-
-	at.scale(image.getWidth(null)  / rect.getWidth(),
-		 image.getHeight(null) / rect.getHeight());
-	at.translate(-rect.getX(),
-		     -rect.getY());
-	return	at;
-     }
+    /** Returns an affine transform that maps world coordinates to pixel coordinates */
+    public static final AffineTransform world2image(Rectangle2D rect, int imageWidth, int imageHeight) {
+    	AffineTransform at = new AffineTransform();
+    	at.scale(1, -1);
+    	at.translate(0, -imageHeight);
+    	at.scale(imageWidth / rect.getWidth(), imageHeight / rect.getHeight());
+    	at.translate(-rect.getX(), -rect.getY());
+    	return	at;
+    }
 
     /** Returns a new BufferedImage of the given size, with the
      ** default pixel format (as determined by what's most-compatible
@@ -1947,89 +2000,6 @@ public final class Util
 	    .getDefaultConfiguration()
 	    .createCompatibleImage(w, h, Transparency.OPAQUE);
      }
-
-    /**
-     ** Debug version of {@link #urlToDisk}, which doesn't retry, and
-     ** marks up the image to identify its edges and its URL (URLs are
-     ** numbered and printed on the console).
-     **/
-    public static void urlToDiskImageDebug(String urlAddress, String filename)
-     throws IOException
-     {
-	int counter = -1;
-	try
-	 {
-
-	    synchronized(urlToDiskImageDebug_lock)
-	     {
-		counter = ++urlToDiskImageDebug_counter;
-		log.aprintln("#" + counter + ":\t" + filename +
-			     "\n\t" + log.DARK + urlAddress);
-		if(urlToDiskImageDebug_colorUL == null)
-		 {
-		    int rgba = Integer.parseInt(Config.get("tiles.debug"), 16);
-		    urlToDiskImageDebug_colorUL = new Color(rgba);
-		    urlToDiskImageDebug_colorLR = new Color(~rgba);
-		    urlToDiskImageDebug_stroke = new BasicStroke(1);
-		    urlToDiskImageDebug_font =
-			new JLabel("").getFont().deriveFont(Font.BOLD);
-		 }
-	     }
-
-	    // Load the image
-	    BufferedImage img = loadBufferedImage(new URL(urlAddress));
-
-	    // Mark up the image
-	    int w = img.getWidth();
-	    int h = img.getHeight();
-	    Graphics2D g2 = img.createGraphics();
-	    g2.setStroke(urlToDiskImageDebug_stroke);
-
-	    g2.setColor(urlToDiskImageDebug_colorLR);
-	    g2.drawLine(0, h-1, w-1, h-1);
-	    g2.drawLine(w-1, h-1, w-1, 0);
-	    g2.drawLine(0, 0, w-1, h-1);
-	    g2.drawLine(0, h, w, 0);
-	    g2.fillRect(w/2-w/32, h/2-w/16, w/8, h/8);
-
-	    g2.setColor(urlToDiskImageDebug_colorUL);
-	    g2.setFont(urlToDiskImageDebug_font);
-	    g2.drawString(Integer.toString(counter), w/2, h/2);
-	    g2.drawLine(0, 0, w-1, 0);
-	    g2.drawLine(0, 0, 0, h-1);
-
-	    g2.dispose();
-
-	    // Write out the image
-	    final int COMPRESSION_LEVEL = 1; // From ZIP compression range 0-9
-	    PngEncoder encoder = new PngEncoderB(img,
-						 PngEncoder.ENCODE_ALPHA, 
-						 PngEncoder.FILTER_NONE,
-						 COMPRESSION_LEVEL);
-	    byte[] buf = encoder.pngEncode();
-	    FileOutputStream fout = new FileOutputStream(filename);
-	    fout.write(buf);
-	    fout.close();
-	 }
-	catch(RuntimeException e)
-	 {
-	    log.aprintln(e);
-	    throw new RuntimeException("Problem with tile #" + counter, e);
-	 }
-	catch(Exception e)
-	 {
-	    log.aprintln(e);
-	    throw (IOException)
-		new IOException("Problem with tile #" + counter)
-		.initCause(e);
-	 }
-     }
-    private static final Object urlToDiskImageDebug_lock = new Object();
-    private static int urlToDiskImageDebug_counter = 0;
-    private static Color urlToDiskImageDebug_colorUL;
-    private static Color urlToDiskImageDebug_colorLR;
-    private static Stroke urlToDiskImageDebug_stroke;
-    private static Font urlToDiskImageDebug_font;
 
     /**
      ** Convenience method to perform {@link #urlToDisk1} repeatedly
@@ -2132,51 +2102,6 @@ public final class Util
       return ret;
    }
 
-   public static final String httpPost( String surl, String postData) throws Exception {
-
-       URL cgi = new URL(surl);
-       URLConnection conn=cgi.openConnection();
-       conn.setDoOutput(true);
-       conn.setDoInput(true);
-       conn.setUseCaches(false);
-       conn.setRequestProperty("Referer", "http://127.0.0.1/jlayers");
-       conn.setRequestProperty("Cache-Control", "no-cache");
-       conn.setRequestProperty("Content-type","application/x-www-form-urlencoded");
-
-       DataOutputStream out = new DataOutputStream(conn.getOutputStream());
-
-       out.writeBytes(postData);
-
-       out.flush();
-       out.close();
-
-       return readResponse(conn.getInputStream());
-    }
-
-   public static final String httpPostFileName( String surl, String localName, String remoteName) throws Exception {
-	   log.println("Url = "+surl);
-	   log.println("localName = "+localName);
-	   log.println("remoateName = "+remoteName);
-       URL cgi = new URL(surl);
-       URLConnection conn=cgi.openConnection();
-       conn.setDoOutput(true);
-       conn.setDoInput(true);
-       conn.setUseCaches(false);
-       
-       String boundary = "---------------------------7d226f700d0";
-       conn.setRequestProperty("Content-type","multipart/form-data; "+"charset=ISO-8859-1; "+"boundary=" + boundary);
-       conn.setRequestProperty("Referer", "http://127.0.0.1/jlayers");
-       conn.setRequestProperty("Cache-Control", "no-cache");
-       
-       DataOutputStream out = new DataOutputStream(conn.getOutputStream());
-       out.writeBytes("--" + boundary + "\r\n");
-       writeFile("file-to-upload-01", localName, remoteName, out, boundary);
-       out.flush();
-       out.close();
-       
-       return readResponse(conn.getInputStream());
-    }
-
 	/**
 	 * Read to the end of the given input stream, closing the stream and
 	 * returning the string found. If anything goes wrong, it tries to
@@ -2213,30 +2138,7 @@ public final class Util
 		}
 		return ow.toString();
 	}
-   
-   static final int BUFF_SIZE = 1024;
-   static final byte[] buffer = new byte[BUFF_SIZE];
-
-  private static void writeFile(String name, String filePath, String fileNameOut, DataOutputStream out, String boundary) {
-       try {
-	   out.writeBytes("content-disposition: form-data; name=\"" + name + "\"; filename=\""
-			   + fileNameOut + "\"\r\n");
-	   out.writeBytes("content-type: application/octet-stream" + "\r\n\r\n");
-	   FileInputStream fis = new FileInputStream(filePath);
-	   while (true) {
-	       synchronized (buffer) {
-		   int amountRead = fis.read(buffer);
-		       if (amountRead == -1) {
-			   break;
-		       }
-		   out.write(buffer, 0, amountRead);
-		   }
-	   }
-	   fis.close();
-	   out.writeBytes("\r\n" + "--" + boundary + "\r\n");
-	    } catch (Exception e) {  log.println(e.toString());	     }
-   }
-
+	
     public static class TestSaveAsJpeg
      {
 	public static void main(String[] av)
@@ -3132,6 +3034,32 @@ public final class Util
 		return poc.getCenterLat() <= 0 ? in - 180.0 : in;
 	}
 	
+	/**
+	 * Returns the angular distance from p1 to p2 using pure spherical trig.
+	 * This method takes about 50% longer to run than
+	 * {@link HVector#separation(HVector)}, but that uses the arcsin formula
+	 * and this uses a formula that is stable in all cases.
+	 * 
+	 * @param p1 [east-longitude in degrees,geocentric-lat in degrees] point
+	 * @param p2 [east-longitude in degrees,geocentric-lat in degrees] point
+	 * @return The angular distance along the unit sphere from p1 to p2, in radians.
+	 */
+	public static double separation(Point2D p1, Point2D p2) {
+		double latRad2 = Math.toRadians(p2.getY());
+		double cosLat2 = Math.cos(latRad2);
+		double sinLat2 = Math.sin(latRad2);
+		double latRad1 = Math.toRadians(p1.getY());
+		double cosLat1 = Math.cos(latRad1);
+		double sinLat1 = Math.sin(latRad1);
+		double deltaLon = Math.toRadians(p2.getX() - p1.getX());
+		double cosDeLon = Math.cos(deltaLon);
+		double sinDeLon = Math.sin(deltaLon);
+		double a = cosLat2 * sinDeLon;
+		double b = cosLat1 * sinLat2 - sinLat1 * cosLat2 * cosDeLon;
+		double c = sinLat1 * sinLat2 + cosLat1 * cosLat2 * cosDeLon;
+		return Math.atan2(Math.hypot(a, b), c);
+	}
+	
 	public static ImageIcon loadIcon(String name) {
 		return new ImageIcon(loadImage(name));
 	}
@@ -3149,7 +3077,23 @@ public final class Util
 	public static WritableRaster getBands(BufferedImage img, int ... bands) {
 		return img.getRaster().createWritableChild(0, 0, img.getWidth(), img.getHeight(), 0, 0, bands);
 	}
-
+	
+	/** Returns the portion of the raster without the alpha band (could be all of it) */
+	public static WritableRaster getColorRaster(BufferedImage bi) {
+		ColorModel cm = bi.getColorModel();
+		WritableRaster raster = bi.getRaster();
+		if (cm.hasAlpha() == false) {
+			return raster;
+		}
+		int[] bands = new int[cm.getNumColorComponents()];
+		for (int i = 0; i < bands.length; i++) {
+			bands[i] = i;
+		}
+		int x = raster.getMinX();
+		int y = raster.getMinY();
+		return raster.createWritableChild(x, y, raster.getWidth(), raster.getHeight(), x, y, bands);
+	}
+	
 	/**
 	 * Our GrayCS is a linear Gray ColorSpace. Java's GrayCS is non-linear.
 	 */
@@ -3185,6 +3129,13 @@ public final class Util
 		return out;
 	}
 	
+	/** Returns the latin1 encoded string made from an apache-style hash of the given username and password */
+	public static String apachePassHash(String user, String password) {
+		String token = user + password;
+		byte[] coded = Base64.encodeBase64(DigestUtils.sha(token));
+		return Charset.forName("ISO-8859-1").decode(ByteBuffer.wrap(coded)).toString().replaceAll("=+$", "");
+	}
+	
 	/** Returns a MySQL 3.5-4.00 era password hash of the given plaintext password */
 	public static String mysqlPassHash(String password) {
 		int nr = 0x50305735;
@@ -3201,5 +3152,124 @@ public final class Util
 			add += charVal;
 		}
 		return String.format("%08x%08x", nr, nr2);
+	}
+	
+	/**
+	 * Wrapper around basic HttpClient execution of PostMethod to handle
+	 * redirects.
+	 * 
+	 * @return The HTTP response code from the last URI contacted.
+	 * @throws IOException Thrown if an IO error occurs
+	 * @throws NullPointerException Thrown if an empty location header is found
+	 * @throws HttpException Thrown if another kind of HTTP error occurs
+	 * @throws URIException Thrown if an invalid URI is used
+	 */
+	public static int postWithRedirect(HttpClient client, PostMethod post, int maxRedirects)
+			throws URIException, HttpException, NullPointerException, IOException {
+		int code = -1;
+		for (int tries = 0; tries < maxRedirects; tries++) {
+			code = client.executeMethod(post);
+			switch (code) {
+			case 301: // moved permanently
+			case 302: // moved temporarily
+			case 307: // temporary redirect
+				Header loc = post.getResponseHeader("location");
+				if (loc != null) {
+					post.setURI(new URI(loc.getValue(), false));
+				} else {
+					return code;
+				}
+				break;
+			case 200:
+			default:
+				return code;
+			}
+		}
+		return code;
+	}
+	
+	/**
+	 * Retrieves the given remote file, caches it in cachePath. Subsequent
+	 * calls return the cached copy. The cached copy is brought up-to-date
+	 * with respect to the remoteUrl before being returned if updateCheck
+	 * is <code>true</code>.
+	 * @param remoteUrl URL of the source file
+	 * @param updateCheck Whether to check for updates or not. This is only
+	 *        applicable if the file exists already. If not, an update is automatically
+	 *        performed.
+	 * @return <code>null</code> in case of an error, or the {@link File} in case
+	 *         of success.
+	 */
+	public static File getCachedFile(String remoteUrl, boolean updateCheck) {
+		String cachePath = Main.getJMarsPath()+"localcache"+File.separator;
+		try {
+			URL url = new URL(remoteUrl);
+			
+			File localFile = new File(cachePath + url.getFile().replaceAll("[^a-zA-Z0-9]", "_"));
+			if (!updateCheck){
+				if (localFile.exists()){
+					log.println("No update check requested, returning existing file.");
+					return localFile;
+				}
+				else {
+					log.println("No update check requested, but the file does not exist. Forcing update.");
+				}
+			}
+			
+			URLConnection conn = url.openConnection();
+			conn.setRequestProperty("User-Agent", "Java");
+			if (!(localFile.exists() && localFile.lastModified() == conn.getLastModified())){
+				if (localFile.exists())
+					log.println("File from "+remoteUrl+" is out of date ("+(new Date(localFile.lastModified()))+" vs "+(new Date(conn.getLastModified()))+").");
+				else
+					log.println("File from "+remoteUrl+" is not cached locally.");
+				
+				new File(cachePath).mkdirs();
+				InputStream is = conn.getInputStream();
+				OutputStream os = new BufferedOutputStream(new FileOutputStream(localFile));
+				byte[] buff = new byte[1024];
+				int nread;
+				while((nread = is.read(buff)) > -1)
+					os.write(buff, 0, nread);
+				os.close();
+				if (conn.getLastModified() != 0)
+					localFile.setLastModified(conn.getLastModified());
+				
+				log.println("Downloaded file from " + remoteUrl+ " modification date: "+(new Date(conn.getLastModified())));
+			}
+			else {
+				log.println("Using cached copy for "+remoteUrl+".");
+			}
+			return localFile;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
+	public static void addEscapeAction(final JDialog dlg) {
+		KeyStroke esc = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0, false);
+		dlg.getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(esc, "ESCAPE");
+		dlg.getRootPane().getActionMap().put("ESCAPE", new AbstractAction() {
+			public void actionPerformed(ActionEvent e) {
+				dlg.setVisible(false);
+			}
+		});
+	}
+	
+	public static void copy(InputStream is, OutputStream os) throws IOException {
+		byte[] buffer = new byte[2048];
+		int count = 0;
+		while (0 <= (count = is.read(buffer))) {
+			if (count == 0) {
+				try {
+					Thread.sleep(10);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			} else {
+				os.write(buffer, 0, count);
+			}
+		}
 	}
 }

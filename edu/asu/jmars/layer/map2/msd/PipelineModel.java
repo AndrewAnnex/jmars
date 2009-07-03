@@ -26,6 +26,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import edu.asu.jmars.layer.map2.CompStageFactory;
@@ -351,14 +352,11 @@ public class PipelineModel implements PipelineLegModelListener, Cloneable, Seria
 		return ppm;
 	}
 	
-	public static MapSource[] unwrap(WrappedMapSource[] wrapped){
-		if (wrapped == null)
-			return null;
-		
-		MapSource[] unwrapped = new MapSource[wrapped.length];
-		for(int i=0; i<wrapped.length; i++)
-			unwrapped[i] = wrapped[i].getWrappedSource();
-		
+	public static List<MapSource> unwrap(WrappedMapSource[] wrapped){
+		List<MapSource> unwrapped = new LinkedList<MapSource>();
+		for (WrappedMapSource ws: wrapped) {
+			unwrapped.add(ws.getWrappedSource());
+		}
 		return unwrapped;
 	}
 	

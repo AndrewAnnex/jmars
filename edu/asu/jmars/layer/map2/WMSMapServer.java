@@ -20,21 +20,33 @@
 
 package edu.asu.jmars.layer.map2;
 
+import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+
+import org.apache.commons.httpclient.Header;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpMethod;
+import org.apache.commons.httpclient.cookie.CookiePolicy;
+import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.httpclient.util.DateUtil;
 
 import edu.asu.jmars.Main;
 import edu.asu.jmars.util.Config;
@@ -43,6 +55,16 @@ import edu.asu.jmars.util.Util;
 
 /**
  * WMSMapServer stores properties for a WMS Map Server.
+ * 
+ * Note that when updating capabilities, all added/removed sources send a
+ * separate event. This can be very expensive if listeners are registered, so if
+ * large changes are anticipated it will be much more efficient to create a new
+ * WMSMapServer instance.
+ * 
+ * Internally, this class is driven by a capabilities document read from the
+ * WMS server the instance is pointed at.  This document can take a long time
+ * to read and parse, so fetching is deferred until the GetMap URI or list of
+ * sources is truly needed.
  */
 public class WMSMapServer implements MapServer, Serializable {
 	private static DebugLog log = DebugLog.instance();
@@ -71,12 +93,15 @@ public class WMSMapServer implements MapServer, Serializable {
 	/** Transient since GetMap service URL can be recovered from the capabilities document */
 	private transient WMSCapabilities capabilities;
 	/** Listeners who care about changes in this MapServer */
-	private transient List<MapServerListener> listeners = new LinkedList<MapServerListener>();
+	private transient List<MapServerListener> listeners;
 	/** Cached map sources for this server */
-	private transient List<MapSource> sources = new LinkedList<MapSource>();
+	private transient List<MapSource> sources;
+	/** True if the capabilities completely fail to load, such that it should not be tried again */
+	private transient boolean capsFailure;
 	
 	/** Create a new MapServer object, loading capabilities immediately */
 	public WMSMapServer(String newURL, int newTimeout, int newMaxRequests) {
+		initTransients();
 		name = newURL.replaceAll("[^0-9a-zA-Z]", "_").replaceAll("_+", "_");
 		try {
 			uri = new URI(newURL);
@@ -88,7 +113,6 @@ public class WMSMapServer implements MapServer, Serializable {
 		timeout = newTimeout;
 		maxRequests = newMaxRequests;
 		userDefined = true;
-		loadCapabilities(false);
 	}
 	
 	/**
@@ -97,8 +121,8 @@ public class WMSMapServer implements MapServer, Serializable {
 	 * and be unique within this jmars.config.
 	 */
 	public WMSMapServer(String serverName) {
+		initTransients();
 		load(serverName);
-		loadCapabilities(false);
 	}
 	
 	/**
@@ -106,9 +130,9 @@ public class WMSMapServer implements MapServer, Serializable {
 	 * The capabilities are loaded from disk if available.
 	 */
 	public WMSMapServer(String serverName, String urlSuffix) {
+		initTransients();
 		load(serverName);
-		uri = getURI(urlSuffix);
-		loadCapabilities(false);
+		uri = getSuffixedURI(uri, urlSuffix);
 	}
 	
 	/**
@@ -146,29 +170,34 @@ public class WMSMapServer implements MapServer, Serializable {
 		return uri;
 	}
 	
-	/** Get the capabilities service URI with extra 'name=value' parameters */
-	public final URI getURI(String ... args) {
+	/**
+	 * Returns a new URI based on the given base but with the given args added
+	 * onto the end of the query portion of the URI
+	 */
+	public static final URI getSuffixedURI(URI baseURI, String ... args) {
 		try {
-			String query = uri.getQuery();
+			String query = baseURI.getQuery();
 			if (query == null)
 				query = "";
 			if (query.length() > 0 && !query.endsWith("&"))
 				query += "&";
 			query += Util.join("&", args);
-			return new URI(uri.getScheme(), uri.getUserInfo(), uri.getHost(),
-				uri.getPort(), uri.getPath(), query, uri.getFragment());
+			return new URI(baseURI.getScheme(), baseURI.getUserInfo(), baseURI.getHost(),
+				baseURI.getPort(), baseURI.getPath(), query, baseURI.getFragment());
 		} catch (URISyntaxException e) {
 			throw new IllegalArgumentException("Could not construct modified URI: " + e.getMessage(), e);
 		}
 	}
 	
-	/**
-	 * Get the GetMap service URL. This URL comes from the Capabilities
-	 * document, so the blocking IO required to get this URL is done here
-	 * on the first call, rather than in the constructor.
-	 */
-	public final String getMapUrl() {
-		return capabilities.getMapURI().toString();
+	/** Get the GetMap service URI */
+	public final URI getMapURI() {
+		if (capsFailure) {
+			return URI.create("http://ms.mars.asu.edu");
+		}
+		if (capabilities == null) {
+			loadCapabilities(false);
+		}
+		return capabilities.getMapURI();
 	}
 	
 	public final String getTitle() {
@@ -180,12 +209,15 @@ public class WMSMapServer implements MapServer, Serializable {
 	}
 	
 	/**
-	 * Returns list of MapSource objects. This method caches map sources to avoid
-	 * duplicating the expensive download and XML parsing operations.
-	 * @param cached If false, or this method is being called for the first time,
-	 * the capabilities document will be redownloaded and parsed.
+	 * Returns list of MapSource objects, first retrieving the GetCapabilities
+	 * response if not already done. The result will be cached for faster
+	 * results next time. The {@link #loadCapabilities(boolean)} method can be
+	 * called before this method if cached capabilities should be used.
 	 */
 	public List<MapSource> getMapSources() {
+		if (capabilities == null) {
+			loadCapabilities(false);
+		}
 		return Collections.unmodifiableList(sources);
 	}
 	
@@ -227,8 +259,23 @@ public class WMSMapServer implements MapServer, Serializable {
 		}
 	}
 	
+	/** Provides the basename of the cached capabilities XML file */
+	protected String getCacheName() {
+		return "wms_" + getURI().toString().replaceAll("[^0-9a-zA-Z]+", "_") + ".xml";
+	}
+	
+	public final URI getCapabilitiesURI() {
+		return getSuffixedURI(uri, "service=wms","wmsver=1.1.1","request=GetCapabilities");
+	}
+	
+	/** returns an unconnected method for downloading the GetCapabilities response from this server */
+	protected HttpMethod getCapsMethod() {
+		return new GetMethod(getCapabilitiesURI().toString());
+	}
+	
 	/**
-	 * Loads capabilities for this server.
+	 * Loads capabilities for this server. Actually does one of several things depending on the internal
+	 * state of this server and the value of 'cached':
 	 * 
 	 * <ol>
 	 * <li>If capabilities have already been loaded and cached data is requested, this method simply returns.
@@ -236,55 +283,82 @@ public class WMSMapServer implements MapServer, Serializable {
 	 * <li>If cached data is not requested, capabilities are loaded from the map server.
 	 * </ol>
 	 * 
-	 * @throws IllegalStateException Thrown when this method cannot update
-	 * the capabilities, and cannot leave the capabilities in a consistent
-	 * state (such as when loading capabilities for the first time.)
+	 * If something goes wrong and cannot be recovered, the state of the map source list will be restored
+	 * to the prior state if possible, to an empty list of map sources if not.
 	 */
 	public final synchronized void loadCapabilities(boolean cached) {
-		if (capabilities != null && cached) {
+		if ((capabilities != null && cached) || capsFailure) {
 			return;
 		}
 		
 		// get backup of layers
-		List<WMSLayer> oldLayers = Collections.emptyList();
-		if (capabilities != null)
+		List<WMSLayer> oldLayers;
+		if (capabilities != null) {
 			oldLayers = new LinkedList<WMSLayer>(capabilities.getLayers());
+		} else {
+			oldLayers = Collections.emptyList();
+		}
 		
 		WMSCapabilities newCaps = null;
 		try {
-			// TODO: should put the user's name in here, to prevent causing problems caching
-			// multiple JMARS user's custom maps to a single computer user's home directory.
-			final String fileName = Main.getJMarsPath() + "wms_" + Util.urlEncode(getName()) + ".xml";
-			URI networkURI = getURI("service=wms","wmsver=1.1.1","request=GetCapabilities");
+			final String fileName = Main.getJMarsPath() + getCacheName();
+			HttpMethod method = getCapsMethod();
+			String networkPath = method.getURI().toString();
 			
 			// determine if we're using disk caching
-			boolean diskCache = Config.get("map.capabilities.cache", true);
+			// normally the config setting is unset, so we cache if we're running out of a jar
+			boolean diskCache = Config.get("map.capabilities.cache", Main.IN_JAR);
 			
 			// determine where we'll load from this time
 			final File file = new File(fileName);
 			boolean diskLoad = diskCache && cached && file.exists();
-			log.println("Loading capabilities from " + (diskLoad ? file.toURI() : networkURI));
+			log.println("Loading capabilities from " + (diskLoad ? file.getAbsolutePath() : networkPath));
 			
 			// try the network if we're not getting from disk
 			if (!diskLoad) {
 				try {
-					HttpURLConnection conn = (HttpURLConnection)networkURI.toURL().openConnection();
-					if (diskCache && file.exists()) {
-						conn.setIfModifiedSince(file.lastModified());
+					HttpClient client = new HttpClient();
+					client.getParams().setCookiePolicy(CookiePolicy.BROWSER_COMPATIBILITY);
+					if (diskCache && file.exists() && file.lastModified() != 0) {
+						method.setRequestHeader("If-Modified-Since", DateUtil.formatDate(new Date(file.lastModified())));
 					}
-					conn.connect();
-					if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
-						log.println("Capabilities updated from network");
-						newCaps = new WMSCapabilities(conn.getInputStream());
+					
+					int code;
+					if (method instanceof PostMethod) {
+						code = Util.postWithRedirect(client, (PostMethod)method, 3);
+					} else {
+						code = client.executeMethod(method);
+					}
+					
+					switch (code) {
+					case HttpURLConnection.HTTP_OK:
+						String stringDoc = Util.readResponse(method.getResponseBodyAsStream());
+						if (stringDoc.startsWith("ERROR:")) {
+							String message = stringDoc.replaceAll("^ERROR: *", "");
+							throw new IllegalStateException("Server returned error: " + message);
+						}
+						newCaps = new WMSCapabilities(new StringReader(stringDoc));
 						if (diskCache) {
+							final long lastModified;
+							long time = 0;
+							try {
+								Header lastModifiedHeader = method.getResponseHeader("last-modified");
+								if (lastModifiedHeader != null) {
+									String lastModifiedString = lastModifiedHeader.getValue();
+									time = DateUtil.parseDate(lastModifiedString).getTime();
+								}
+							} catch (Exception e) {
+								log.println(e);
+							}
+							lastModified = time;
+							
 							// save on another thread, since it takes a second that we
 							// don't want to slow down startup
-							final long modTime = conn.getLastModified();
-							new Thread(new Runnable() {
+							Thread t = new Thread(new Runnable() {
 								public void run() {
 									try {
 										synchronized(WMSMapServer.this) {
-											capabilities.save(file, modTime);
+											capabilities.save(file, lastModified);
 										}
 									} catch (Exception e) {
 										log.aprintln("Failure saving capabilities for " +
@@ -292,22 +366,34 @@ public class WMSMapServer implements MapServer, Serializable {
 										log.println(e);
 									}
 								}
-							}).start();
+							});
+							t.setName("capabilities-caching-thread");
+							t.setPriority(Thread.MIN_PRIORITY);
+							t.setDaemon(true);
+							t.start();
 						}
-					} else if (conn.getResponseCode() == HttpURLConnection.HTTP_NOT_MODIFIED) {
+						log.println("Capabilities updated from network");
+						break;
+					case HttpURLConnection.HTTP_NOT_MODIFIED:
 						log.println("Capabilities are already up to date");
-					} else {
-						log.aprintln("Capabilities update failed with response code: " + conn.getResponseCode());
+						break;
+					default:
+						log.aprintln("Capabilities update failed with response code: " + code);
+						break;
 					}
 				} catch (Exception e) {
-					log.aprintln("Unable to load from network" + (diskCache ? "; trying locally cached capabilities" : ""));
+					log.aprintln(MessageFormat.format(
+						"Unable to load capabilities from \"{0}\" for server \"{1}\", due to:",
+						networkPath,
+						getName()));
+					e.printStackTrace();
 				}
 			}
 			
 			// try the disk if we didn't load capabilities from network
 			if (newCaps == null) {
 				try {
-					newCaps = new WMSCapabilities(new FileInputStream(file));
+					newCaps = new WMSCapabilities(new BufferedReader(new FileReader(file)));
 				} catch (Exception e) {
 					throw new IllegalStateException("Unable to get capabilities for server named " +
 						getName() + " from network or disk; check network connection and try again.", e);
@@ -320,17 +406,21 @@ public class WMSMapServer implements MapServer, Serializable {
 			capabilities = newCaps;
 		} catch (Exception e) {
 			// log failure and attempt to revert to prior good state
-			log.aprintln("Exception getting capabilities: "+ e.getMessage());
+			log.aprintln("Exception getting capabilities from server named " + getName() + ":");
 			log.aprintln(e);
 			if (capabilities != null) {
 				log.aprintln("Attempting to restore previous state");
 				try {
 					processSources(capabilities.getLayers(), oldLayers, this);
 				} catch (Exception e2) {
-					throw new IllegalStateException("Unable to restore state after failed load: " + e.getMessage());
+					log.aprintln("Unable to restore state after failed load, server has no map sources:");
+					log.aprintln(e2);
+					sources.clear();
 				}
 			} else {
-				throw new IllegalStateException("loadCapabilities failed, there are NO capabilities for this server");
+				log.aprintln("loadCapabilities failed, there are NO capabilities for this server");
+				sources.clear();
+				capsFailure = true;
 			}
 		}
 	}
@@ -343,14 +433,16 @@ public class WMSMapServer implements MapServer, Serializable {
 			sources.add(source);
 			notifyListeners(source, MapServerListener.Type.ADDED);
 		} else {
-			throw new IllegalStateException("Adding source to server that doesn't own it!");
+			throw new IllegalStateException("Unsupported source type " +
+				(source==null ? "null" : source.getClass().getName()));
 		}
 	}
 	
 	public void add(WMSLayer layer) {
 		log.println("Adding layer [" + layer + "]");
 		add(new WMSMapSource(layer.getName(), layer.getTitle(), layer.getAbstract(),
-			layer.getCategories(), this, layer.isNumeric(), layer.getLatLonBoundingBox(), layer.getIgnoreValue()));
+			layer.getCategories(), this, layer.isNumeric(), layer.getLatLonBoundingBox(),
+			layer.getIgnoreValue(), layer.getMaxPPD()));
 	}
 	
 	public void remove(String name) {
@@ -363,7 +455,7 @@ public class WMSMapServer implements MapServer, Serializable {
 		notifyListeners(source, MapServerListener.Type.REMOVED);
 	}
 	
-	/** Negotiate differences between old and new layers onto server */
+	/** Merge differences between old and new layers onto this server */
 	private static final void processSources(List<WMSLayer> oldLayers, List<WMSLayer> newLayers, WMSMapServer server) {
 		// process deletes
 		Set<WMSLayer> deleted = new LinkedHashSet<WMSLayer>(oldLayers);
@@ -443,9 +535,14 @@ public class WMSMapServer implements MapServer, Serializable {
 	}
 	
 	private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+		initTransients();
 		in.defaultReadObject();
+	}
+	
+	private void initTransients() {
 		listeners = new LinkedList<MapServerListener>();
-		sources = new LinkedList<MapSource>();
+		sources = new ArrayList<MapSource>();
+		capsFailure = false;
 	}
 }
 

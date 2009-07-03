@@ -24,22 +24,18 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import edu.asu.jmars.layer.map2.stages.ColorStretcherStage;
 import edu.asu.jmars.layer.map2.stages.ColorStretcherStageSettings;
 import edu.asu.jmars.layer.map2.stages.ContourStageSettings;
-import edu.asu.jmars.layer.map2.stages.GrayscaleStage;
 import edu.asu.jmars.layer.map2.stages.GrayscaleStageSettings;
 
 /**
  * Factory to create instances of Stages.
  */
-public class StageFactory {
+public final class StageFactory {
 	static StageFactory instance;
-
-	List singleIOStages;
-
-	protected StageFactory(){
-		singleIOStages = new ArrayList();
+	private final List<Stage> singleIOStages;
+	private StageFactory() {
+		singleIOStages = new ArrayList<Stage>();
 		singleIOStages.add(getStageInstance(ColorStretcherStageSettings.stageName));
 		singleIOStages.add(getStageInstance(GrayscaleStageSettings.stageName));
 		singleIOStages.add(getStageInstance(ContourStageSettings.stageName));
@@ -58,7 +54,7 @@ public class StageFactory {
 	 * Returns an unmodifiable list of single input single output
 	 * Stages.
 	 */
-	public List getAllSingleIOStages(){
+	public List<Stage> getAllSingleIOStages(){
 		return Collections.unmodifiableList(singleIOStages);
 	}
 	
@@ -68,17 +64,15 @@ public class StageFactory {
 	 * within the stages. Only a handful of single input/output 
 	 * stages are supported at this time.
 	 */
-	public static Stage getStageInstance(String name){
-		if (name.equals(GrayscaleStageSettings.stageName)){
+	public static Stage getStageInstance(String name) {
+		if (name.equals(GrayscaleStageSettings.stageName)) {
 			return (new GrayscaleStageSettings()).createStage();
-		}
-		else if (name.equals(ColorStretcherStageSettings.stageName)){
+		} else if (name.equals(ColorStretcherStageSettings.stageName)) {
 			return (new ColorStretcherStageSettings()).createStage();
-		}
-		else if (name.equals(ContourStageSettings.stageName)){
+		} else if (name.equals(ContourStageSettings.stageName)) {
 			return (new ContourStageSettings()).createStage();
+		} else {
+			return null;
 		}
-		
-		return null;
 	}
 }

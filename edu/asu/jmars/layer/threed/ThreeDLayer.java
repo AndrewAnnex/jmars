@@ -96,7 +96,7 @@ public class ThreeDLayer extends Layer {
     	Request request = (Request)layerRequest;
     	Request oldRequest = requests.put(request.source, request);
     	log.println("Old request: " + oldRequest);
-    	if (request.source == getActiveView()) {
+    	if (request.source == getActiveView() && elevationSource != null) {
         	mapProducer.setRequest(new MapRequest(elevationSource, request.extent, request.ppd, request.projection));
         	mapProducer.addReceiver(new MapChannelReceiver() {
     			public void mapChanged(MapData mapData) {

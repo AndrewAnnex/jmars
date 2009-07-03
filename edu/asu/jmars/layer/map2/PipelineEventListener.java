@@ -24,5 +24,4 @@ import java.util.EventListener;
 
 public interface PipelineEventListener extends EventListener {
 	public void pipelineEventOccurred(PipelineEvent e);
-	public void userInitiatedStageChangedEventOccurred(StageChangedEvent e);
 }

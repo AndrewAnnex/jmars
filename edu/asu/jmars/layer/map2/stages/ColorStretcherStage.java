@@ -36,7 +36,7 @@ import edu.asu.jmars.util.Util;
 
 public class ColorStretcherStage extends AbstractStage implements Cloneable, Serializable {
 	private static final long serialVersionUID = -1320855669272199638L;
-
+	private static final Object globalLock = new Object();
 	public static DebugLog log = DebugLog.instance();
 	
 	public static String inputName = "Input";
@@ -68,8 +68,19 @@ public class ColorStretcherStage extends AbstractStage implements Cloneable, Ser
 
 		// Create an output image which is compatible with the FancyColorMapper's color map op
 		BufferedImage outImage = Util.newBufferedImage(image.getWidth(), image.getHeight());
-		ColorConvertOp cco = new ColorConvertOp(null);
-		cco.filter(image, outImage);
+
+		// the color convert op may be the cause of a relatively rare jvm crash
+		// that is rumored to occur as a result of a race condition within
+		// libcmm.so on linux versions of Java, that supposedly does not occur
+		// if access to the module occurs in a single threaded fashion; now this
+		// is by no means the only way within Java 2D to use the operator in
+		// such a way, but with N CPUs, and therefore N pipelines, and very long
+		// lists of tiles to filter, this could be a high frequency cause, so we
+		// at least ensure that this location is synchronized
+		synchronized(globalLock) {
+			ColorConvertOp cco = new ColorConvertOp(null);
+			cco.filter(image, outImage);
+		}
 		
 		// TODO: fcm is a Swing object while the Stage is multi-threaded. How do we cope?
 		// TODO: Don't know what alpha to use here, "1" seems like a reasonable choice.

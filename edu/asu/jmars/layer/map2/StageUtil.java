@@ -48,6 +48,7 @@ public class StageUtil {
 	/**
 	 * Returns a transform that maps from extent's coordinate space to screen (pixel) coordinates.
 	 */
+	// TODO: is this just the same as Util.image2world?
 	public static AffineTransform getExtentTransform(int width, int height, final Rectangle2D extent){
 		AffineTransform at = new AffineTransform();
 		

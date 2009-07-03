@@ -137,20 +137,9 @@ public final class PannerGlass extends BaseGlass {
 				Point2D downW = myVMan.getProj().screen.toWorld(mouseDown);
 				Point2D currW = myVMan.getProj().screen.toWorld(mouseCurr);
 
-				Point2D downS;
-				Point2D currS;
-
-				if (Main.inTimeProjection()) {
-					downS = Main.PO.convWorldToSpatialFromProj(
-							myVMan.getProj(), downW);
-					currS = Main.PO.convWorldToSpatialFromProj(
-							myVMan.getProj(), currW);
-				} else {
-					downS = Main.PO.convWorldToSpatial(downW);
-					currS = Main.PO.convWorldToSpatial(currW);
-				}
-				double angDistance = myVMan.getProj().spatial.distance(downS,
-						currS);
+				Point2D downS = Main.PO.convWorldToSpatial(downW);
+				Point2D currS = Main.PO.convWorldToSpatial(currW);
+				double angDistance = myVMan.getProj().spatial.distance(downS, currS);
 				double linDistance = angDistance * 3390.0 * 2 * Math.PI / 360.0;
 
 				// JMARS west lon => USER east lon
@@ -208,10 +197,6 @@ public final class PannerGlass extends BaseGlass {
 
 		Point2D down = proj.screen.toSpatial(x1, y1);
 		Point2D curr = proj.screen.toSpatial(x2, y2);
-		if (Main.inTimeProjection()) {
-			down = Main.PO.convWorldToSpatialFromProj(proj, down);
-			curr = Main.PO.convWorldToSpatialFromProj(proj, curr);
-		}
 		g2s.draw(new Line2D.Double(down, curr));
 		g2s.dispose();
 	}

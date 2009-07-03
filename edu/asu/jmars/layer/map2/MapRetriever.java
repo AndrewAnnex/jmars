@@ -20,6 +20,7 @@
 
 package edu.asu.jmars.layer.map2;
 
+import java.awt.Point;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
@@ -43,34 +44,39 @@ import edu.asu.jmars.util.Util;
  * If a final update occurs, image will be non-null and the finished flag will be set.
  */
 public class MapRetriever implements Runnable {
-
-	private static final int NUM_RETRIEVER_THREADS = Config.get("map.retriever.threadCount", 5);	
-	
-	private static ExecutorService pool;
+	public static final WrappedWorldTiler tiler = new WrappedWorldTiler(256,256);
+	private static final int NUM_RETRIEVER_THREADS = Config.get("map.retriever.threadCount", 5);
+	private static ExecutorService pool = Executors.newFixedThreadPool(NUM_RETRIEVER_THREADS, new MapThreadFactory("Map Retriever"));
 	private static DebugLog log = DebugLog.instance();
+	private static DownloadManager dman = new DownloadManager();
 	
-	public static MapRetriever getMapData(MapRequest request) {
-		if (request.getExtent()==null) {
-			log.println("NULL extent passed to MapRetriever.  MapRetriever isn't going to do anything useful for this case.  Correct the code that did this.");
-			return null;
+	private final MapRequest originalRequest;
+	private final MapData fetchedData;
+	private Collection<MapTile> unFinishedMapTiles;
+	private Collection<MapTile> cachedMapTiles;
+	private Collection<MapTile> nonCachedMapTiles;
+	private MapTile requestTiles[];
+	private boolean finishedDataSent=false;
+	private int downloadedTilesReceived=0;
+	private MapProcessor receiver;
+	
+	public MapRetriever(MapRequest request) {
+		if (request == null) {
+			throw new IllegalArgumentException("Request must not be null");
 		}
-		if (pool == null) {
-			int procs = NUM_RETRIEVER_THREADS;
-			log.println("Creating MapRetriever pool with " + procs + " processors");
-			pool = Executors.newFixedThreadPool(procs, new MapThreadFactory());
+		originalRequest = request;
+		if (request.getSource().getMaxPPD() < request.getPPD()) {
+			// request data at not more than twice the resolution of the dataset
+			int maxPPD = 1 << Math.max(0, (int)Math.ceil(Math.log(request.getSource().getMaxPPD()) / Math.log(2)));
+			fetchedData = new MapData(new MapRequest(request.getSource(), request.getExtent(), maxPPD, request.getProjection()));
+		} else {
+			fetchedData = new MapData(request);
 		}
-		
-		MapRetriever newRetriever = new MapRetriever(request);
-		
-		return newRetriever;
 	}
 	
-	MapRequest dataToFetch = null;
-	MapData fetchedData = null;
-	
-	private MapRetriever(MapRequest request) {
-		dataToFetch = request;
-		fetchedData = new MapData(request);
+	public void setReceiver(MapProcessor recv) {
+		receiver = recv;
+		pool.execute(this);
 	}
 	
 	/*
@@ -87,70 +93,32 @@ public class MapRetriever implements Runnable {
 	 * 
 	 */
 	
-	private Collection<MapTile> unFinishedMapTiles;
-	private Collection<MapTile> cachedMapTiles;
-	private Collection<MapTile> nonCachedMapTiles;
-	
-	public static double getLongitudeTileSize(int ppd) {
-		return 256.0/ppd;
-		// 256x256 on a side
-	}
-	
-	public static double getLatitudeTileSize(int ppd) {		
-		return 256.0/ppd;
-	}
-
-	private MapTile requestTiles[];
-	
-	private void initTiles(MapRequest data) {
-		double xstep = getLongitudeTileSize(data.getPPD());
-		double ystep = getLatitudeTileSize(data.getPPD());
-		
-		double pixelWidth = 1.0 / data.getPPD();
-		
-		// tile set will not contain two tiles with the same xtile/ytile
-		Set<MapTile> tiles = new LinkedHashSet<MapTile>();
-		
+	/** Calculates tiles from a map request, shifting each tile's extent by the request source's map offset */
+	public static Set<MapTile> createTiles(MapRequest request) {
 		// Apply the offset (defaults to 0.0) to handle nudged maps
-		Point2D offset = data.getSource().getOffset();
+		Point2D offset = request.getSource().getOffset();
+		Rectangle2D extent = request.getExtent();
+		Rectangle2D offsetExtent = new Rectangle2D.Double(
+			extent.getMinX() + offset.getX(),
+			extent.getMinY() + offset.getY(),
+			extent.getWidth(), extent.getHeight());
 		
-		Rectangle2D extent = data.getExtent();
-		
-		Rectangle2D offsetExtent = new Rectangle2D.Double(extent.getMinX() + offset.getX(),
-				extent.getMinY() + offset.getY(), extent.getWidth(), extent.getHeight());
-		
-		// for each wrapped world rectangle
-		Rectangle2D[] wrappedRects = Util.toWrappedWorld(offsetExtent);
-		for (int i = 0; i < wrappedRects.length; i++) {
-			Rectangle2D wrappedWorld = wrappedRects[i];
-			
-			double x = wrappedWorld.getX();
-			double y = wrappedWorld.getY();
-			double width = wrappedWorld.getWidth();
-			double height = wrappedWorld.getHeight();
-			
-			// get tile range of this wrapped piece
-			int xtileStart = (int) Math.floor(x / xstep); 
-			int ytileStart = (int) Math.floor((y + 90.0) / ystep);
-			
-			// Subract the width of 1 pixel from the calculation to avoid
-			// getting an extra column of tiles when the width is the same as the xstep
-			int xtileEnd = (int) ((x + width - pixelWidth) / xstep);			
-			int ytileEnd = (int) ((y + 90.0 + height-pixelWidth) / ystep);
-			
-			// create each tile
-			for (int xtile = xtileStart; xtile <= xtileEnd; xtile ++) {
-				for (int ytile = ytileStart; ytile <= ytileEnd; ytile ++) {
-					tiles.add(new MapTile(fetchedData.getRequest(), xtile, ytile));
-				}
+		// Create unique set of tiles that cover each wrapped rectangle in the
+		// request's unwrapped extent
+		int ppd = request.getPPD();
+		Set<MapTile> tiles = new LinkedHashSet<MapTile>();
+		for (Rectangle2D wrappedOffsetExtent: Util.toWrappedWorld(offsetExtent)) {
+			for (Point tilePoint: tiler.getTiles(wrappedOffsetExtent, ppd)) {
+				Rectangle2D tileExtent = MapRetriever.tiler.getExtent(tilePoint, ppd);
+				MapRequest tileRequest = new MapRequest(request.getSource(), tileExtent, ppd, request.getProjection());
+				tiles.add(new MapTile(request, tileRequest, tilePoint));
 			}
 		}
 		
-		requestTiles = (MapTile[])tiles.toArray(new MapTile[0]);
+		return tiles;
 	}
-
 	
-	public MapTile[] getIncompleteTiles() {
+	private MapTile[] getIncompleteTiles() {
 		Vector<MapTile> incompleteTiles = new Vector<MapTile>();
 		
 		for (int i = 0; i<requestTiles.length; i++) {
@@ -164,8 +132,8 @@ public class MapRetriever implements Runnable {
 		return (MapTile[])incompleteTiles.toArray(new MapTile[incompleteTiles.size()]);
 	}
 	
-	private void fetchMapData(MapRequest mapRequest) {		
-		initTiles(mapRequest);
+	private void fetchMapData() {
+		requestTiles = createTiles(fetchedData.getRequest()).toArray(new MapTile[0]);
 		
 		MapTile tiles[]=getIncompleteTiles();
 		
@@ -179,56 +147,17 @@ public class MapRetriever implements Runnable {
 		unFinishedMapTiles.addAll(Arrays.asList(cachedTiles));
 		unFinishedMapTiles.addAll(Arrays.asList(nonCachedTiles));
 		
-		fuzzyTilesRequested = nonCachedTiles.length;
-		cachedTilesRequested = cachedTiles.length;
-		downloadedTilesRequested = nonCachedTiles.length;
-		
 		CacheManager.getTiles(this, cachedTiles);
 		CacheManager.getFuzzyTiles(this, nonCachedTiles);
-		new DownloadManager(this, nonCachedTiles);
 		
-	}
-
-	private boolean finishedDataSent=false;
-
-	private int fuzzyTilesRequested=0;
-	private int cachedTilesRequested=0;
-	private int downloadedTilesRequested=0;
-
-	private int fuzzyTilesReceived=0;
-	private int cachedTilesReceived=0;
-	private int downloadedTilesReceived=0;
-
-	public int getFuzzyTilesRequested() {
-		return fuzzyTilesRequested;
+		for (MapTile tile: nonCachedTiles) {
+			dman.addDownload(this, tile);
+		}
 	}
 	
-	public int getCachedTilesRequested() {
-		return cachedTilesRequested;
-	}
-	
-	public int getDownloadedTilesRequested() {
-		return downloadedTilesRequested;
-	}
-
-	
-	public int getFuzzyTileCnt() {
-		return fuzzyTilesReceived;
-	}
-	
-	public int getCachedTilesReceived() {
-		return cachedTilesReceived;
-	}
-	
-	public int getDownloadedTilesReceived() {
-		return downloadedTilesReceived;
-	}
-
-	public boolean allTilesFetched() {
+	private boolean allTilesFetched() {
 		return (cachedMapTiles.isEmpty() && nonCachedMapTiles.isEmpty());
 	}
-	
-//	List modifiedExtents = new ArrayList();
 	
 	public synchronized void cacheResponse(MapTile tile, BufferedImage image) {
 		if (tile.getRequest().isCancelled()) {
@@ -236,32 +165,16 @@ public class MapRetriever implements Runnable {
 		}
 		
 		if (cachedMapTiles.contains(tile)) {
-			cachedTilesReceived++;
 			cachedMapTiles.remove(tile);
-			
-			// Uncomment this block to cause the cache to drop 1/5 of
-			// the tiles.  This is useful for testing the code that draws
-			// checkerboards over bad tiles.  Just don't forget to comment it 
-			// back out before you check in changes!
-			//if (tile.getXtile()*tile.getYtile()%5==0) {
-			//	return;
-			//}
 			
 			if (image==null) {
 				nonCachedMapTiles.add(tile);
-				MapTile tiles[] = new MapTile[1];
-				tiles[0]=tile;
-				
-				// TODO: This is wild overkill.  Instead, should try to 
-				// add to the existing DownloadManager for this request
 				
 				log.println("CacheManager returned a null image, trying to download image instead");
 				
-				new DownloadManager(this, tiles);
+				dman.addDownload(this, tile);
 				return;
 			}
-			
-//			modifiedExtents.add(tile.getExtent());
 			
 			tile.setImage(image);
 			fetchedData.addTile(tile);
@@ -270,7 +183,7 @@ public class MapRetriever implements Runnable {
 				sendUpdate();
 			}
 		} else {
-			// error
+			log.aprintln("MapRetriever update error");
 		}
 	}
 	
@@ -280,12 +193,9 @@ public class MapRetriever implements Runnable {
 		}
 		
 		if (nonCachedMapTiles.contains(tile)) {
-			fuzzyTilesReceived++;
 			tile.setFuzzyImage(image);
 			fetchedData.addTile(tile);
 
-//			modifiedExtents.add(tile.getExtent());
-			
 			sendUpdate();
 		} else {
 			// This could be fine - it just means we may have received the downloadResponse
@@ -294,52 +204,67 @@ public class MapRetriever implements Runnable {
 		}
 	}
 	
-	public synchronized void downloadResponse(MapTile tile, BufferedImage image) {
+	public synchronized void downloadResponse(MapTile tile) {
 		if (tile.getRequest().isCancelled()) {
+			log.println("Received cancelled downloaded response");
 			return;
 		}
 		
 		if (nonCachedMapTiles.contains(tile)) {
 			downloadedTilesReceived++;
 			
+			// specifically look at the final image, not the fuzzy one
+			BufferedImage image = tile.getImage();
+			
 			if (image==null && !tile.hasError()) {
 				// error
-				log.println("Null Tile in downloadResponse but not marked as an error");
+				log.aprintln("Null Tile in downloadResponse but not marked as an error");
 				return;
 			}
-
+			
 			nonCachedMapTiles.remove(tile);
-
+			
 			if (image!=null) {
 				tile.setImage(image);				
 				fetchedData.addTile(tile);
-				
-//				modifiedExtents.add(tile.getExtent());
-				
-				sendUpdate();
-				
-				CacheManager.storeMapData(tile);				
+			}
+			
+			sendUpdate();
+			
+			if (image!=null) {
+				CacheManager.storeMapData(tile);
 			}
 		} else {
-			// error
+			log.println("Received downloaded tile not requested");
+			throw new IllegalStateException("Receiver got tile it didn't ask for");
 		}
 	}
-
-	public synchronized MapData getData(boolean convert) {
-		return fetchedData.getDeepCopy(convert);
+	
+	/**
+	 * Returns a copy of the data that is safe to modify without worry about
+	 * subsequent updates from the cache or download systems, and ensures that
+	 * the image is a component color model.
+	 */
+	public synchronized MapData getData() {
+		MapData out = fetchedData.convertToCCM().convertToRequest(originalRequest);
+		// ensure at least one copy is made
+		if (out == fetchedData) {
+			out = out.getDeepCopy();
+		}
+		return out;
 	}
 	
 	public MapRequest getRequest() {
-		return dataToFetch;
+		return originalRequest;
 	}
 	
-	private synchronized void sendUpdate() {		
+	private synchronized void sendUpdate() {
 		if (finishedDataSent==true) {
 			log.println("MapRetriever received an update after sending finished data!.");
 			return;
 		}
 		
-		if (dataToFetch.isCancelled()) {
+		if (originalRequest.isCancelled()) {
 			return;
 		}
 		
@@ -358,13 +283,6 @@ public class MapRetriever implements Runnable {
 	}
 	
 	public void run() {
-		fetchMapData(dataToFetch);
-	}
-	
-	private MapProcessor receiver;
-	
-	public void setReceiver(MapProcessor recv) {
-		this.receiver = recv;
-		pool.execute(this);
+		fetchMapData();
 	}
 }

@@ -20,8 +20,9 @@
 
 package edu.asu.jmars.layer.util.features;
 
-import java.awt.geom.*;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Font;
+import java.io.Serializable;
 
 import edu.asu.jmars.util.LineType;
 
@@ -32,7 +33,9 @@ import edu.asu.jmars.util.LineType;
  * Equality is defined as having the same name and type, so a Set of Field
  * instances can have multiple fields with the same name and different types.
  */
-public class Field {
+public class Field implements Serializable {
+	private static final long serialVersionUID = 1L;
+	
 	/**
 	 * All Feature instances should have a path and type.
 	 */
@@ -40,7 +43,7 @@ public class Field {
 	/**
 	 * Spatial coordinates in the west-leading areo-centric coordinate system.
 	 */
-	public static final Field FIELD_PATH = new Field("path",GeneralPath.class,true);
+	public static final Field FIELD_PATH = new Field("path",FPath.class,true);
 	public static final Field FIELD_DRAW_COLOR = new Field("Line Color",java.awt.Color.class,true);
 	public static final Field FIELD_FILL_COLOR = new Field("Fill Color",java.awt.Color.class,true);
 	public static final Field FIELD_LABEL_COLOR = new Field("Label Color",Color.class,true);
@@ -50,17 +53,9 @@ public class Field {
 	public static final Field FIELD_LINE_DIRECTED = new Field("Line Arrow",Boolean.class,true);
 	public static final Field FIELD_FONT = new Field("font",Font.class,false);
 	public static final Field FIELD_LABEL = new Field("Label",String.class,true);
-	public static final Field FIELD_SELECTED = new Field("selected",Boolean.class,true);
 	public static final Field FIELD_SHOW_LABEL = new Field("Show Labels",Boolean.class,true);
 	public static final Field FIELD_FILL_POLYGON = new Field("Fill Poly",Boolean.class,true);
 	public static final Field FIELD_FEATURE_TYPE = new Field("Feature", String.class, false);
-
-	public static final Field[] DEFAULT_FIELDS = {
-		FIELD_FEATURE_TYPE, FIELD_PATH, FIELD_SELECTED, FIELD_LABEL,
-		FIELD_DRAW_COLOR, FIELD_FILL_COLOR, FIELD_LABEL_COLOR,
-		FIELD_LINE_WIDTH, FIELD_LINE_DASH, FIELD_LINE_DIRECTED,
-		FIELD_FILL_POLYGON, FIELD_SHOW_LABEL, FIELD_POINT_SIZE
-	};
 
 	/**
 	 * The name of the field, usually what is displayed in a table header.
@@ -72,7 +67,7 @@ public class Field {
 	 * etc must be used in place of real primitives, due to the limitations of
 	 * Java 1.4.
 	 */
-	public final Class type;
+	public final Class<?> type;
 
 	/**
 	 * An editable Field usually represents real data in some Feature source,
@@ -104,11 +99,12 @@ public class Field {
 	 * Defines equality as the intersection of name and type equality.
 	 */
 	public boolean equals (Object o) {
-		if (o == null || !(o instanceof Field))
+		if (o instanceof Field) {
+			Field f = (Field)o;
+			return this.name.equals (f.name) && this.type.equals (f.type);
+		} else {
 			return false;
-
-		Field f = (Field)o;
-		return this.name.equals (f.name) && this.type.equals (f.type);
+		}
 	}
 
 	/**
@@ -120,7 +116,7 @@ public class Field {
 	
 	
 	/**
-	 * Debugging version of toString() method.
+	 * Must return the name, for user interface reasons
 	 */
 	public String toString(){
 		return name;

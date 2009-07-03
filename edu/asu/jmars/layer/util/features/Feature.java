@@ -20,8 +20,13 @@
 
 package edu.asu.jmars.layer.util.features;
 
-import java.util.*;
-import java.awt.geom.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import edu.asu.jmars.util.Util;
 
@@ -48,9 +53,9 @@ import edu.asu.jmars.util.Util;
  */
 public class Feature {
 	// package-private collection that 'owns' this Feature
-	SingleFeatureCollection owner;
+	public SingleFeatureCollection owner;
 	// package-private map of Field to Object
-	LinkedHashMap attributes = new LinkedHashMap ();
+	public Map<Field,Object> attributes = new LinkedHashMap<Field,Object>();
 
 	/**
 	 * Default constructor creates a Feature object with no defined attributes.
@@ -68,7 +73,7 @@ public class Feature {
 	/**
 	 * Return a read-only view of the Set of keys to the attribute map.
 	 */
-	public Set getKeys () {
+	public Set<Field> getKeys () {
 		return Collections.unmodifiableSet (attributes.keySet ());
 	}
 
@@ -135,9 +140,9 @@ public class Feature {
 	 * Clones the attribute map <i>only</i>; the Feature must be attached to a
 	 * FeatureCollection to set the owner.
 	 */
-	public Object clone () {
-		Feature f = new Feature ();
-		f.attributes = (LinkedHashMap) this.attributes.clone ();
+	public Feature clone () {
+		Feature f = new Feature();
+		f.attributes.putAll(this.attributes);
 		return f;
 	}
 	
@@ -147,65 +152,12 @@ public class Feature {
 	 * makes a whole bunch of stuff slower.
 	 */
 	public boolean equals(Feature o){
-		if (o == null)
-			return false;
 		if (!(o instanceof Feature))
 			return false;
 		
 		Feature f = (Feature)o;
-		
 		return (f.owner == owner)
 			&& f.attributes.equals(attributes);
-	}
-	
-	/*
-	public int hashCode(){
-		return (owner.hashCode() ^ attributes.hashCode());
-	}
-	*/
-
-	/**
-	 * This Feature represents an undefined shape.
-	 */
-	public static final int TYPE_NONE = 0;
-	/**
-	 * This Feature represents a single point.
-	 */
-	public static final int TYPE_POINT = 1;
-
-	/**
-	 * This Feature represents an unclosed polyline with 2 or more points.
-	 */
-	public static final int TYPE_POLYLINE = 2;
-
-	/**
-	 * This Feature represents a closed polygon with 3 or more points.
-	 */
-	public static final int TYPE_POLYGON = 3;
-
-	/**
-	 * Returns the current type of the Feature's path attribute.
-	 * The GeneralPath is examined each time this method is called, so the
-	 * result should be retained externally if it is needed in many places.
-	 * @return One of the public field values:
-	 * <ul>
-	 * <li>TYPE_NONE
-	 * <li>TYPE_POINT
-	 * <li>TYPE_POLYLINE
-	 * <li>TYPE_POLYGON
-	 * </ul>
-	 */
-	public int getPathType () {
-		FPath path = (FPath) attributes.get (Field.FIELD_PATH);
-		Point2D[] vertices = path.getVertices();
-		if (vertices.length < 1)
-			return TYPE_NONE;
-		else if (vertices.length < 2)
-			return TYPE_POINT;
-		else if (path.getClosed())
-			return TYPE_POLYGON;
-		else
-			return TYPE_POLYLINE;
 	}
 	
 	/**

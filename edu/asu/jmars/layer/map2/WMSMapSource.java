@@ -20,7 +20,6 @@
 
 package edu.asu.jmars.layer.map2;
 
-import java.awt.Dimension;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
@@ -29,9 +28,13 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.SocketTimeoutException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
 
 import javax.imageio.ImageIO;
 import javax.swing.SwingUtilities;
@@ -40,7 +43,9 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpConnectionManager;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpMethod;
+import org.apache.commons.httpclient.HttpMethodRetryHandler;
 import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.httpclient.params.HttpMethodParams;
 
 import edu.asu.jmars.ProjObj;
 import edu.asu.jmars.ProjObj.Projection_OC;
@@ -62,7 +67,6 @@ public class WMSMapSource implements MapSource, Serializable {
 	public static final String CONTENT_TYPE_WMS_ERROR = "application/vnd.ogc.se_xml";
 	public static final String RESP_HDR_CONTENT_TYPE = "Content-Type";
 	
-	
 	// accessible properties
 	private String name;          // This is the map name to use when requesting a map from the server
 	private MapServer server;
@@ -77,6 +81,8 @@ public class WMSMapSource implements MapSource, Serializable {
 	private boolean hasNumericKeyword = false;
 	
 	private final double[] ignoreValue;
+	
+	private final double maxPPD;
 	
 	// internal-only fields for resolving the MapAttr object
 	private transient MapChannel channel = null;
@@ -110,7 +116,7 @@ public class WMSMapSource implements MapSource, Serializable {
 	 * listener to {@link MapAttr#getChannel() MapAttr's MapChannel}.
 	 */
 	public WMSMapSource(String newName, String newTitle, String newAbstract, String[][] categories,
-			MapServer newServer, boolean hasNumericKeyword, Rectangle2D latLonBBox, double[] ignoreValue) {
+			MapServer newServer, boolean hasNumericKeyword, Rectangle2D latLonBBox, double[] ignoreValue, double maxPPD) {
 		this.name=newName;
 		this.title=newTitle;
 		this.abstractText=newAbstract;
@@ -119,7 +125,7 @@ public class WMSMapSource implements MapSource, Serializable {
 		this.categories = categories;
 		this.latLonBBox = safeCopy(latLonBBox);
 		this.ignoreValue = ignoreValue;
-		
+		this.maxPPD = maxPPD;
 		allSources.add(this);
 	}
 	
@@ -203,74 +209,54 @@ public class WMSMapSource implements MapSource, Serializable {
 		});
 	}
 	
-	/**
-	 * Returns the tile size in pixels.
-	 * @param mapTileRequest
-	 */
-	private Dimension getTileSizeInPixels(MapRequest mapTileRequest){
-		int ppd = mapTileRequest.getPPD();
-		double width = (MapRetriever.getLatitudeTileSize(ppd) * ppd);
-		double height = (MapRetriever.getLongitudeTileSize(ppd) * ppd);
-		return new Dimension((int)width, (int)height);
-	}
-	
-	private String buildRequestUrlString(MapRequest mapTileRequest){
-		String serverURL = getServer().getMapUrl();
-
-		StringBuffer wmsURL = new StringBuffer();
-		wmsURL.append(serverURL);
-		wmsURL.append("SERVICE=WMS&REQUEST=GetMap&FORMAT="); wmsURL.append(getMimeType());
-		
-		// get up vector to request, and adjust longitude values based on requested projection
+	private URI getRequestURI(MapRequest mapTileRequest){
+		// get up vector and bbox, and shift bbox based on uplon
 		Projection_OC poc = (Projection_OC)mapTileRequest.getProjection();
 		Point2D up = Util.getJmars1Up(poc, null);
-		
-		wmsURL.append("&SRS=JMARS:1,"); wmsURL.append(up.getX()); wmsURL.append(","); wmsURL.append(up.getY());				
-		wmsURL.append("&STYLES=&VERSION=1.1.1&LAYERS="); wmsURL.append(getName());
-
-		// TODO: This can be simplified to just '256'.  Should it be, or is it better to let us have
-		// some flexibility?
-		Dimension tileSize = getTileSizeInPixels(mapTileRequest);
-		wmsURL.append("&WIDTH="); wmsURL.append(tileSize.width);
-		wmsURL.append("&HEIGHT="); wmsURL.append(tileSize.height);
-
 		Rectangle2D tileExtent = mapTileRequest.getExtent();
-
 		double startX = tileExtent.getMinX();
 		double startY = tileExtent.getMinY();
 		double endX = tileExtent.getMaxX();
 		double endY = tileExtent.getMaxY();
-
 		startX = Util.worldXToJmars1X(poc, startX);
 		endX = Util.worldXToJmars1X(poc, endX);
-
-		StringBuffer tileURL = new StringBuffer();
-		tileURL.append("&BBOX="); tileURL.append(startX); tileURL.append(","); tileURL.append(startY);
-		tileURL.append(","); tileURL.append(endX); tileURL.append(","); tileURL.append(endY);
-
-		String urlString = wmsURL.toString()+tileURL.toString();
-		
-		return urlString;
+		int pixWidth = (int)Math.round(mapTileRequest.getExtent().getWidth() * mapTileRequest.getPPD());
+		int pixHeight = (int)Math.round(mapTileRequest.getExtent().getHeight() * mapTileRequest.getPPD());
+		return WMSMapServer.getSuffixedURI(
+			getServer().getMapURI(),
+			"SERVICE=WMS",
+			"REQUEST=GetMap",
+			"FORMAT="+getMimeType(),
+			"SRS=JMARS:1," + up.getX() + "," + up.getY(),
+			"STYLES=",
+			"VERSION=1.1.1",
+			"LAYERS=" + getName(),
+			"WIDTH=" + pixWidth,
+			"HEIGHT=" + pixHeight,
+			"BBOX=" + startX + "," + startY + "," + endX + "," + endY);
 	}
 	
 	public BufferedImage fetchTile(MapRequest mapTileRequest) throws RetryableException, NonRetryableException {
-		String urlString = buildRequestUrlString(mapTileRequest);
-		Dimension tileSize = getTileSizeInPixels(mapTileRequest);
+		String urlString = getRequestURI(mapTileRequest).toString();
 		String mimeType = getMimeType();
 		log.println("Downloading ["+mimeType+"] tile from URL " + urlString);
 		
 		HttpClient client = new HttpClient();
 		HttpConnectionManager conMan = client.getHttpConnectionManager();
-		
-		conMan.getParams().setDefaultMaxConnectionsPerHost(10);
+		conMan.getParams().setDefaultMaxConnectionsPerHost(getServer().getMaxRequests());
 	    conMan.getParams().setConnectionTimeout(getServer().getTimeout());
-	    conMan.getParams().setSoTimeout(60000);
-	    
-	    HttpMethod method = new GetMethod(urlString);
-	    
+	    GetMethod method = new GetMethod(urlString);
+		method.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, new HttpMethodRetryHandler() {
+			public boolean retryMethod(HttpMethod method, IOException exception, int executionCount) {
+				return false; 
+			}
+		});
+		
 		BufferedImage tileImage = null;
 	    
 		try {
+			hookWatch(Thread.currentThread(), method);
+			
 			client.executeMethod(method);
 			
 			// check the resulting content type
@@ -285,8 +271,10 @@ public class WMSMapSource implements MapSource, Serializable {
 			} else {
 				throw new NonRetryableException("Unrecognized MIME type " + contentType);
 			}
-			
-			if (tileImage == null || tileImage.getWidth() != tileSize.width || tileImage.getHeight() != tileSize.height) {
+
+			if (tileImage == null ||
+					tileImage.getWidth() != MapRetriever.tiler.getPixelWidth() ||
+					tileImage.getHeight() != MapRetriever.tiler.getPixelHeight()) {
 				throw new RetryableException(tileImage==null?"Downloaded image was null": "Wrong size image downloaded");
 			}
 		}
@@ -320,9 +308,93 @@ public class WMSMapSource implements MapSource, Serializable {
 		} 
 		finally {
 			method.releaseConnection();
+			unhookWatch(Thread.currentThread());
 		}
 	    
 	    return tileImage;
+	}
+	
+	/** millisecond frequency of interrupt polling */
+	private static final int INT_POLL_FREQ = 100;
+	/** singleton timer to execute the timed poll check */
+	private static Thread interruptThread;
+	/** list of threads to poll for interrupted state and the method to abort if it is */
+	private static final Map<Thread,GetMethod> downloads = new IdentityHashMap<Thread,GetMethod>();
+	/** this task will keep rescheduling itself until there are no downloads to watch */
+	private static final Runnable interruptTask = new Runnable() {
+		public void run() {
+			while (true) {
+				// gather methods for interrupted threads
+				List<GetMethod> toAbort = new ArrayList<GetMethod>(downloads.size());
+				synchronized(downloads) {
+					for (Thread t: downloads.keySet()) {
+						if (t.isInterrupted()) {
+							toAbort.add(downloads.get(t));
+						}
+					}
+				}
+				
+				// abort outside the downloads lock since it could take time
+				for (GetMethod m: toAbort) {
+					log.println("poll: aborting socket");
+					m.abort();
+				}
+				
+				// if we're out of downloads to monitor, get out
+				synchronized(downloads) {
+					if (downloads.isEmpty()) {
+						interruptThread = null;
+						break;
+					}
+				}
+				
+				// if we are interrupted, get out, otherwise wait before
+				// checking interrupt flags again
+				try {
+					Thread.sleep(INT_POLL_FREQ);
+				} catch (InterruptedException e) {
+					interruptThread = null;
+					break;
+				}
+			}
+			log.println("poll: quitting");
+		}
+	};
+	
+	/**
+	 * Schedules a periodic poll of the thread's interrupt state, and if it
+	 * becomes interrupted, aborts the given method. All HttpClient3 requests
+	 * should call this method before calling
+	 * {@link HttpClient#executeMethod(HttpMethod)}.
+	 * 
+	 * The {@link #fetchTile(MapRequest)} method must close the socket when the
+	 * downloading thread becomes interrupted, and while HttpClient 4 uses NIO
+	 * for proper abort-on-interrupt behavior, it is still in beta and neither
+	 * Java sockets nor HttpClient3 do it, so we have this work around for now.
+	 */
+	private static void hookWatch(final Thread thread, final GetMethod method) {
+		synchronized(downloads) {
+			downloads.put(thread,method);
+			if (interruptThread == null) {
+				interruptThread = new Thread(interruptTask);
+				interruptThread.setPriority(Thread.MIN_PRIORITY);
+				interruptThread.setName("WMSMapSource-interrupt-handler");
+				interruptThread.setDaemon(true);
+				log.println("poll: starting");
+				interruptThread.start();
+			}
+		}
+	}
+	
+	/**
+	 * Stop periodically polling the state of the interrupt flag for the given
+	 * thread. This method should always be called when leaving
+	 * {@link #fetchTile(MapRequest)}.
+	 */
+	private static void unhookWatch(Thread thread) {
+		synchronized(downloads) {
+			downloads.remove(thread);
+		}
 	}
 	
 	/**
@@ -381,7 +453,7 @@ public class WMSMapSource implements MapSource, Serializable {
 		}
 	}
 	
-	/** Equality comparison by <em>identity</em> */
+	/** Equal if servers are equal and objects have the same type and name property */
 	public boolean equals(Object o) {
 		if (o instanceof WMSMapSource) {
 			MapSource s = (MapSource)o;
@@ -390,7 +462,7 @@ public class WMSMapSource implements MapSource, Serializable {
 		return false;
 	}
 	
-	/** Hash-code is based on <em>identity</em> */
+	/** Hash-code is based on the hash of the server and name properties */
 	public int hashCode(){
 		return (getServer().hashCode() * (1<<31)) + getName().hashCode();
 	}
@@ -409,5 +481,13 @@ public class WMSMapSource implements MapSource, Serializable {
 		} else {
 			return null;
 		}
+	}
+	
+	/**
+	 * Returns the maximum PPD at which this source is available, or
+	 * Double.POSITIVE_INFINITY if there is no maximum.
+	 */
+	public double getMaxPPD() {
+		return maxPPD;
 	}
 }

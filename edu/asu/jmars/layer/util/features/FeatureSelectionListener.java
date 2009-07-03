@@ -31,6 +31,8 @@ import javax.swing.event.*;
 import edu.asu.jmars.swing.STable;
 import edu.asu.jmars.util.stable.Sorter;
 import edu.asu.jmars.util.DebugLog;
+import edu.asu.jmars.util.ObservableSet;
+import edu.asu.jmars.util.ObservableSetListener;
 import edu.asu.jmars.util.Util;
 
 /**
@@ -45,30 +47,31 @@ import edu.asu.jmars.util.Util;
  * When the FeatureSelectionListener is changing the ListSelectionModel to match
  * the FeatureCollection's selections, it should ignore the return events.
  */
-public class FeatureSelectionListener implements FeatureListener, ListSelectionListener
+public class FeatureSelectionListener implements ListSelectionListener, ObservableSetListener<Feature>, FeatureListener
 {
 	static final DebugLog log = DebugLog.instance();
 
 	private STable table;
 	private FeatureCollection fc;
+	private ObservableSet<Feature> selections;
 	private ListSelectionModel listModel;
 	private Sorter sorter;
-	private boolean listening = true;
-
+	private volatile boolean listening = true;
+	
 	/**
-	 * It is strongly recommended that setFeatureSelectionsToTable() be called
-	 * soon after construction to sync the feature collection and the selection
-	 * model.
+	 * Override the default {#link SelectionHandler} to tailor how selection state is stored and updated.
 	 */
-	public FeatureSelectionListener(STable table, FeatureCollection fc) {
+	public FeatureSelectionListener(STable table, FeatureCollection fc, ObservableSet<Feature> selections) {
 		this.table = table;
 		this.listModel = table.getSelectionModel();
 		this.fc = fc;
+		this.selections = selections;
 		this.sorter = table.getSorter();
-
 		listModel.addListSelectionListener(this);
+		selections.addListener(this);
+		fc.addListener(this);
 	}
-
+	
 	/**
 	 * Update table row selection from the <em>selected</em> attribute
 	 * in each Feature object.
@@ -82,8 +85,7 @@ public class FeatureSelectionListener implements FeatureListener, ListSelectionL
 			int[] selectIdx = new int[fc.getFeatures().size()];
 			int selectSize = 0, pos = 0;
 			for (Iterator fi=fc.featureIterator(); fi.hasNext(); pos ++) {
-				Boolean isSelected = (Boolean)((Feature)fi.next()).getAttribute(Field.FIELD_SELECTED);
-				if (isSelected != null && isSelected.booleanValue())
+				if (selections.contains(fi.next()))
 					selectIdx[selectSize++] = sorter.sortRow(pos);
 			}
 
@@ -95,13 +97,15 @@ public class FeatureSelectionListener implements FeatureListener, ListSelectionL
 			listModel.setValueIsAdjusting(false);
 		}
 	}
-
+	
 	/**
 	 * Remove this instance from listening to the underlying
 	 * FeatureCollection and ListSelectionModel.
 	 */
 	public void disconnect () {
 		listModel.removeListSelectionListener (this);
+		selections.removeListener(this);
+		fc.removeListener(this);
 	}
 
 	/**
@@ -142,108 +146,58 @@ public class FeatureSelectionListener implements FeatureListener, ListSelectionL
 				return;
 			}
 
-			Map toModify = new LinkedHashMap();
+			Set<Feature> toEnable = new HashSet<Feature>();
+			Set<Feature> toDisable = new HashSet<Feature>();
 
 			for (int sortedIdx = first; sortedIdx <= last; sortedIdx++) {
 				int unsortedIdx = sorter.unsortRow (sortedIdx);
 				Feature feat = (Feature)fc.getFeatures().get(unsortedIdx);
 				boolean tableSel = listModel.isSelectedIndex(sortedIdx);
-				Boolean featureSel = (Boolean)feat.getAttribute(Field.FIELD_SELECTED);
-				if (featureSel == null) {
-					featureSel = Boolean.FALSE;
-				}
-
-				if (featureSel.booleanValue() != tableSel) {
-					toModify.put(feat, tableSel ? Boolean.TRUE : Boolean.FALSE);
+				boolean featureSel = selections.contains(feat);
+				if (featureSel != tableSel) {
+					(tableSel ? toEnable : toDisable).add(feat);
 				}
 			}
 
-			if (!toModify.isEmpty()) {
-				fc.setAttributes(Field.FIELD_SELECTED, toModify);
-			}
+			selections.removeAll(toDisable);
+			selections.addAll(toEnable);
 		} finally {
 			listening = true;
 		}
 	}
 
-	/**
-	 * When the selected state of a Feature disagrees with the selection model
-	 * in the table, update the selection model.
-	 */
-	public void receive( FeatureEvent e)
-	{
-		if (! listening) {
+	public void change(Set<Feature> added, Set<Feature> removed) {
+		if (!listening) {
 			return;
 		}
-
-		// Only process feature add/change events; when FeatureTableModel sends
-		// a tableChanged indicating a deletion, the JTable removes any
-		// corresponding selections for us.
+		
 		listening = false;
-		listModel.setValueIsAdjusting(true);
 		try {
-			switch (e.type) {
-			case FeatureEvent.ADD_FEATURE:
-				int[] sorted = new int[e.features.size()];
-				int sortedSize = 0;
-				for (Iterator li = e.features.iterator(); li.hasNext(); ) {
-					Feature f = (Feature)li.next();
-					if (f.getAttribute (Field.FIELD_SELECTED) == Boolean.TRUE) {
-						int unsortedIdx = ((Integer)e.featureIndices.get(f)).intValue();
-						int sortedIndex = sorter.sortRow (unsortedIdx);
-						sorted[sortedSize++] = sortedIndex;
-					}
-				}
-				int[][] binned = Util.binRanges (sorted, sortedSize);
-				for (int i = 0; i < binned.length; i++)
-					listModel.addSelectionInterval (binned[i][0], binned[i][1]);
-				break;
-
-			case FeatureEvent.CHANGE_FEATURE:
-				if (! e.fields.contains(Field.FIELD_SELECTED))
-					return;
-				int[] addArr = new int[e.features.size()];
-				int[] delArr = new int[e.features.size()];
-				int addSize = 0, delSize = 0;
-				for (Iterator li = e.features.iterator(); li.hasNext(); ) {
-					Feature f = (Feature)li.next();
-					int unsortedIdx = ((Integer)e.featureIndices.get(f)).intValue();
-					int sortedIndex = sorter.sortRow (unsortedIdx);
-					Boolean selected = (Boolean)f.getAttribute(Field.FIELD_SELECTED);
-					if (selected == null || !selected.booleanValue()) {
-						delArr[delSize++] = sortedIndex;
-					} else {
-						addArr[addSize++] = sortedIndex;
-					}
-				}
-
-				if (addSize > 0) {
-					int[][] addBins = Util.binRanges (addArr, addSize);
-					for (int i = 0; i < addBins.length; i++)
-						listModel.addSelectionInterval (addBins[i][0], addBins[i][1]);
-					Rectangle rect = table.getCellRect(addBins[addBins.length-1][1], 0, true);
-					rect = rect.union(table.getCellRect(addBins[addBins.length-1][1], table.getColumnCount()-1, true));
-					table.scrollRectToVisible(rect);
-				}
-
-				if (delSize > 0) {
-					int[][] delBins = Util.binRanges (delArr, delSize);
-					for (int i = 0; i < delBins.length; i++)
-						listModel.removeSelectionInterval (delBins[i][0], delBins[i][1]);
-				}
-				break;
+			// this is as fast as we can do it without changing the
+			// SingleFeatureCollection data structure to provide more efficient
+			// index lookups, or changing the table selection model to be backed by
+			// our selection set
+			setFeatureSelectionsToTable();
+			if (added != null && added.size() > 0) {
+				int row = listModel.getMaxSelectionIndex();
+				Rectangle rect = table.getCellRect(row, 0, true);
+				rect = rect.union(table.getCellRect(row, table.getColumnCount()-1, true));
+				table.scrollRectToVisible(rect);
 			}
 		} finally {
 			listening = true;
-			listModel.setValueIsAdjusting(false);
 		}
 	}
 
-	/**
-	 * Controls whether FeatureSelectionListener will process or ignore events
-	 * from the ListSelectionModel.
-	 */
-	public void setListening (boolean listen) {
-		this.listening = listen;
+	public void receive(FeatureEvent e) {
+		if (e.type == FeatureEvent.REMOVE_FEATURE) {
+			listening = false;
+			try {
+				selections.removeAll(e.features);
+			} finally {
+				listening = true;
+			}
+		}
 	}
 } // end: class FeatureSelectionListener.java
+

@@ -476,11 +476,10 @@ public final class GridDataStore
 	 **/
 	public static GridDataStore forProj(MultiProjection proj)
 	 {
-		if(!Main.inTimeProjection())
-		 {
+		if (!(proj.getProjection() instanceof ProjObj.Projection_SOM)) {
 			log.aprintln("PROGRAMMER: Grids only implemented for time!");
-			return  null;
-		 }
+			return null;
+		}
 
 		Dimension2D pixel = proj.getPixelSize();
 		Double key = null;//new Double(pixel.getHeight());
@@ -718,10 +717,7 @@ public final class GridDataStore
 //		log.println("xMin = " + xMin);
 //		log.println("yMin = " + yMin);
 
-		if(Main.isStudentApplication())
-			chunk = getLocalChunk(xMin, yMin);
-		else
-			chunk = getRemoteChunk(xMin, yMin);
+		chunk = getRemoteChunk(xMin, yMin);
 
 		if(chunk == null)
 			chunk = zeroChunk;
@@ -1033,9 +1029,6 @@ public final class GridDataStore
 	public static void generateLocalFiles(Rectangle2D worldRange)
 	 throws IOException
 	 {
-		if(Main.isStudentApplication())
-			return;
-
 		// Ensure the GRIDS directory exists
 		File gridDir = new File("GRIDS");
 		if(!gridDir.isDirectory())

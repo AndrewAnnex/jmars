@@ -115,14 +115,14 @@ public class CommandDialog extends JDialog {
 						history.mark();
 
 					final ShapeLayer.LEDState ledState = new ShapeLayer.LEDStateFileIO();
-					shapeLayer.begin(ledState);
 					SwingUtilities.invokeLater(new Runnable(){
 						public void run(){
+							shapeLayer.begin(ledState);
 							try {
 								String text = commandArea.getText();
 								String [] lines = text.split("\n");
 								for (int i=0; i< lines.length; i++){
-									new FeatureSQL( lines[i], fc, statusBar);
+									new FeatureSQL( lines[i], fc, shapeLayer.selections, statusBar);
 									// String perror = FeatureSQL.getResultString();
 									//if (perror != null && statusBar != null){
 									//	statusBar.setText( perror);
@@ -147,16 +147,16 @@ public class CommandDialog extends JDialog {
 					}
 					
 					ShapeLayer.LEDState ledState = new ShapeLayer.LEDStateFileIO();
-					shapeLayer.begin(ledState);
 					StringBuffer inputLine  = new StringBuffer();
+					shapeLayer.begin(ledState);
 					try {
 						String [] lines = Util.readLines( new FileInputStream( scriptFile[0]));
 						for (int i=0; i< lines.length; i++){
 							inputLine.append( lines[i] + "\n");
 						}
 						commandArea.setText( inputLine.toString());
-					} catch (Exception exception) {}
-					finally {
+					} catch (Exception exception) {
+					} finally {
 						shapeLayer.end(ledState);
 					}
 				}

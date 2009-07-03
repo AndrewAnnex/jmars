@@ -23,6 +23,7 @@ package edu.asu.jmars.layer.map2.stages;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.text.MessageFormat;
 
 import edu.asu.jmars.layer.map2.AbstractStageSettings;
 import edu.asu.jmars.layer.map2.Stage;
@@ -30,6 +31,7 @@ import edu.asu.jmars.layer.map2.StageView;
 import edu.asu.jmars.util.DebugLog;
 
 public class GrayscaleStageSettings extends AbstractStageSettings implements Cloneable, Serializable {
+	private static final long serialVersionUID = -6697335572481467237L;
 	
 	private static final DebugLog log = DebugLog.instance();
 	
@@ -38,10 +40,12 @@ public class GrayscaleStageSettings extends AbstractStageSettings implements Clo
 	public static final String propMin = "min";
 	public static final String propMax = "max";
 	public static final String propAutoMinMax = "auto";
+	public static final String propIgnore = "ignore";
 	
 	double minValue, maxValue;
 	boolean autoMinMax;
-
+	private double ignore = Double.NaN;
+	
 	public GrayscaleStageSettings() {
 		minValue = Double.POSITIVE_INFINITY;
 		maxValue = Double.NEGATIVE_INFINITY;
@@ -50,7 +54,6 @@ public class GrayscaleStageSettings extends AbstractStageSettings implements Clo
 
 	public Stage createStage() {
 		GrayscaleStage s = new GrayscaleStage(this);
-		addPropertyChangeListener(s);
 		return s;
 	}
 
@@ -65,7 +68,7 @@ public class GrayscaleStageSettings extends AbstractStageSettings implements Clo
 	}
 
 	public void setMinValue(double newMinValue){
-		if (newMinValue != minValue) {
+		if (newMinValue != minValue && !Double.isNaN(newMinValue)) {
 			double oldMinValue = minValue;
 			minValue = newMinValue;
 			log.println("Setting new min value from "+oldMinValue+" to "+newMinValue);
@@ -74,7 +77,7 @@ public class GrayscaleStageSettings extends AbstractStageSettings implements Clo
 	}
 	
 	public void setMaxValue(double newMaxValue){
-		if (newMaxValue != maxValue) {
+		if (newMaxValue != maxValue && !Double.isNaN(newMaxValue)) {
 			double oldMaxValue = maxValue;
 			maxValue = newMaxValue;
 			log.println("Setting new max value from "+oldMaxValue+" to "+newMaxValue);
@@ -82,10 +85,21 @@ public class GrayscaleStageSettings extends AbstractStageSettings implements Clo
 		}
 	}
 	
-	public void setAutoMinMax(boolean newAutoMinMax){
+	public void setAutoMinMax(boolean newAutoMinMax) {
 		autoMinMax = newAutoMinMax;
 		log.println("Setting new auto min/max value from "+(!newAutoMinMax)+" to "+newAutoMinMax);
 		firePropertyChangeEvent(propAutoMinMax, new Boolean(!newAutoMinMax), new Boolean(newAutoMinMax));
+	}
+	
+	public void setIgnore(double ignoreValue) {
+		if (!new Double(ignore).equals(new Double(ignoreValue))) {
+			double oldIgnore = ignore;
+			ignore = ignoreValue;
+			log.println(MessageFormat.format(
+				"Setting new ignore value from {0,number,#.###} to {1,number,#.###}",
+				oldIgnore, ignore));
+			firePropertyChangeEvent(propIgnore, oldIgnore, ignore);
+		}
 	}
 	
 	public double getMinValue(){
@@ -106,6 +120,13 @@ public class GrayscaleStageSettings extends AbstractStageSettings implements Clo
 	}
 	
 	private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+		// set a default that can be overridden by the stream
+		ignore = Double.NaN;
 		in.defaultReadObject();
+	}
+	
+	/** Returns the ignore value for the stretch, or NaN if none is defined */
+	public double getIgnore() {
+		return ignore;
 	}
 }

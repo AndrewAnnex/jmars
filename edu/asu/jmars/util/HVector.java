@@ -21,11 +21,14 @@
 package edu.asu.jmars.util;
 
 import java.awt.geom.Point2D;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
+import java.io.Serializable;
 import java.util.StringTokenizer;
 
 import edu.asu.jmars.Main;
-import edu.asu.jmars.util.DebugLog;
 
 public final class HVector
  implements Cloneable, Serializable
@@ -85,7 +88,7 @@ public final class HVector
 	 }
 
 	/**
-	 ** Constructs an HVector from Mars lon/lat (degrees).
+	 ** Constructs an HVector from Mars lon/lat (west-leading ocentric degrees).
 	 **/
 	public HVector(double lon, double lat)
 	 {
@@ -198,6 +201,10 @@ public final class HVector
 
 	// Basic arithmetic
 
+	public HVector add(double c){
+		return new HVector(x+c,y+c,z+c);
+	}
+	
 	public HVector add(HVector v)
 	 {
 		return  new HVector(x + v.x,
@@ -544,15 +551,37 @@ public final class HVector
 	private static final HVector ellipsoid_radii = new HVector(3397,
 															   3397,
 															   3375);
+	
+	/** @return Mars radii in Km. */
+	public static HVector getMarsRadii(){
+		return new HVector(ellipsoid_radii);
+	}
+	
 	/**
-	 ** Returns the point on Mars that is hit from a ray at the given
-	 ** vertex in the given direction. Returns null if there is no
-	 ** such point.
-	 **
-	 ** <p>Shamelessly stolen from intersect.C in QMV, then converted
-	 ** and modified all over the place.
-	 **/
+	 * Returns the point on Mars that is hit from a ray at the given
+	 * vertex in the given direction. Returns null if there is no
+	 * such point.
+	 */
 	public static HVector intersectMars(HVector vertex, HVector direction)
+	 {
+		return intersectMars(ellipsoid_radii, vertex, direction);
+	 }
+	
+	/**
+	 * Returns the point on Mars that is hit from a ray at the given
+	 * vertex in the given direction. Returns null if there is no
+	 * such point.
+	 *
+	 * <p>Shamelessly stolen from intersect.C in QMV, then converted
+	 * and modified all over the place.
+	 * 
+	 * @param ellipsoid_radii Mars radii in Km.
+	 * @param vertex Ray's origin.
+	 * @param direction Ray's head.
+	 * @return A point on Mars in case of a hit or <code>null</code>
+	 *    in case there is no hit.
+	 */
+	public static HVector intersectMars(HVector ellipsoid_radii, HVector vertex, HVector direction)
 	 {
 		// The point we eventually return, it was a member of QMV Intersection
 		HVector point1;
@@ -680,6 +709,24 @@ public final class HVector
 		 }
 	 }
 
+	/**
+	 * Returns normal to the ellipsoid at the specified point. <em>
+     * Lifted from cspice.</em>
+	 * @param radii Semi-major axes of the ellipsoid.
+	 * @param p Point (must be) on the ellipsoid.
+	 * @return Normal to surface with the specified radii at point p.
+	 */
+	public static final HVector surfNorm(HVector radii, HVector p){
+		if (radii.x <= 0 || radii.y <= 0 || radii.z <= 0)
+			throw new IllegalArgumentException("Radii cannot be less than or equal to zero.");
+		
+		double minRadius = Math.min(radii.x, Math.min(radii.y, radii.z));
+		HVector r = new HVector(minRadius/radii.x, minRadius/radii.y, minRadius/radii.z);
+		
+		HVector normal = new HVector(p.x*(r.x*r.x),p.y*(r.y*r.y),p.z*(r.z*r.z));
+		return normal.unit();
+	}
+	
 	/////////////////////////////////////////////////////////////////////////
 	// I/O routines
 	/////////////////////////////////////////////////////////////////////////

@@ -20,18 +20,79 @@
 
 package edu.asu.jmars.swing;
 
-import edu.asu.jmars.*;
-import edu.asu.jmars.util.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.image.*;
-import java.io.*;
-import java.lang.reflect.*;
-import java.net.*;
-import java.util.*;
-import javax.swing.*;
-import javax.swing.event.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Frame;
+import java.awt.Graphics;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.IndexColorModel;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.io.Serializable;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.StringTokenizer;
+import java.util.TreeMap;
+import java.util.TreeSet;
+
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.ImageTypeSpecifier;
+import javax.imageio.stream.ImageInputStream;
+import javax.swing.AbstractAction;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.ButtonGroup;
+import javax.swing.JButton;
+import javax.swing.JColorChooser;
+import javax.swing.JDialog;
+import javax.swing.JFileChooser;
+import javax.swing.JLabel;
+import javax.swing.JLayeredPane;
+import javax.swing.JList;
+import javax.swing.JMenu;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.JRadioButtonMenuItem;
+import javax.swing.JRootPane;
+import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
+import javax.swing.JToolTip;
+import javax.swing.ListCellRenderer;
+import javax.swing.ListSelectionModel;
+import javax.swing.SwingUtilities;
+import javax.swing.border.Border;
+import javax.swing.border.CompoundBorder;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.MouseInputAdapter;
 import javax.swing.filechooser.FileFilter;
+
+import edu.asu.jmars.Main;
+import edu.asu.jmars.util.DebugLog;
+import edu.asu.jmars.util.Util;
 
 /**
  ** A {@link MultiSlider} used to drag around tie-points on a color
@@ -235,6 +296,18 @@ public class ColorMapper
 				return  new ColorMapOp(interpolation.createColorMap(values,
 																	colors));
 		 }
+		
+		public int[] getValues(){
+			return values.clone();
+		}
+		
+		public Color[] getColors(){
+			return colors.clone();
+		}
+		
+		public ColorInterp getInterpolation(){
+			return interpolation;
+		}
 
 		public static State DEFAULT = new State(
 			new int[] { 0, 255 },
@@ -493,32 +566,56 @@ public class ColorMapper
 		 }
 		setColors(vals, cols, interpolation);
 	 }
-
-	private JFileChooser _fileChooser;
-	private JFileChooser getFileChooser()
-	 {
-		if(_fileChooser == null)
-		 {
-			// Create the file chooser
-			_fileChooser = new JFileChooser();
-			_fileChooser.addChoosableFileFilter(
-				new FileFilter()
-				 {
-					public boolean accept(File f)
-					 {
-					String fname = f.getName().toLowerCase();
-					return  f.isDirectory()  ||  fname.endsWith(".cmap");
-					 }
-					public String getDescription()
-					 {
-						return  "Colormap files (*.cmap)";
-					 }
-				 }
-				);
-		 }
-		return  _fileChooser;
-	 }
-
+	
+	private FileFilter cmapFilter = new FileFilter() {
+		public boolean accept(File f) {
+			String fname = f.getName().toLowerCase();
+			return f.isDirectory() || fname.endsWith(".cmap");
+		}
+		public String getDescription() {
+			return "Colormap files (*.cmap)";
+		}
+	};
+	
+	private FileFilter imageFilter = new FileFilter() {
+		private final Set<String> formatNames = new TreeSet<String>();
+		{
+			for (String name: ImageIO.getReaderFormatNames()) {
+				formatNames.add(name.toLowerCase());
+			}
+		}
+		public boolean accept(File f) {
+			if (f.isDirectory()) {
+				return true;
+			} else {
+				String name = f.getName();
+				int formatIdx = name.lastIndexOf(".");
+				if (formatIdx >= 0 && formatIdx < name.length() - 1) {
+					return formatNames.contains(name.substring(formatIdx + 1).trim().toLowerCase());
+				} else {
+					return false;
+				}
+			}
+		}
+		public String getDescription() {
+			return "Image (*." + Util.join(", *.", formatNames) + ")";
+		}
+	};
+	
+	private JFileChooser chooser;
+	private JFileChooser getFileChooser(FileFilter filter) {
+		if (chooser == null) {
+			chooser = new JFileChooser();
+		}
+		for (FileFilter f: chooser.getChoosableFileFilters()) {
+			chooser.removeChoosableFileFilter(f);
+		}
+		chooser.addChoosableFileFilter(filter);
+		chooser.addChoosableFileFilter(chooser.getAcceptAllFileFilter());
+		chooser.setFileFilter(filter);
+		return chooser;
+	}
+	
 	/**
 	 ** Re-scales the current range of tabs to fit within the given DN
 	 ** range.
@@ -656,6 +753,7 @@ public class ColorMapper
 			popup.add(new JSeparator());
 			popup.add(new SaveColors());
 			popup.add(new LoadColors());
+			popup.add(new LoadImagePalette());
 			popup.add(new ResetColors());
 
 			popup.show((Component) e.getSource(), e.getX(), e.getY());
@@ -704,12 +802,12 @@ public class ColorMapper
 		public void actionPerformed(ActionEvent e)
 		 {
 			// Show the file chooser until we find an acceptable file
-			JFileChooser fc = getFileChooser();
+			JFileChooser fc = getFileChooser(cmapFilter);
 			if(Util.showSaveWithConfirm(fc, ColorMapper.this, ".cmap"))
 				saveColors(fc.getSelectedFile());
 		 }
 	 }
-
+	
 	private class LoadColors extends AbstractAction
 	 {
 		LoadColors()
@@ -720,16 +818,180 @@ public class ColorMapper
 		public void actionPerformed(ActionEvent e)
 		 {
 			// Show the file chooser
-			JFileChooser fc = getFileChooser();
+			JFileChooser fc = getFileChooser(cmapFilter);
 			if(fc.showOpenDialog(ColorMapper.this)
 			   != JFileChooser.APPROVE_OPTION)
 				return;
-
+			
 			loadColors(fc.getSelectedFile());
 		 }
 	 }
+	
+	private class LoadImagePalette extends AbstractAction {
+		public LoadImagePalette() {
+			super("Load Colors From File...");
+		}
+		private void setPalette(Map<Integer,Color> palette) {
+			int[] values = new int[palette.size()];
+			Color[] colors = new Color[palette.size()];
+			int i = 0;
+			for (int value: palette.keySet()) {
+				values[i] = value;
+				colors[i] = palette.get(value);
+				i++;
+			}
+			setColors(values, colors);
+		}
+		private Map<Integer,Color> choosePalette(final List<Map<Integer,Color>> palettes) {
+			final JDialog dlg = new JDialog(JOptionPane.getFrameForComponent(ColorMapper.this), "Multiple palettes founds, choose one...", true);
+			JList palList = new JList(palettes.toArray());
+			palList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+			palList.setSelectedIndex(0);
+			palList.setCellRenderer(new ListCellRenderer() {
+				private int renderIndex;
+				private JLabel row = new JLabel() {
+					public void paintComponent(Graphics g) {
+						super.paintComponent(g);
+						int gap = 4;
+						int width = getWidth() - gap*2;
+						int height = getHeight() - gap*2;
+						g.clearRect(gap, gap, width, height);
+						Map<Integer,Color> palette = palettes.get(renderIndex);
+						for (int pos: palette.keySet()) {
+							g.setColor(palette.get(pos));
+							int x1 = gap + pos*width/256;
+							int x2 = gap + (pos+1)*width/256;
+							g.fillRect(x1, gap, x2-x1+1, height);
+						}
+					}
+				};
+				private Border space = new EmptyBorder(15,120,15,120);
+				private Border selBorder = new CompoundBorder(new LineBorder(Color.blue, 2), space);
+				private Border unsBorder = new CompoundBorder(new EmptyBorder(2,2,2,2), space);
+				public Component getListCellRendererComponent(JList list,
+						Object value, int index, boolean isSelected,
+						boolean cellHasFocus) {
+					this.renderIndex = index;
+					Dimension d = list.getSize();
+					row.setSize(new Dimension(d.width, d.width / 8));
+					row.setBorder(isSelected ? selBorder : unsBorder);
+					return row;
+				}
+			});
+			
+			JButton ok = new JButton("OK");
+			ok.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					dlg.setVisible(false);
+				}
+			});
+			
+			Box h = Box.createHorizontalBox();
+			h.add(Box.createHorizontalGlue());
+			h.add(ok);
+			
+			JPanel pane = new JPanel(new BorderLayout(4,4));
+			pane.add(new JScrollPane(palList), BorderLayout.CENTER);
+			pane.add(h, BorderLayout.SOUTH);
+			pane.setBorder(new EmptyBorder(4,4,4,4));
+			
+			dlg.getContentPane().add(pane);
+			dlg.pack();
+			dlg.setSize(400,400);
+			dlg.setVisible(true);
+			
+			return palettes.get(palList.getSelectedIndex());
+		}
+		public void actionPerformed(ActionEvent e) {
+			JFileChooser fc = getFileChooser(imageFilter);
+			if (fc.showOpenDialog(ColorMapper.this) == JFileChooser.APPROVE_OPTION
+					&& fc.getSelectedFile() != null
+					&& fc.getSelectedFile().exists()) {
+				try {
+					List<Map<Integer,Color>> palettes = loadImagePalettes(fc.getSelectedFile());
+					switch (palettes.size()) {
+					case 0:
+						throw new IllegalArgumentException("That image does not contain a palette");
+					case 1:
+						setPalette(palettes.get(0)); break;
+					default:
+						setPalette(choosePalette(palettes)); break;
+					}
+				} catch (Exception ex) {
+					ex.printStackTrace();
+					JOptionPane.showMessageDialog(
+						ColorMapper.this,
+						"An error occurred reading the color palette:\n\n" + 
+							ex.getMessage() +
+							"\n\nSee command line for details", 
+						"Unable to read color palette",
+						JOptionPane.ERROR_MESSAGE);
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Returns a list of palettes found in this file, by retrieving the image
+	 * format's color information if an indexcolormodel is used, and by parsing
+	 * the image pixels if x*y==256 and z in [1,3,4].
+	 */
+	private List<Map<Integer,Color>> loadImagePalettes(File file) throws IOException {
+		List<Map<Integer,Color>> palettes = new ArrayList<Map<Integer,Color>>(2);
+		ImageInputStream iis = ImageIO.createImageInputStream(file);
+		Iterator<ImageReader> irit = ImageIO.getImageReaders(iis);
+		while (irit.hasNext()) {
+			ImageReader ir = irit.next();
+			ir.setInput(iis);
+			for (int imgnum = 0; imgnum < Integer.MAX_VALUE; imgnum++) {
+				try {
+					Iterator<ImageTypeSpecifier> its = ir.getImageTypes(imgnum);
+					while (its.hasNext()) {
+						ImageTypeSpecifier it = its.next();
+						ColorModel cm = it.getColorModel();
+						// get a palette from an indexcolormodel
+						if (cm instanceof IndexColorModel) {
+							IndexColorModel icm = (IndexColorModel)cm;
+							int size = icm.getMapSize();
+							int[] rgbs = new int[size];
+							icm.getRGBs(rgbs);
+							Map<Integer,Color> colors = new TreeMap<Integer,Color>();
+							for (int i = 0; i < size; i++) {
+								colors.put(i, new Color(rgbs[i], icm.hasAlpha()));
+							}
+							palettes.add(colors);
+						}
+					}
+					// check for a palette in the pixels of the image
+					int width = ir.getWidth(imgnum);
+					int height = ir.getHeight(imgnum);
+					if (width * height == 256) {
+						int bands = ir.getRawImageType(imgnum).getNumBands();
+						if (bands == 1 || bands == 3 || bands == 4) {
+							BufferedImage bi = ir.read(imgnum);
+							Map<Integer,Color> palette = new TreeMap<Integer,Color>();
+							boolean alpha = bi.getColorModel().hasAlpha();
+							for (int j = 0; j < height; j++) {
+								for (int i = 0; i < width; i++) {
+									palette.put(j*width+i, new Color(bi.getRGB(i, j), alpha));
+								}
+							}
+							palettes.add(palette);
+						}
+					}
+				} catch (IndexOutOfBoundsException e) {
+					// this is icky flow control but recommended for performance
+					// with some ImageReaders
+					break;
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		return palettes;
+	}
 
-	private class ResetColors extends JMenu
+private class ResetColors extends JMenu
 	 {
 		ResetColors()
 		 {
@@ -743,6 +1005,11 @@ public class ColorMapper
 			add(new LoadColorMap("b_rgb_w.cmap",   "Black-RGB-White"       ));
 			add(new LoadColorMap("spectrum.cmap",  "Full Spectrum"         ));
 			add(new LoadColorMap("spectrumi.cmap", "Inverted Spectrum"     ));
+			add(new LoadColorMap("colormap.cmap",  "TES Colormap"          ));
+			add(new LoadColorMap("colormap_daily.cmap", "TES Daily Colormap"));
+			add(new LoadColorMap("dv6color.cmap", "Color Scale (6)"));
+			add(new LoadColorMap("dv7color.cmap", "Color Scale (7)"));
+			add(new LoadColorMap("xvcolor.cmap", "XV Color Scale"));
 		 }
 	 }
 

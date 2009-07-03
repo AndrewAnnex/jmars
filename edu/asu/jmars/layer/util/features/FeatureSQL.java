@@ -96,13 +96,11 @@ public class FeatureSQL {
 	 * constructor: class attributes are set, the line is parsed out, and the 
 	 * actions defined by the line performed.
 	 */
-	// TODO: we return data from static methods that is set here; WTF?
-	public FeatureSQL( String line, FeatureCollection fc, JLabel statusBar){
-
+	public FeatureSQL( String line, FeatureCollection fc, Set<Feature> selections, JLabel statusBar){
 		this.statusBar = statusBar;
 		if (line!=null && fc!=null){
 			this.lex  = new LexicalAnalyzer( line);
-			parseLine( fc);
+			parseLine(fc, selections);
 		}
 	}
 
@@ -166,7 +164,7 @@ public class FeatureSQL {
 	/** 
 	 * returns an array of row indices that correspond to the inputted where clause.
 	 */
-	public static void select( FeatureCollection fc, String where) {
+	public static void select(FeatureCollection fc, Set<Feature> selections, String where) {
 
 		int featuresSelected=0;
 		Connection conn = null;
@@ -182,28 +180,22 @@ public class FeatureSQL {
 			ResultSet rs = st.executeQuery( query );
 
 			// first off, set all the Features to unselected.
-			Map unselectedFeatures = new HashMap();
-			Iterator fi = fc.getFeatures().iterator();
-			while (fi.hasNext()){
-				Feature f = (Feature)fi.next();
-				unselectedFeatures.put( f, Boolean.FALSE);
-			}
-			fc.setAttributes( Field.FIELD_SELECTED, unselectedFeatures);
+			selections.clear();
 
 			// get the resulting key values and set selection on for those rows
-			Map selectedFeatures = new HashMap(); 
+			Set<Feature> selectedFeatures = new HashSet<Feature>(); 
 			while(rs.next()){
 				int key = rs.getInt(1);
 				Feature feature = fc.getFeature( key);
-				selectedFeatures.put( feature, Boolean.TRUE);
+				selectedFeatures.add(feature);
 				featuresSelected++;
 			}
-			fc.setAttributes( Field.FIELD_SELECTED, selectedFeatures);
-	    
+			selections.addAll(selectedFeatures);
+			
 			conn.close();
 
 			resultStr = featuresSelected + " rows selected";
-		} 
+		}
 		catch (SQLException sqle){
 			resultStr = "SQL error selecting rows: " +   sqle.getMessage();
 			System.out.println( resultStr);
@@ -543,8 +535,7 @@ public class FeatureSQL {
 	}
 
 	// parses out the line that was input and runs the specified action.
-	private void parseLine( FeatureCollection fc){
-		
+	private void parseLine( FeatureCollection fc, Set<Feature> selections) {
 		Point2D param;
 		String endClause;
 		
@@ -565,7 +556,7 @@ public class FeatureSQL {
 				if (endClause == null){
 					return;
 				}
-				FeatureSQL.select( fc, endClause);
+				FeatureSQL.select(fc, selections, endClause);
 				printResult( getResultString());
 				return;
 			case MOVE_COMMAND:

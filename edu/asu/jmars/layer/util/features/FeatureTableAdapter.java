@@ -23,9 +23,12 @@ package edu.asu.jmars.layer.util.features;
 import java.awt.Color;
 
 import javax.swing.JTable;
+import javax.swing.event.ChangeEvent;
 
 import edu.asu.jmars.swing.STable;
+import edu.asu.jmars.util.History;
 import edu.asu.jmars.util.LineType;
+import edu.asu.jmars.util.ObservableSet;
 import edu.asu.jmars.util.stable.*;
 
 /**
@@ -43,18 +46,27 @@ public class FeatureTableAdapter implements FeatureListener
 	private FeatureCollection fc;
 	private FeatureSelectionListener fsl;
 	private FeatureTableModel ftm;
-
-	public FeatureTableAdapter (FeatureCollection fc) {
+	private History history;
+	
+	public FeatureTableAdapter (FeatureCollection fc, ObservableSet<Feature> selections, History history) {
 		this.fc = fc;
-
+		this.history = history;
+		
 		// create and customize an STable for our needs
-		fst = new STable ();
+		fst = new STable () {
+			// marks a history frame when the table cell editor is used
+			public void editingStopped(ChangeEvent e) {
+				FeatureTableAdapter.this.history.mark();
+				super.editingStopped(e);
+			}
+		};
+		
 		fst.setAutoCreateColumnsFromModel(false);
 		fst.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 		fst.setTypeSupport(Color.class, new ColorCellRenderer(), new ColorCellEditor());
 		fst.setTypeSupport(LineType.class, new LineTypeTableCellRenderer(), new LineTypeCellEditor());
 
-		fsl = new FeatureSelectionListener (fst, fc);
+		fsl = new FeatureSelectionListener (fst, fc, selections);
 		ftm = new FeatureTableModel (fc, (FilteringColumnModel)fst.getColumnModel(), fsl);
 		fst.setUnsortedTableModel(ftm);
 
@@ -79,7 +91,6 @@ public class FeatureTableAdapter implements FeatureListener
 	 */
 	public void receive (FeatureEvent event) {
 		ftm.receive(event);
-		fsl.receive(event);
 	}
 
 	/**

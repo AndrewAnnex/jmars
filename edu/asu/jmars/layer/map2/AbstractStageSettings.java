@@ -30,6 +30,8 @@ import java.util.List;
 import javax.swing.SwingUtilities;
 
 public abstract class AbstractStageSettings implements StageSettings {
+	private static final long serialVersionUID = -787452580306026300L;
+	
 	private transient List<PropertyChangeListener> listeners;
 	
 	public AbstractStageSettings(){
@@ -40,11 +42,11 @@ public abstract class AbstractStageSettings implements StageSettings {
 		listeners = new ArrayList<PropertyChangeListener>();
 	}
 	
-	public void addPropertyChangeListener(PropertyChangeListener l) {
+	public final void addPropertyChangeListener(PropertyChangeListener l) {
 		listeners.add(l);
 	}
 
-	public void removePropertyChangeListener(PropertyChangeListener l) {
+	public final void removePropertyChangeListener(PropertyChangeListener l) {
 		listeners.remove(l);
 	}
 
@@ -56,7 +58,7 @@ public abstract class AbstractStageSettings implements StageSettings {
 	 * 
 	 * @see #addPropertyChangeListener(PropertyChangeListener)
 	 */
-	public void firePropertyChangeEvent(String propertyName, Object oldValue, Object newValue){
+	public final void firePropertyChangeEvent(String propertyName, Object oldValue, Object newValue){
 		final PropertyChangeEvent e = new PropertyChangeEvent(this, propertyName, oldValue, newValue);
 		final List<PropertyChangeListener> ll = new ArrayList<PropertyChangeListener>(listeners);
 		SwingUtilities.invokeLater(new Runnable(){

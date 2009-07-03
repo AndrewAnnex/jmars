@@ -20,19 +20,13 @@
 
 package edu.asu.jmars;
 
-import java.awt.Point;
-import java.awt.geom.Point2D;
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.StringTokenizer;
-
-import edu.asu.jmars.graphics.GridDataStore;
-import edu.asu.jmars.layer.MultiProjection;
-import edu.asu.jmars.util.Config;
-import edu.asu.jmars.util.DebugLog;
-import edu.asu.jmars.util.HVector;
-import edu.asu.jmars.util.Util;
+import edu.asu.jmars.graphics.*;
+import edu.asu.jmars.layer.*;
+import edu.asu.jmars.util.*;
+import java.awt.*;
+import java.awt.geom.*;
+import java.io.*;
+import java.util.*;
 
 
 public abstract class ProjObj
@@ -121,9 +115,9 @@ public abstract class ProjObj
 				lon = Util.roundToMultiple(lon, ROUND);
 				lat = Util.roundToMultiple(lat, ROUND);
 				if(90-Math.abs(lat) < 0.001) {
-                                       log.println("I'm setting lon to 0 now");
+					log.println("I'm setting lon to 0 now");
 					lon = 0;
-                                 }
+				}
 				up = new HVector(lon, lat);
 				log.println("now: lon = " + lon);
 				log.println("     lat = " + lat);
@@ -182,6 +176,7 @@ public abstract class ProjObj
 			log.println("initial = " + initialX + "\t" + initialY);
 		 }
 
+		/** Returns the projection center in east-lon ocentric lat */
 		public Point2D getProjectionCenter()
 		{
 			// Return E-Leading longitude for now
@@ -271,8 +266,11 @@ public abstract class ProjObj
 		 }
 
 		/**
-		 ** Takes a point in degrees lat/long and outputs left-right/up-down.
-		 **/
+		 * @param orig The point to convert; the x-axis is the west-leading
+		 * longitude, the y-axis is the ocentric latitude.
+		 * @return The point in world coordinates (this map projection's two-axis
+		 * Euclidian coordinate system.)
+		 */
 		public Point2D convSpatialToWorld(Point2D orig)
 		 {
 			HVector pt = marsll2vector(Math.toRadians(orig.getX()),
@@ -469,7 +467,12 @@ public abstract class ProjObj
 	 {
 		return  marsll2vector(pt.getX(), pt.getY());
 	 }
-
+	
+	/**
+	 * @param lon Radians west of the prime meridian
+	 * @param lat Radians north of the equator
+	 * @return The {@link HVector} on the unit sphere for this lon/lat position
+	 */
 	public static HVector marsll2vector(double lon, double lat)
 	 {
 		return  new HVector(Math.cos(lat)*Math.cos(-lon),

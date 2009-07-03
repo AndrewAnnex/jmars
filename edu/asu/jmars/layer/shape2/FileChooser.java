@@ -96,8 +96,26 @@ public class FileChooser extends JFileChooser {
 		return files;
 	}
 
-	public void addFilter(FeatureProvider fp) {
-		addChoosableFileFilter(new UniqueFilter(fp));
+	public File getStartingDir() {
+		return startingDir;
+	}
+	
+	public void setStartingDir(File dir) {
+		if (dir.exists() && dir.isDirectory() && dir.canRead()) {
+			startingDir = dir;
+		} else {
+			throw new IllegalArgumentException("Starting directory must be a readable directory");
+		}
+	}
+	
+	/**
+	 * Wraps the given feature provider in a Filter for the file chooser, adds
+	 * it and returns it so clients can set the current filter if desired
+	 */
+	public FileFilter addFilter(FeatureProvider fp) {
+		UniqueFilter f = new UniqueFilter(fp);
+		addChoosableFileFilter(f);
+		return f;
 	}
 
 	/**
@@ -112,7 +130,7 @@ public class FileChooser extends JFileChooser {
 		return null;
 	}
 
-	public class UniqueFilter extends FileFilter {
+	private static class UniqueFilter extends FileFilter {
 		private FeatureProvider fp;
 
 		public UniqueFilter(FeatureProvider fp) {

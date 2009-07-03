@@ -20,7 +20,9 @@
 
 package edu.asu.jmars.layer.map2.stages;
 
-import java.awt.BorderLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
@@ -30,8 +32,6 @@ import java.beans.PropertyChangeListener;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 
-import javax.swing.Box;
-import javax.swing.BoxLayout;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -43,15 +43,16 @@ import edu.asu.jmars.util.DebugLog;
 
 public class GrayscaleStageView implements StageView, PropertyChangeListener {
 	private static final DebugLog log = DebugLog.instance();
-	
 	private static final String VAL_UNKNOWN = "unknown";
+	private static final DecimalFormat nf = new DecimalFormat("###0.########");
+	private static final int gap = 4;
 	
-	GrayscaleStageSettings settings;
-	JTextField minValField;
-	JTextField maxValField;
-	JCheckBox autoMinMaxCheckBox;
-	JPanel stagePanel;
-	DecimalFormat nf = new DecimalFormat("###0.########");
+	private GrayscaleStageSettings settings;
+	private JTextField minValField;
+	private JTextField maxValField;
+	private JCheckBox autoMinMaxCheckBox;
+	private JTextField ignoreValField;
+	private JPanel stagePanel;
 	
 	public GrayscaleStageView(GrayscaleStageSettings settings){
 		this.settings = settings;
@@ -61,10 +62,9 @@ public class GrayscaleStageView implements StageView, PropertyChangeListener {
 	
 	private void updateMinValFromField(){
 		try {
-			settings.setMinValue(getFieldValue(minValField));
-		}
-		catch(ParseException ex){
-			log.println(ex.toString());
+			settings.setMinValue(getFieldValue(minValField, VAL_UNKNOWN, Double.POSITIVE_INFINITY));
+		} catch(ParseException ex){
+			log.println(ex);
 			minValField.selectAll();
 			minValField.requestFocus();
 		}
@@ -72,24 +72,30 @@ public class GrayscaleStageView implements StageView, PropertyChangeListener {
 	
 	private void updateMaxValFromField(){
 		try {
-			settings.setMaxValue(getFieldValue(maxValField));
+			settings.setMaxValue(getFieldValue(maxValField, VAL_UNKNOWN, Double.NEGATIVE_INFINITY));
 		}
 		catch(ParseException ex){
-			log.println(ex.toString());
+			log.println(ex);
 			maxValField.selectAll();
 			maxValField.requestFocus();
 		}
 	}
 	
 	private void updateAutoMinMaxFromCheckBox(){
-		boolean enabled = autoMinMaxCheckBox.isSelected();
-		settings.setAutoMinMax(enabled);
+		settings.setAutoMinMax(autoMinMaxCheckBox.isSelected());
 	}
 	
-	private JPanel buildUI(){
-		JPanel minMaxPanel = new JPanel();
-		minMaxPanel.setLayout(new BoxLayout(minMaxPanel, BoxLayout.X_AXIS));
-		
+	private void updateIgnoreFromField() {
+		try {
+			settings.setIgnore(getFieldValue(ignoreValField, "", Double.NaN));
+		} catch (ParseException e) {
+			log.println(e);
+			ignoreValField.selectAll();
+			ignoreValField.requestFocus();
+		}
+	}
+	
+	private JPanel buildUI() {
 		minValField = new JTextField(6);
 		minValField.setFocusable(true);
 		updateMinFieldFromSettings();
@@ -118,7 +124,7 @@ public class GrayscaleStageView implements StageView, PropertyChangeListener {
 			}
 		});
 		
-		autoMinMaxCheckBox = new JCheckBox("Auto");
+		autoMinMaxCheckBox = new JCheckBox("Autodetect min/max values");
 		autoMinMaxCheckBox.setSelected(settings.getAutoMinMax());
 		autoMinMaxCheckBox.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e) {
@@ -126,62 +132,91 @@ public class GrayscaleStageView implements StageView, PropertyChangeListener {
 			}
 		});
 		
-		minMaxPanel.add(new JLabel("Min:"));
-		minMaxPanel.add(minValField);
-		minMaxPanel.add(Box.createHorizontalStrut(10));
-		minMaxPanel.add(new JLabel("Max:"));
-		minMaxPanel.add(maxValField);
-		minMaxPanel.add(Box.createHorizontalStrut(10));
-		minMaxPanel.add(autoMinMaxCheckBox);
+		ignoreValField = new JTextField(6);
+		ignoreValField.setFocusable(true);
+		updateIgnoreFieldFromSettings();
+		ignoreValField.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				updateIgnoreFromField();
+			}
+		});
 		
-		JPanel slim = new JPanel(new BorderLayout());
-		slim.add(minMaxPanel, BorderLayout.NORTH);
-		return slim;
+		JLabel minLbl = new JLabel("Min:");
+		JLabel maxLbl = new JLabel("Max:");
+		JLabel ignoreLbl = new JLabel("Null Value");
+		
+		JPanel out = new JPanel(new GridBagLayout());
+		Insets in = new Insets(gap,gap,gap,gap);
+		out.add(autoMinMaxCheckBox, new GridBagConstraints(0,0,2,1,0,0,GridBagConstraints.WEST,GridBagConstraints.HORIZONTAL,in,gap,gap));
+		out.add(minLbl, new GridBagConstraints(0,1,1,1,0,0,GridBagConstraints.WEST,GridBagConstraints.HORIZONTAL,in,gap,gap));
+		out.add(minValField, new GridBagConstraints(1,1,1,1,0,0,GridBagConstraints.WEST,GridBagConstraints.HORIZONTAL,in,gap,gap));
+		out.add(maxLbl, new GridBagConstraints(0,2,1,1,0,0,GridBagConstraints.WEST,GridBagConstraints.HORIZONTAL,in,gap,gap));
+		out.add(maxValField, new GridBagConstraints(1,2,1,1,0,0,GridBagConstraints.WEST,GridBagConstraints.HORIZONTAL,in,gap,gap));
+		out.add(ignoreLbl, new GridBagConstraints(0,3,1,1,0,0,GridBagConstraints.WEST,GridBagConstraints.HORIZONTAL,in,gap,gap));
+		out.add(ignoreValField, new GridBagConstraints(1,3,1,1,0,0,GridBagConstraints.WEST,GridBagConstraints.HORIZONTAL,in,gap,gap));
+		out.add(new JLabel(""), new GridBagConstraints(2,0,1,4,1,0,GridBagConstraints.NORTHWEST,GridBagConstraints.HORIZONTAL,in,gap,gap));
+		return out;
 	}
-
+	
 	public StageSettings getSettings() {
 		return settings;
 	}
-
+	
 	public JPanel getStagePanel() {
 		return stagePanel;
 	}
-
+	
 	private void setFieldValue(JTextField textField, double val){
-		if (Double.isInfinite(val))
+		if (Double.isInfinite(val)) {
 			textField.setText(textField.isEnabled()? "": VAL_UNKNOWN);
-		else
+		} else synchronized(nf) {
 			textField.setText(nf.format(val));
+		}
 	}
 	
 	private void updateMaxFieldFromSettings(){
 		maxValField.setEnabled(!settings.getAutoMinMax());
 		setFieldValue(maxValField, settings.getMaxValue());
+		maxValField.setCaretPosition(0);
 	}
 	
 	private void updateMinFieldFromSettings(){
 		minValField.setEnabled(!settings.getAutoMinMax());
 		setFieldValue(minValField, settings.getMinValue());
+		minValField.setCaretPosition(0);
 	}
 	
-	private double getFieldValue(JTextField textField) throws ParseException {
-		String text = textField.getText();
-		if (VAL_UNKNOWN.equals(text))
-			return textField == minValField? Double.POSITIVE_INFINITY: Double.NEGATIVE_INFINITY;
-		return nf.parse(text).doubleValue();
+	private void updateIgnoreFieldFromSettings() {
+		double ignore = settings.getIgnore();
+		if (Double.isNaN(ignore)) {
+			ignoreValField.setText("");
+		} else synchronized(nf) {
+			ignoreValField.setText(nf.format(ignore));
+		}
+		ignoreValField.setCaretPosition(0);
+	}
+	
+	private static double getFieldValue(JTextField textField, String unknownString, double unknownValue) throws ParseException {
+		String text = textField.getText().trim();
+		if (unknownString.equals(text)) {
+			return unknownValue;
+		} else synchronized(nf) {
+			return nf.parse(text).doubleValue();
+		}
 	}
 	
 	public void propertyChange(final PropertyChangeEvent e) {
 		final String prop = e.getPropertyName();
-		
-		if (prop.equals(GrayscaleStageSettings.propMin))
+		if (prop.equals(GrayscaleStageSettings.propMin)) {
 			updateMinFieldFromSettings();
-		else if (prop.equals(GrayscaleStageSettings.propMax))
+		} else if (prop.equals(GrayscaleStageSettings.propMax)) {
 			updateMaxFieldFromSettings();
-		else if (prop.equals(GrayscaleStageSettings.propAutoMinMax)){
+		} else if (prop.equals(GrayscaleStageSettings.propAutoMinMax)) {
 			autoMinMaxCheckBox.setSelected(((Boolean)e.getNewValue()).booleanValue());
 			updateMinFieldFromSettings();
 			updateMaxFieldFromSettings();
+		} else if (prop.equals(GrayscaleStageSettings.propIgnore)) {
+			updateIgnoreFieldFromSettings();
 		}
 	}
 }

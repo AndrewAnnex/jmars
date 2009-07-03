@@ -47,10 +47,12 @@ import javax.swing.Timer;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
+import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.methods.PostMethod;
 
 import edu.asu.jmars.layer.util.FileLogger;
 import edu.asu.jmars.util.Config;
+import edu.asu.jmars.util.Util;
 
 /**
  * Gathers information on the state of JMARS when a problem occurred and emails
@@ -171,14 +173,17 @@ public class ReportCreator {
 					HttpClient http = new HttpClient();
 					http.getHttpConnectionManager().getParams().setConnectionTimeout(timeout);
 					
-					if (-1 != http.executeMethod(post)) {
+					int code = Util.postWithRedirect(http, post, 3);
+					if (code != HttpStatus.SC_OK) {
+						error = "Server returned unexpected code " + code;
+					} else {
 						String response = new BufferedReader(
 							new InputStreamReader(
 								post.getResponseBodyAsStream())).readLine();
 						if (response.equals("OKAY")) {
 							// mail sent properly
 						} else if (response.equals("FAILURE")) {
-							error = "Server was unable to deliver the message";
+							error = "Server was unable to deliver the message: " + response;
 						}
 					}
 				} catch (HttpException e) {

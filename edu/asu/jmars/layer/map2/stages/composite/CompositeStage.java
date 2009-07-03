@@ -52,7 +52,6 @@ import edu.asu.jmars.util.DebugLog;
  * called.
  */
 public abstract class CompositeStage extends AbstractStage implements Cloneable, Serializable {
-	
 	private static DebugLog log = DebugLog.instance();
 	
 	transient private MapData mapData;
@@ -118,9 +117,12 @@ public abstract class CompositeStage extends AbstractStage implements Cloneable,
 			mapData=null;
 		}
 		
-		// if this is the first time,
-		// or we're starting on a new request
-		if (mapData == null || !mapData.getRequest().equals(inputData.getRequest())) {
+		// if this is the first time, or we're starting on a new request
+		if (mapData == null ||
+				!mapData.getRequest().getExtent().equals(inputData.getRequest().getExtent()) ||
+				 mapData.getRequest().getPPD() != inputData.getRequest().getPPD() ||
+				 mapData.getRequest().getProjection() != inputData.getRequest().getProjection()) {
+			log.println("Creating new output object");
 			initData();
 			int w = inputData.getImage().getWidth();
 			int h = inputData.getImage().getHeight();
@@ -148,7 +150,7 @@ public abstract class CompositeStage extends AbstractStage implements Cloneable,
 			mapData.getFinishedArea().intersect(finalArea[i]);
 			mapData.getFuzzyArea().intersect(fuzzy[i]);
 		}
-
+		
 		return mapData;
 	}
 	

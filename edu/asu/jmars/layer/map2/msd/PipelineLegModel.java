@@ -58,7 +58,7 @@ public class PipelineLegModel implements PropertyChangeListener {
 	protected void commonInit(){
 		listeners = new ArrayList<PipelineLegModelListener>();
 		for(Stage s: innerStages){
-			s.addPropertyChangeListener(this);
+			s.getSettings().addPropertyChangeListener(this);
 		}
 	}
 	
@@ -86,9 +86,13 @@ public class PipelineLegModel implements PropertyChangeListener {
 		return mapSource;
 	}
 	
+	public void setMapSource(MapSource source) {
+		mapSource = source;
+	}
+	
 	public void insertStage(int index, Stage stage){
 		innerStages.add(index, stage);
-		stage.addPropertyChangeListener(this);
+		stage.getSettings().addPropertyChangeListener(this);
 		firePipelineLegModelEvent(new PipelineLegModelEvent(this, PipelineLegModelEvent.STAGES_ADDED, new int[]{ index }, new Stage[]{ stage }));
 	}
 	
@@ -99,19 +103,19 @@ public class PipelineLegModel implements PropertyChangeListener {
 	
 	public void removeStage(int index){		
 		Stage stage = innerStages.remove(index);
-		stage.removePropertyChangeListener(this);
+		stage.getSettings().removePropertyChangeListener(this);
 		firePipelineLegModelEvent(new PipelineLegModelEvent(this, PipelineLegModelEvent.STAGES_REMOVED, new int[]{ index }, new Stage[]{ stage }));
 	}
 	
 	public void setInnerStages(Stage[] newInnerStages){
 		Stage[] oldStages = innerStages.toArray(new Stage[0]);
 		for(Stage s: innerStages)
-			s.removePropertyChangeListener(this);
+			s.getSettings().removePropertyChangeListener(this);
 
 		innerStages.clear();
 		innerStages.addAll(Arrays.asList(newInnerStages));
 		for(Stage s: innerStages)
-			s.addPropertyChangeListener(this);
+			s.getSettings().addPropertyChangeListener(this);
 		
 		firePipelineLegModelEvent(new PipelineLegModelEvent(this, oldStages, innerStages.toArray(new Stage[0])));
 	}

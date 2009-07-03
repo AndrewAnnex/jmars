@@ -20,19 +20,24 @@
 
 package edu.asu.jmars.util;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Provides a one dimensional range index in the 'double' coordinate space. Each
  * range is associated with an Object, and to the extent that the bin size
  * ideally suites the dataset, all operations are constant-time. Sparse and
- * packed datasets have the same memory.
+ * packed datasets have the same memory requirements.
  */
-public class RangeIndex {
+public class RangeIndex<T> {
 	private double binSize;
 	private boolean useHashMap;
-	private Map bins = new HashMap ();
-	private Map values;
+	private Map<Integer, Map<T,Tuple<T>>> bins = new HashMap<Integer, Map<T,Tuple<T>>> ();
+	private Map<T, Tuple<T>> values;
 
 	/**
 	 * Constructs a new empty index.
@@ -65,8 +70,8 @@ public class RangeIndex {
 	 * @param value
 	 *            Value to insert into the index.
 	 */
-	public void add (double min, double max, Object value) {
-		Tuple t = new Tuple (min, max, value);
+	public void add (double min, double max, T value) {
+		Tuple<T> t = new Tuple<T> (min, max, value);
 		int start = getBin(t.min, false);
 		int end = getBin(t.max, true);
 
@@ -74,7 +79,7 @@ public class RangeIndex {
 
 		for (int i = start; i <= end; i++) {
 			Integer binNum = new Integer (i);
-			Map bin = (Map)bins.get(binNum);
+			Map<T,Tuple<T>> bin = bins.get(binNum);
 			if (bin == null)
 				bins.put(binNum, bin = makeMap());
 			bin.put(value,t);
@@ -89,15 +94,15 @@ public class RangeIndex {
 	 * @param value
 	 *            The reference to remove.
 	 */
-	public void remove (Object value) {
-		Tuple t = (Tuple)values.get(value);
+	public void remove (T value) {
+		Tuple<T> t = values.get(value);
 		if (t == null)
 			return;
 		int start = getBin(t.min, false);
 		int end = getBin(t.max, true);
 		for (int i = start; i <= end; i++) {
 			Integer bin = new Integer(i);
-			Map contents = (Map)bins.get(bin);
+			Map<T,Tuple<T>> contents = bins.get(bin);
 			if (contents.size() > 1)
 				contents.remove(value);
 			else
@@ -117,18 +122,17 @@ public class RangeIndex {
 	 * @return A set of all values in the queried extent, in no particular
 	 *         order.
 	 */
-	public Set query (double min, double max) {
-		Map results = makeMap();
+	public Set<T> query (double min, double max) {
+		Map<T,Tuple<T>> results = makeMap();
 		int start = getBin(min, false);
 		int end = getBin(max, true);
 		for (int i = start; i <= end; i++) {
-			Map bin = (Map)bins.get(new Integer(i));
-			if (bin == null)
-				continue;
-			for (Iterator it=bin.values().iterator(); it.hasNext(); ) {
-				Tuple t = (Tuple) it.next();
-				if (t.max >= min && t.min <= max)
-					results.put(t.value,null);
+			Map<T,Tuple<T>> bin = bins.get(i);
+			if (bin != null) {
+				for (Tuple<T> t: bin.values()) {
+					if (t.max >= min && t.min <= max)
+						results.put(t.value,null);
+				}
 			}
 		}
 		return results.keySet();
@@ -160,23 +164,23 @@ public class RangeIndex {
 	/**
 	 * Returns a Map suitable for hashing the caller's values.
 	 */
-	private Map makeMap () {
+	private Map<T,Tuple<T>> makeMap () {
 		if (useHashMap)
-			return new HashMap();
+			return new HashMap<T,Tuple<T>>();
 		else
-			return new IdentityHashMap();
+			return new IdentityHashMap<T,Tuple<T>>();
 	}
 
 	/**
 	 * Simple container for the extent and value.
 	 */
-	class Tuple {
-		public Tuple(double min, double max, Object value) {
+	class Tuple<TT> {
+		public Tuple(double min, double max, TT value) {
 			this.min = min; this.max = max; this.value = value;
 		}
 		double min;
 		double max;
-		Object value;
+		TT value;
 	}
 
 	static class Test {
@@ -185,7 +189,7 @@ public class RangeIndex {
 			testStats();
 		}
 		private static void testResults() {
-			RangeIndex index = new RangeIndex (10, true);
+			RangeIndex<String> index = new RangeIndex<String> (10, true);
 			index.add(0, 5, "A");
 			index.add(3, 7, "B");
 			index.add(5, 10, "C");
@@ -213,7 +217,7 @@ public class RangeIndex {
 			for (int i = 0; i < values.length; i++)
 				values[i] = new Integer(i);
 			double baseWidth = 50;
-			RangeIndex index = new RangeIndex(baseWidth*1.5, false);
+			RangeIndex<Integer> index = new RangeIndex<Integer>(baseWidth*1.5, false);
 			int expectedCellSizeAvg = 10;
 			double maxPos = values.length/expectedCellSizeAvg*baseWidth;
 			for (int i = 0; i < values.length; i++) {
@@ -222,21 +226,21 @@ public class RangeIndex {
 				double b = pos + Math.random()*baseWidth - baseWidth/2;
 				index.add(Math.min(a,b), Math.max(a,b), values[i]);
 			}
-			Set distinctItems = new HashSet();
+			Set<Integer> distinctItems = new HashSet<Integer>();
 			int count = 0;
 			int sum = 0;
 			for (double pos = 0; pos <= maxPos; pos += baseWidth) {
-				Set contents = index.query(pos, pos+baseWidth);
+				Set<Integer> contents = index.query(pos, pos+baseWidth);
 				distinctItems.addAll(contents);
 				count ++;
 				sum += contents.size();
 			}
 			dump(count + " queries results in " + sum + " items, " + distinctItems.size() + " distinct", null);
 		}
-		private static void dump (String msg, Set set) {
+		private static void dump (String msg, Set<?> set) {
 			if (set != null) {
 				msg += ": ";
-				for (Iterator it=set.iterator(); it.hasNext(); )
+				for (Iterator<?> it=set.iterator(); it.hasNext(); )
 					msg += it.next();
 			}
 			System.out.println(msg);

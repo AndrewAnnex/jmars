@@ -20,19 +20,43 @@
 
 package edu.asu.jmars.layer.grid;
 
-import edu.asu.jmars.*;
-import edu.asu.jmars.graphics.*;
-import edu.asu.jmars.layer.*;
-import edu.asu.jmars.swing.*;
-import edu.asu.jmars.util.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.geom.*;
-import java.io.Serializable;
-import java.text.*;
-import java.util.*;
-import javax.swing.*;
-import javax.swing.event.*;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.GridLayout;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.RenderingHints;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.geom.GeneralPath;
+import java.awt.geom.Line2D;
+import java.awt.geom.PathIterator;
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JColorChooser;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
+import javax.swing.event.MouseInputAdapter;
+import javax.swing.event.MouseInputListener;
+
+import edu.asu.jmars.Main;
+import edu.asu.jmars.ProjObj;
+import edu.asu.jmars.layer.FocusPanel;
+import edu.asu.jmars.layer.Layer;
+import edu.asu.jmars.swing.PasteField;
+import edu.asu.jmars.util.DebugLog;
+import edu.asu.jmars.util.Util;
 
 public class GridLView extends Layer.LView
  {
@@ -129,8 +153,7 @@ public class GridLView extends Layer.LView
 
 	/**
 	 ** Draws a screen-coordinate line, using a spatial graphics
-	 ** context (in time mode, this results in a nicely-curved
-	 ** geodesic).
+	 ** context
 	 **/
 	private void drawLine(int x1, int y1,
 						  int x2, int y2)
@@ -142,11 +165,6 @@ public class GridLView extends Layer.LView
 		Graphics2D g2s = getProj().createSpatialGraphics(g2);
 		Point2D down = getProj().screen.toSpatial(x1, y1);
 		Point2D curr = getProj().screen.toSpatial(x2, y2);
-		if(Main.inTimeProjection())
-		 {
-			down = Main.PO.convWorldToSpatialFromProj(getProj(), down);
-			curr = Main.PO.convWorldToSpatialFromProj(getProj(), curr);
-		 }
 		g2s.draw(new Line2D.Double(down, curr));
 		g2s.dispose();
 	 }
@@ -196,18 +214,8 @@ public class GridLView extends Layer.LView
 
 					Point2D down = getProj().screen.toWorld(mouseDown);
 					Point2D curr = getProj().screen.toWorld(mouseCurr);
-					if(Main.inTimeProjection())
-					 {
-						down = Main.PO.convWorldToSpatialFromProj(getProj(),
-																  down);
-						curr = Main.PO.convWorldToSpatialFromProj(getProj(),
-																  curr);
-					 }
-					else
-					 {
-						down = Main.PO.convWorldToSpatial(down);
-						curr = Main.PO.convWorldToSpatial(curr);
-					 }
+					down = Main.PO.convWorldToSpatial(down);
+					curr = Main.PO.convWorldToSpatial(curr);
 
 					double[] distances = Util.angularAndLinearDistanceS(down, curr, getProj());
 					Main.setStatus(Util.formatSpatial(curr) + "\tdist = " +
@@ -325,67 +333,39 @@ public class GridLView extends Layer.LView
 		synchronized(redrawLock)
 		 {
 			clearOffScreen();
+			// Determine how many periods to draw (360-degree horizontal boxes)
+			double minX = viewman.getProj().getWorldWindow().getMinX();
+			double maxX = viewman.getProj().getWorldWindow().getMaxX();
 
-			if(Main.inTimeProjection())
-				redrawGridInTime(id);
-			else
-				redrawGridInCyl(id);
+			long minPeriod = (long) Math.floor(minX / 360);
+			long maxPeriod = (long) Math.ceil (maxX / 360);
+			int count = (int) (maxPeriod - minPeriod);
+
+			// Create graphics contexts for each period
+			Graphics2D g2 = getOffScreenG2Raw();
+			prepare(g2);
+			if(g2 == null)
+				return;
+			g2.setStroke(getProj().getWorldStroke(1));
+			Graphics2D[] copies = new Graphics2D[count];
+			for(int i=0; i<count; i++)
+			 {
+				copies[i] = (Graphics2D) g2.create();
+				copies[i].translate(360*(i+minPeriod), 0);
+				copies[i].clip(new Rectangle(0, -90, 360, 180));
+			 }
+
+			// Actually draw the grid elements
+			drawLatLon(id, copies, minor);
+			drawLatLon(id, copies, major);
+
+			if(!oldViewChange(id))
+				repaint();
 		 }
 	 }
 	private Object redrawLock = new Object();
 
-	private void redrawGridInTime(int id)
-	 {
-		Graphics2D g2world = getOffScreenG2();
-		if(g2world == null)
-			return;
-
-		Graphics2D g2spatial = getProj().createSpatialGraphics(g2world);
-		g2spatial.setStroke(new BasicStroke(0));
-
-		// Actually draw the grid elements
-		drawLatLon(id, new Graphics2D[]{ g2spatial }, minor);
-		drawLatLon(id, new Graphics2D[]{ g2spatial }, major);
-
-		if(!oldViewChange(id))
-			repaint();
-	 }
-
-	private void redrawGridInCyl(int id)
-	 {
-		// Determine how many periods to draw (360-degree horizontal boxes)
-		double minX = viewman.getProj().getWorldWindow().getMinX();
-		double maxX = viewman.getProj().getWorldWindow().getMaxX();
-
-		long minPeriod = (long) Math.floor(minX / 360);
-		long maxPeriod = (long) Math.ceil (maxX / 360);
-		int count = (int) (maxPeriod - minPeriod);
-
-		// Create graphics contexts for each period
-		Graphics2D g2 = getOffScreenG2Raw();
-		prepare(g2);
-		if(g2 == null)
-			return;
-		g2.setStroke(getProj().getWorldStroke(1));
-		Graphics2D[] copies = new Graphics2D[count];
-		for(int i=0; i<count; i++)
-		 {
-			copies[i] = (Graphics2D) g2.create();
-			copies[i].translate(360*(i+minPeriod), 0);
-			copies[i].clip(new Rectangle(0, -90, 360, 180));
-		 }
-
-		// Actually draw the grid elements
-		drawLatLon(id, copies, minor);
-		drawLatLon(id, copies, major);
-
-		if(!oldViewChange(id))
-			repaint();
-	 }
-
-	// For cylindrical
-	private GeneralPath[] generateLinesCyl(double spacing)
-	 {
+	private GeneralPath[] generateLines(double spacing){
 		log.println("spacing = " + spacing);
 		log.printStack(3);
 		int expected = (int) Math.ceil(360/spacing + 180/spacing);
@@ -428,57 +408,6 @@ public class GridLView extends Layer.LView
 		log.println("Generated " + paths.size() + " paths");
 
 		return  (GeneralPath[]) paths.toArray(new GeneralPath[0]);
-	 }
-
-	// For time
-	private GeneralPath[] generateLinesTime(double spacing)
-	 {
-		int expected = (int) Math.ceil(360/spacing + 180/spacing);
-		ArrayList paths = new ArrayList(expected);
-		GeneralPath gp = new GeneralPath();
-		final double latprec = 2;
-		final double lonprec = 2;
-
-		log.printStack(3);
-		log.println("spacing = " + spacing);
-		log.println("Expecting " + expected + " paths");
-
-		// Lines of latitude
-		for(double lat=-90+spacing; lat<+90-spacing/2; lat+=spacing)
-		 {
-			final double prec = latprec;
-			gp.reset();
-
-			gp.moveTo(0, (float) lat);
-			for(double lon=prec; lon<360-prec/2; lon+=prec)
-				gp.lineTo((float)lon, (float)lat);
-			gp.lineTo(0, (float) lat);
-
-			paths.add(gp.clone());
-		 }
-		// Lines of longitude
-		for(double lon=0; lon<360; lon+=spacing)
-		 {
-			final double prec = lonprec;
-			gp.reset();
-
-			gp.moveTo((float)lon, -90);
-			for(double lat=-90+prec; lat<+90-prec/2; lat+=prec)
-				gp.lineTo((float)lon, (float)lat);
-			gp.lineTo((float) lon, +90);
-
-			paths.add(gp.clone());
-		 }
-
-		log.println("Generated " + paths.size() + " paths");
-
-		return  (GeneralPath[]) paths.toArray(new GeneralPath[0]);
-	 }
-	
-	private GeneralPath[] generateLines(double spacing){
-		if (Main.inTimeProjection())
-			return generateLinesTime(spacing);
-		return generateLinesCyl(spacing);
 	}
 
 	private void drawLatLon(int id, Graphics2D[] g2s, GridSettings settings)

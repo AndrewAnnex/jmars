@@ -39,7 +39,6 @@ public abstract class BaseGlass extends JPanel {
 	final LViewManager myVMan;
 	final LViewManager mainVMan;
 	private static final DecimalFormat decF = new DecimalFormat("0.00");
-	private static final DecimalFormat intF = new DecimalFormat("0");
 
 	BaseGlass(LViewManager myVMan, LViewManager mainVMan) {
 		this.myVMan = myVMan;
@@ -60,10 +59,8 @@ public abstract class BaseGlass extends JPanel {
 		MouseEvent e1 = new WrappedMouseEvent(e);
 
 		double worldX = myVMan.getProj().screen.toWorld(e1.getPoint()).getX();
-		if (!Main.inTimeProjection()) {
-			int scale = 360 * myVMan.magnify;
-			e1.translatePoint(-(int) Math.floor(worldX / 360) * scale, 0);
-		}
+		int scale = 360 * myVMan.magnify;
+		e1.translatePoint(-(int) Math.floor(worldX / 360) * scale, 0);
 		Layer.LView view = myVMan.getActiveLView();
 		if (myVMan != mainVMan)
 			view = view.getChild();
@@ -269,12 +266,7 @@ public abstract class BaseGlass extends JPanel {
 		world.setLocation(world.getX() + Main.PO.getServerOffsetX(), world
 				.getY());
 
-		if (Main.inTimeProjection())
-			Main.setStatus(formatCoord(spatial, decF, "E ", "N\t")
-					+ formatCoordTime(world)
-					+ formatCoord(screen, intF, "r ", "d"));
-		else
-			Main.setStatus(formatCoord(spatial, decF, "E ", "N\t"));
+		Main.setStatus(formatCoord(spatial, decF, "E ", "N\t"));
 	}
 	
 	/** dx,dy go down and to the right, image coordinates go up and to the right */

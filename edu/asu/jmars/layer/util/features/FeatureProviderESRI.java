@@ -88,7 +88,7 @@ import edu.asu.jmars.util.LineType;
  *    FeatureCollection load()
  *    int save(  FeatureCollection )
  */
-public class FeatureProviderESRI implements FeatureProvider, FeatureListener {
+public class FeatureProviderESRI implements FeatureProvider {
 	private static DebugLog log = DebugLog.instance();
 
 	public String getExtension () {
@@ -159,43 +159,11 @@ public class FeatureProviderESRI implements FeatureProvider, FeatureListener {
 	public static final Field POINT_SIZE   = Field.FIELD_POINT_SIZE;
 	public static final Field FILL_COLOR   = Field.FIELD_FILL_COLOR;
 	public static final Field FILL_POLY    = Field.FIELD_FILL_POLYGON;
-	public static final Field AREA         = new Field( "Area",         Double.class, false);
-	public static final Field LAT          = new Field( "Latitude",     Double.class, false);
-	public static final Field LON          = new Field( "Longitude",    Double.class, false);
-	public static final Field FILE         = new Field( "file",         String.class, false);
-	public static final Field [] fieldArray = {
-		FEATURE_TYPE ,
-		LABEL        ,
-		SHOW_LABELS  ,
-		LABEL_COLOR  ,
-		LINE_COLOR   ,
-		LINE_TYPE    ,
-		LINE_DIR     ,
-		LINE_WIDTH   ,
-		POINT_SIZE   ,
-		FILL_COLOR   ,
-		FILL_POLY    ,
-		AREA         ,
-		LAT          ,
-		LON          ,
-		FILE         	
-	};
+	public static final Field AREA         = new Field( "Area",         Double.class, true);
+	public static final Field LAT          = new Field( "Latitude",     Double.class, true);
+	public static final Field LON          = new Field( "Longitude",    Double.class, true);
+	public static final Field FILE         = new Field( "file",         String.class, true);
 	
-	/**
-	 * A list of automatically populated fields.
-	 * @see #updateEsriAutoFields(FeatureCollection, List)
-	 */
-	public static final List autoFields;
-	static {
-		List autoFieldsTmp = new ArrayList();
-		autoFieldsTmp.add(AREA);
-		autoFieldsTmp.add(LON);
-		autoFieldsTmp.add(LAT);
-		autoFieldsTmp.add(FILE);
-		
-		autoFields = Collections.unmodifiableList(autoFieldsTmp);
-	};
-
 	/**
 	 * Reserved bidirectional internal names to external name mapping.
 	 */
@@ -240,7 +208,7 @@ public class FeatureProviderESRI implements FeatureProvider, FeatureListener {
 			tableModel = new DbfTableModel(new DbfInputStream(new FileInputStream(fileName.getDbf())));
 		}
 		catch(Exception ex){
-			log.println(ex.getMessage());
+			log.aprintln(ex.getMessage());
 			return null;
 		}
 
@@ -248,10 +216,7 @@ public class FeatureProviderESRI implements FeatureProvider, FeatureListener {
 		SingleFeatureCollection fc = new SingleFeatureCollection();
 
 		// Setup default schema
-		for(int i=0; i<fieldArray.length; i++)
-			fc.addField(fieldArray[i]);
 		fc.addField( Field.FIELD_PATH);
-		fc.addField( Field.FIELD_SELECTED);
 
 		// Create a set of field names so that we don't end up with duplicate names. 
 		Map predefNames = new HashMap();
@@ -287,7 +252,7 @@ public class FeatureProviderESRI implements FeatureProvider, FeatureListener {
 		int dbfRows = tableModel.getRowCount();
 		int shpRows = shpList.size();
 		if (dbfRows != shpRows){
-			log.println("dbfTable rows (" + dbfRows + ") != shpList rows (" + shpRows + ")");
+			log.aprintln("dbfTable rows (" + dbfRows + ") != shpList rows (" + shpRows + ")");
 			return null;
 		}
 		
@@ -299,7 +264,6 @@ public class FeatureProviderESRI implements FeatureProvider, FeatureListener {
 			boolean closed = (shapeType==SHAPE_TYPE_POLYGON);
 			FPath path = new FPath ((float[])shpList.get(i), true, FPath.SPATIAL_EAST, closed);
 			f.setAttributeQuiet( Field.FIELD_PATH, path.getSpatialWest());
-			f.setAttributeQuiet( Field.FIELD_SELECTED, Boolean.FALSE);
 
 			// Add all the other columns to the Feature.
 			// Note that we cannot simply test if the field is contains in the schema 
@@ -309,7 +273,6 @@ public class FeatureProviderESRI implements FeatureProvider, FeatureListener {
 				Field field = (Field)si.next();
 				try {
 					if (field.equals( Field.FIELD_PATH)){
-					} else if ( field.equals( Field.FIELD_SELECTED)){
 					} else if ( field.equals( FILE)){
 						f.setAttributeQuiet( FILE, fileName.shpFileName);
 					} else if (field.equals( FEATURE_TYPE)){
@@ -341,10 +304,10 @@ public class FeatureProviderESRI implements FeatureProvider, FeatureListener {
 					}
 				}
 				catch (NumberFormatException exc){
-					log.println("Processing field "+field.name+": "+exc.getMessage());
+					log.aprintln("Processing field "+field.name+": "+exc.getMessage());
 				}
 				catch (ClassCastException exc){
-					log.println("Processing field "+field.name+": "+exc.getMessage());
+					log.aprintln("Processing field "+field.name+": "+exc.getMessage());
 				}
 			}
 			
@@ -353,12 +316,6 @@ public class FeatureProviderESRI implements FeatureProvider, FeatureListener {
 		}
 
 		fc.addFeatures( featureList);
-		
-		// Add ourselves as the very first listener so that the auto-fields
-		// may be updated. But only do it for any modification, not on load.
-		// If it is needed on load, move this line above the fc.addFeatures()
-		// above.
-		fc.addListener(this);
 
 		props.addProperties(fc, shapeType, columnDesc);
 
@@ -378,106 +335,6 @@ public class FeatureProviderESRI implements FeatureProvider, FeatureListener {
 		return fn.getLoadFiles();
 	}
 	
-	/**
-	 * Modify the event in place to reflect changes made to the auto-fields.
-	 * CAUTION: In order for this to work, the ESRI FeatureProvider must be the
-	 * first one to catch the add/change FeatureEvent. Note that this can only
-	 * be done for CHANGE_FEATURE event. Once modified, the event will flow
-	 * through the rest of the system as before. Thus, care must be taken that
-	 * the FeatureProvider implementation returned by load() doesn't allow
-	 * inserting listeners prior to this.
-	 */
-	public void receive(FeatureEvent e){
-		switch(e.type){
-		case FeatureEvent.ADD_FEATURE:
-			break;
-		case FeatureEvent.CHANGE_FEATURE:
-			if (e.fields.contains(Field.FIELD_PATH))
-				break;
-			return;
-		case FeatureEvent.ADD_FIELD:
-			Set fields = new HashSet(e.fields);
-			fields.retainAll(autoFields);
-			
-			if (fields.isEmpty())
-				break;
-			return;
-		default:
-			return;
-		}
-		
-		// Update auto-fields and get a list of fields actually updated
-		// Note that e.features is null for an FIELD related events.
-		Set modifiedFields = updateEsriAutoFields(e.source,
-				e.features == null? e.source.getFeatures(): e.features);
-		
-		if (e.type == FeatureEvent.CHANGE_FEATURE){
-			// Add changed auto-fields.
-			List fields = new ArrayList(e.fields);
-			fields.addAll(modifiedFields);
-			e.fields = fields;
-			
-			// Update field-indices.
-			e.fieldIndices = FeatureUtil.getFieldIndices(e.source.getSchema(), e.fields);
-		}
-	}
-	
-	/**
-	 * Updates the Area, Lat, Lon and feature-type auto-fields. This method is called
-	 * when either the path field is modified or one of the auto-fields is added.
-	 * 
-	 * @param sourceFC The FeatureCollection that contains each Feature in updateList.
-	 * @param updateList The List of Features to recalculate the auto fields for.
-	 */
-	Set updateEsriAutoFields(FeatureCollection sourceFC, List featureList) {
-		List schema = sourceFC.getSchema(); // they'd better have the same schema
-		Set modifiedFields = new HashSet();
-		
-		for (Iterator fi = featureList.iterator(); fi.hasNext(); ){
-			Feature feature = (Feature)fi.next();
-			FPath path = (FPath)feature.getAttribute(Field.FIELD_PATH);
-			if (path == null)
-				continue;
-
-			Map fieldMap = new HashMap();
-			if (schema.contains (FeatureProviderESRI.AREA)) {
-				Double area = null;
-				if (feature.getPathType() == Feature.TYPE_POLYGON)
-					area = new Double (path.getSpatialWest().getArea());
-
-				fieldMap.put(FeatureProviderESRI.AREA, area);
-				modifiedFields.add(FeatureProviderESRI.AREA);
-			}
-			boolean hasLon = schema.contains(FeatureProviderESRI.LON);
-			boolean hasLat = schema.contains(FeatureProviderESRI.LAT);
-			if (hasLon || hasLat) {
-				Point2D center = path.getSpatialEast().getCenter();
-				if (hasLon){
-					fieldMap.put(FeatureProviderESRI.LON, new Double(center.getX()));
-					modifiedFields.add(FeatureProviderESRI.LON);
-				}
-				if (hasLat){
-					fieldMap.put(FeatureProviderESRI.LAT, new Double( center.getY()));
-					modifiedFields.add(FeatureProviderESRI.LAT);
-				}
-			}
-			if (schema.contains(FeatureProviderESRI.FEATURE_TYPE)){
-				if (feature.getAttribute(FeatureProviderESRI.FEATURE_TYPE) == null){
-					int shapeType = this.featureTypeToShapeType(feature.getPathType());
-					fieldMap.put(FeatureProviderESRI.FEATURE_TYPE, getShapeTypeString(shapeType));
-					modifiedFields.add(FeatureProviderESRI.FEATURE_TYPE);
-				}
-			}
-			if (fieldMap.isEmpty())
-				continue;
-			
-			feature.setAttributes(fieldMap, true);
-		}
-		
-		return modifiedFields;
-	}
-	
-
 	// on LOADING:
 	// Each element in the list is a float[] of LatLon values
 	// in decimal degrees. The size of the list should equal
@@ -547,9 +404,11 @@ public class FeatureProviderESRI implements FeatureProvider, FeatureListener {
 
 		} catch (FileNotFoundException e) {
 			System.out.println("Error reading SHP file: " + e);
+			e.printStackTrace();
 			return null;
 		} catch(Exception e) {
 			System.out.println("Error reading SHP file: " + e);
+			e.printStackTrace();
 			return null;
 		}
 		
@@ -615,20 +474,20 @@ public class FeatureProviderESRI implements FeatureProvider, FeatureListener {
 	
 	private int featureTypeToShapeType(int ft){
 		switch(ft){
-			case Feature.TYPE_POINT: return SHAPE_TYPE_POINT;
-			case Feature.TYPE_POLYGON: return SHAPE_TYPE_POLYGON;
-			case Feature.TYPE_POLYLINE: return SHAPE_TYPE_POLYLINE;
+			case FPath.TYPE_POINT: return SHAPE_TYPE_POINT;
+			case FPath.TYPE_POLYGON: return SHAPE_TYPE_POLYGON;
+			case FPath.TYPE_POLYLINE: return SHAPE_TYPE_POLYLINE;
 		}
 		return SHAPE_TYPE_NONE;
 	}
 	
 	private int shapeTypeToFeatureType(int st){
 		switch(st){
-			case SHAPE_TYPE_POINT: return Feature.TYPE_POINT;
-			case SHAPE_TYPE_POLYGON: return Feature.TYPE_POLYGON;
-			case SHAPE_TYPE_POLYLINE: return Feature.TYPE_POLYLINE;
+			case SHAPE_TYPE_POINT: return FPath.TYPE_POINT;
+			case SHAPE_TYPE_POLYGON: return FPath.TYPE_POLYGON;
+			case SHAPE_TYPE_POLYLINE: return FPath.TYPE_POLYLINE;
 		}
-		return Feature.TYPE_NONE;
+		return FPath.TYPE_NONE;
 	}
 		
     // on SAVING
@@ -698,7 +557,7 @@ public class FeatureProviderESRI implements FeatureProvider, FeatureListener {
     	Iterator fi = features.iterator();
     	while (fi.hasNext()){
     		Feature feature = (Feature)fi.next();
-    		int pathType  = feature.getPathType();
+    		int pathType  = feature.getPath().getType();
     		if (shapeType == featureTypeToShapeType(pathType))
     			return true;
     	}
@@ -739,7 +598,7 @@ public class FeatureProviderESRI implements FeatureProvider, FeatureListener {
 			
 			for(fi = features.iterator(); fi.hasNext(); ){
 				feature = (Feature)fi.next();
-				featureShapeType = featureTypeToShapeType(feature.getPathType());
+				featureShapeType = featureTypeToShapeType(feature.getPath().getType());
 				
 				if (featureShapeType != shapeType)
 					continue;
@@ -1025,7 +884,6 @@ public class FeatureProviderESRI implements FeatureProvider, FeatureListener {
 		java.util.List schema = new ArrayList(fc.getSchema());
 		/* remove fields which shouldn't end up in the dbf file */
 		schema.remove(Field.FIELD_PATH);
-		schema.remove(Field.FIELD_SELECTED);
 		schema.remove(FeatureProviderESRI.FEATURE_TYPE);
 		schema.remove(FeatureProviderESRI.FILE);
 		
@@ -1084,7 +942,7 @@ public class FeatureProviderESRI implements FeatureProvider, FeatureListener {
 			Point2D center = null; // feature center
 			
 			// Skip all features that are not of the requested shape type.
-			if (featureTypeToShapeType(feature.getPathType()) != shapeType)
+			if (featureTypeToShapeType(feature.getPath().getType()) != shapeType)
 				continue;
 			
 			int col = 0;
@@ -1093,26 +951,8 @@ public class FeatureProviderESRI implements FeatureProvider, FeatureListener {
 				Field field = (Field)si.next();
 				
 				Object val = feature.getAttribute(field);
-				if (val == null){
-					if (autoFields.contains(field)){
-						// Try to populate an auto field, if value is not already there
-						if (field.equals(LAT)){
-							if (center == null)
-								center = feature.getPath().getSpatialEast().getCenter();
-							val = new Double(center.getY());
-						}
-						else if (field.equals(LON)){
-							if (center == null)
-								center = feature.getPath().getSpatialEast().getCenter();
-							val = new Double(center.getX());
-						}
-						else if (field.equals(AREA)){
-							if (feature.getPathType() == Feature.TYPE_POLYGON)
-								val = new Double (feature.getPath().getSpatialWest().getArea());
-						}
-					}
-					if (val == null)
-						val = model.getEmptyDefaultForType(model.getType(col));
+				if (val == null) {
+					val = model.getEmptyDefaultForType(model.getType(col));
 				}
 				
 				if (val instanceof Number){

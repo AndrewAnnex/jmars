@@ -166,17 +166,19 @@ public class MultiFeatureCollection implements FeatureCollection, FeatureListene
 			feFeatures = new FeatureEvent(FeatureEvent.REMOVE_FEATURE, this, fc.getFeatures(), null, null);
 		
 		boolean result = support.remove(fc);
-
-		// ArrayList.removeAll() is slooooooow hence features.removeAll() has been replaced
-		// by the following code.
-		ArrayList updated = new ArrayList(features.size());
-		Set removeSet = new HashSet(fc.getFeatures());
-		for(Iterator fi=features.iterator(); fi.hasNext(); ){
-			Feature feat = (Feature)fi.next();
-			if (!removeSet.contains(feat))
-				updated.add(feat);
+		
+		// remove the features, if there are any features to remove
+		if (fc.getFeatureCount() > 0) {
+			// ArrayList.removeAll() is O(N^2), for some reason, so we do this O(N) routine instead:
+			ArrayList updated = new ArrayList(features.size());
+			Set removeSet = new HashSet(fc.getFeatures());
+			for(Iterator fi=features.iterator(); fi.hasNext(); ){
+				Feature feat = (Feature)fi.next();
+				if (!removeSet.contains(feat))
+					updated.add(feat);
+			}
+			features = updated;
 		}
-		features = updated;
 		
 		Set diffSchema = new LinkedHashSet(schema);
 		diffSchema.removeAll(getSchemaFor(support));
@@ -601,7 +603,7 @@ public class MultiFeatureCollection implements FeatureCollection, FeatureListene
 	public void notify(FeatureEvent e){
 		FeatureListener l;
 		
-		for(Iterator i=listeners.iterator(); i.hasNext(); ){
+		for(Iterator i=new ArrayList(listeners).iterator(); i.hasNext(); ){
 			l = (FeatureListener)i.next();
 			l.receive(e);
 		}

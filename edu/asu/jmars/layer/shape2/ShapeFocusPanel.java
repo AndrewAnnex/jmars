@@ -21,50 +21,45 @@
 package edu.asu.jmars.layer.shape2;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Component;
-import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Frame;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.geom.Point2D;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Vector;
 
 import javax.swing.AbstractAction;
+import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
+import javax.swing.ButtonGroup;
+import javax.swing.DefaultListModel;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JColorChooser;
-import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -72,24 +67,26 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JRadioButton;
+import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
-import javax.swing.JSeparator;
 import javax.swing.JSplitPane;
-import javax.swing.JTextField;
 import javax.swing.JViewport;
-import javax.swing.ListCellRenderer;
-import javax.swing.ListSelectionModel;
-import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.BevelBorder;
 import javax.swing.border.CompoundBorder;
+import javax.swing.border.EmptyBorder;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.filechooser.FileFilter;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableColumn;
 
+import com.thoughtworks.xstream.XStream;
+
 import edu.asu.jmars.Main;
 import edu.asu.jmars.layer.FocusPanel;
-import edu.asu.jmars.layer.Layer.LView;
-import edu.asu.jmars.layer.shape2.FileChooser;
+import edu.asu.jmars.layer.util.features.Feature;
 import edu.asu.jmars.layer.util.features.FeatureCollection;
 import edu.asu.jmars.layer.util.features.FeatureMouseHandler;
 import edu.asu.jmars.layer.util.features.FeatureProvider;
@@ -100,13 +97,14 @@ import edu.asu.jmars.layer.util.features.FeatureTableModel;
 import edu.asu.jmars.layer.util.features.FeatureUtil;
 import edu.asu.jmars.layer.util.features.Field;
 import edu.asu.jmars.layer.util.features.ScriptFileChooser;
-import edu.asu.jmars.layer.util.features.ShapeRenderer;
 import edu.asu.jmars.layer.util.features.SingleFeatureCollection;
+import edu.asu.jmars.layer.util.features.Style;
+import edu.asu.jmars.layer.util.features.Styles;
 import edu.asu.jmars.layer.util.features.ZOrderMenu;
 import edu.asu.jmars.layer.util.filetable.FileTable;
 import edu.asu.jmars.layer.util.filetable.FileTableModel;
 import edu.asu.jmars.swing.STable;
-import edu.asu.jmars.util.ColorComponent;
+import edu.asu.jmars.util.Config;
 import edu.asu.jmars.util.DebugLog;
 import edu.asu.jmars.util.Util;
 import edu.asu.jmars.util.stable.ColorCellEditor;
@@ -114,6 +112,7 @@ import edu.asu.jmars.util.stable.FilteringColumnModel;
 
 public class ShapeFocusPanel extends FocusPanel {
 	final private static DebugLog log = DebugLog.instance(); 
+	private static final String defaultProviderKey = "shape.filefactory.default";
 	
 	public static final String saveSelectedFilesAsActionName = "Save Selected Files As";
 	public static final String saveSelectedFeaturesAsActionName = "Save Selected Features As";
@@ -127,8 +126,6 @@ public class ShapeFocusPanel extends FocusPanel {
     JMenuItem saveSelectedFeaturesToFileMenuItem     = new JMenuItem(saveSelectedFeaturesAsActionName);
     JMenuItem saveAllFeaturesToFileAsMenuItem        = new JMenuItem(saveAllFeaturesAsActionName);
     
-    JMenuItem   featureAddColumnMenuItem       = new JMenuItem("Add New Column");
-    JMenuItem   featureDelColumnMenuItem       = new JMenuItem("Delete Column");
     JMenuItem   featureCommandMenuItem         = new JMenuItem("Edit Script");
     JMenuItem   featureLoadScriptsMenuItem     = new JMenuItem("Load & Run Script");
     
@@ -146,20 +143,40 @@ public class ShapeFocusPanel extends FocusPanel {
     
     ShapeLView     shapeLView;
     ShapeLayer     shapeLayer;
-
+    
     private STable featureTable;
-
-	public ShapeFocusPanel(LView parent) {
+	private final StylesStore stylesStore = new StylesStore();
+	
+	public ShapeFocusPanel(ShapeLView parent) {
 		super(parent);
 		setLayout(new BorderLayout());
 		
-		shapeLView = (ShapeLView)parent;
+		shapeLView = parent;
 		shapeLayer = (ShapeLayer)shapeLView.getLayer();
 		loadSaveFileChooser = new FileChooser();
-		Iterator fpit = shapeLayer.getProviderFactory().getFileProviders().iterator();
-		while (fpit.hasNext())
-			loadSaveFileChooser.addFilter(((FeatureProvider)fpit.next()));
-
+		
+		// use jmars.config key to decide if we set up the chooser in the home
+		// or working directories
+		String chooserPathType = Config.get("shape.chooser.path", "home");
+		if (chooserPathType.trim().toLowerCase().equals("working")) {
+			loadSaveFileChooser.setStartingDir(new File("."));
+		} else if (chooserPathType.trim().toLowerCase().equals("home")) {
+			loadSaveFileChooser.setStartingDir(new File(Main.getUserHome()));
+		}
+		
+		List<FeatureProvider> fileProviders = (List<FeatureProvider>)shapeLayer.getProviderFactory().getFileProviders();
+		FileFilter selected = null;
+		String defaultProviderClass = Config.get(defaultProviderKey);
+		for (FeatureProvider fp: fileProviders) {
+			FileFilter f = loadSaveFileChooser.addFilter(fp);
+			if (fp.getClass().getName().equals(defaultProviderClass)) {
+				selected = f;
+			}
+		}
+		if (selected != null) {
+			loadSaveFileChooser.setFileFilter(selected);
+		}
+		
 		shapeScriptFileChooser = new ScriptFileChooser();
 
 	    // build menu bar.
@@ -169,8 +186,7 @@ public class ShapeFocusPanel extends FocusPanel {
 	    initMenuActions();
 
 		// TODO: the mfc should be produced by the layer, not the file table!
-		shapeLayer.getFileTable().setHistory(shapeLayer.getHistory());
-		FeatureTableAdapter ft = new FeatureTableAdapter(shapeLayer.getFeatureCollection());
+		FeatureTableAdapter ft = new FeatureTableAdapter(shapeLayer.getFeatureCollection(), shapeLayer.selections, shapeLayer.getHistory());
 		featureTable = ft.getTable();
 
 		// add the column dialog to the list of open dialogs so its disposed
@@ -216,7 +232,7 @@ public class ShapeFocusPanel extends FocusPanel {
 
 					// Install Z-order menu for the main FeatureTable in the FocusPanel only.
 					if (getFeatureTable() == featureTable)
-						popup.add(new ZOrderMenu("Z Order", fc));
+						popup.add(new ZOrderMenu("Z Order", fc, shapeLayer.selections));
 					
 					if (selectedRows.length > 1)
 						popup.add(multiEditMenuItem);
@@ -284,7 +300,7 @@ public class ShapeFocusPanel extends FocusPanel {
 					List fcl = fileTable.getSelectedFeatureCollections();
 					for(Iterator li=fcl.iterator(); li.hasNext(); ){
 						FeatureCollection fc = (FeatureCollection)li.next();
-						final FeatureTableAdapter fta = new FeatureTableAdapter(fc);
+						final FeatureTableAdapter fta = new FeatureTableAdapter(fc, shapeLayer.selections, shapeLayer.getHistory());
 						final STable ft = fta.getTable();
 						final JDialog columnDialog = ((FilteringColumnModel)ft.getColumnModel()).getColumnDialog();
 						// add the column dialog to the list of open dialogs so it's disposed
@@ -374,9 +390,6 @@ public class ShapeFocusPanel extends FocusPanel {
 		
 		saveSelectedFilesMenuItem.addActionListener(new SaveSelectedFilesActionListener());
 		
-		featureAddColumnMenuItem.addActionListener(new AddColumnActionListener());
-		featureDelColumnMenuItem.addActionListener(new DelColumnActionListener());
-
 		featureCommandMenuItem.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e){
 				shapeLView.getFeatureMouseHandler().setMode(FeatureMouseHandler.SELECT_FEATURE_MODE);
@@ -400,21 +413,23 @@ public class ShapeFocusPanel extends FocusPanel {
 	 * @author saadat
 	 */
 	private class LoadActionListener implements ActionListener {
-		public void actionPerformed(ActionEvent e){
+		public void actionPerformed(ActionEvent e) {
 			final File [] f = loadSaveFileChooser.chooseFile("Load");
 
 		    // If no file was selected, quit.
 		    if (f == null)
 				return;
-
+		    
 	    	FeatureProvider fp = loadSaveFileChooser.getFeatureProvider();
-	    	String[] files = new String[f.length];
-	    	for (int i = 0; i < f.length; i++)
-	    		files[i] = f[i].getAbsolutePath();
-	    	loadSources(fp, files);
+	    	final List<ShapeLayer.LoadData> sources = new ArrayList<ShapeLayer.LoadData>();
+	    	for (int i = 0; i < f.length; i++) {
+	    		sources.add(new ShapeLayer.LoadData(fp, f[i].getAbsolutePath()));
+	    	}
+	    	Config.set(defaultProviderKey, fp.getClass().getName());
+			shapeLayer.loadSources(sources);
 		}
 	}
-
+	
 	/**
 	 * Implements loading for an array of FeatureProviders. If the instance of a
 	 * provider needs a name, it needs to be set prior to sending it to this
@@ -422,72 +437,14 @@ public class ShapeFocusPanel extends FocusPanel {
 	 */
 	private class CustomProviderHandler implements ActionListener {
 		FeatureProvider fp;
-
 		public CustomProviderHandler(FeatureProvider fp) {
 			this.fp = fp;
 		}
-
 		public void actionPerformed(ActionEvent e) {
-			loadSources(fp, new String[] {null});
+			shapeLayer.loadSources(Arrays.asList(new ShapeLayer.LoadData(fp, null)));
 		}
 	}
-
-	/*
-	 * Creates a separate thread to load files, since it can take awhile and if
-	 * done on the AWT thread, would prevent updating the display. The
-	 * FeatureProvider array needs to have the name to load from (if necessary)
-	 * set already.
-	 */
-	public void loadSources (final FeatureProvider fp, final String[] files) {
-		Runnable loader = new Runnable() {
-			public void run() {
-				List errors = new LinkedList();
-				final List loaded = new LinkedList();
-				ShapeLayer.LEDState led = null;
-				try {
-					// Set the LED state appropriately
-					shapeLayer.begin(led = new ShapeLayer.LEDStateFileIO());
-					// load each instantiated feature provider
-					for (int i = 0; i < files.length; i++) {
-						final FeatureCollection fc;
-						try {
-							fc = fp.load(files[i]);
-							fc.setProvider(fp);
-							fc.setFilename(files[i] == null ? fp.getDescription() : files[i]);
-							loaded.add(fc);
-						} catch (Exception e) {
-							errors.add(e.getMessage() + " while loading " + files[i]);
-						}
-					}
-					// inject the loaded data on the AWT thread since it
-					// cascades into a display update
-					SwingUtilities.invokeLater(new Runnable() {
-						public void run() {
-							shapeLayer.getHistory().mark();
-							for (Iterator it = loaded.iterator(); it.hasNext(); ) {
-								SingleFeatureCollection fc = (SingleFeatureCollection)it.next();
-								fc.setHistory(shapeLayer.getHistory());
-								shapeLayer.getFileTable().add(fc);
-							}
-						}
-					});
-					// display errors
-					if (errors.size() > 0) {
-				    	JOptionPane.showMessageDialog(Main.getLManager(),
-			    			Util.join("\n", (String[])errors.toArray(new String[0])),
-			    			"Unable to load files...", JOptionPane.ERROR_MESSAGE);
-					}
-				}
-				finally {
-					// Unset the LED state
-					shapeLayer.end(led);
-				}
-			}
-		};
-
-		new Thread(loader, "Feature Loader").start();
-	}
-
+	
 	/**
 	 * Implements various "Save As" actions. This code is also invoked as a
 	 * subordinate of the "Save" action. Such a situation occurs when the 
@@ -503,7 +460,7 @@ public class ShapeFocusPanel extends FocusPanel {
 			this._fc = _fc;
 		}
 		
-		public SaveAsAction(SingleFeatureCollection fc){
+		public SaveAsAction(FeatureCollection fc){
 			this("Save As", fc);
 		}
 		
@@ -529,7 +486,7 @@ public class ShapeFocusPanel extends FocusPanel {
 			FeatureCollection fc = new SingleFeatureCollection();
 			// fc.setFilename(_fc.getFilename());
 			if (saveSelectedFeaturesAsActionName.equals(e.getActionCommand())){
-				fc.addFeatures(FeatureUtil.getSelectedFeatures(_fc));
+				fc.addFeatures(shapeLayer.selections);
 			}
 			else if (saveSelectedFilesAsActionName.equals(e.getActionCommand())){
 				List fcl = shapeLayer.getFileTable().getSelectedFeatureCollections();
@@ -537,7 +494,7 @@ public class ShapeFocusPanel extends FocusPanel {
 					fc.addFeatures(((FeatureCollection)i.next()).getFeatures());
 			}
 			else if (saveAllFeaturesAsActionName.equals(e.getActionCommand())){
-				List fcl = shapeLayer.getFileTable().getFeatureCollections();
+				List fcl = shapeLayer.getFileTable().getFileTableModel().getAll();
 				for(Iterator i=fcl.iterator(); i.hasNext(); )
 					fc.addFeatures(((FeatureCollection)i.next()).getFeatures());
 			}
@@ -584,6 +541,7 @@ public class ShapeFocusPanel extends FocusPanel {
 		    }
 		    catch(RuntimeException ex){
 		    	log.aprintln("While saving "+fileName+" got: "+ex.getMessage());
+		    	ex.printStackTrace();
 		    	if (!runningAsSubordinate)
 		    		JOptionPane.showMessageDialog(Main.getLManager(), "Unable to save "+fileName);
 		    	else
@@ -602,22 +560,12 @@ public class ShapeFocusPanel extends FocusPanel {
 	 * @author saadat
 	 */
 	private class SaveSelectedFilesActionListener implements ActionListener {
-		private SingleFeatureCollection currentFc = null;
-		
-		/**
-		 * Returns the FeatureCollection currently under process.
-		 * @return FeatureCollection currently in the process of saving.
-		 */
-		public SingleFeatureCollection getFeatureCollection(){
-			return currentFc;
-		}
-		
 		public void actionPerformed(ActionEvent e){
-			final FileTable ft = shapeLayer.getFileTable();
-			final List unsavable = new ArrayList();
-			final List saveable = new ArrayList();
-			List fcl = ft.getSelectedFeatureCollections();
-			for(Iterator i=fcl.iterator(); i.hasNext(); ){
+			FileTable ft = shapeLayer.getFileTable();
+			List<String> unsavable = new ArrayList<String>();
+			List<FeatureCollection> saveable = new ArrayList<FeatureCollection>();
+			List<?> fcl = ft.getSelectedFeatureCollections();
+			for(Iterator<?> i=fcl.iterator(); i.hasNext(); ){
 				FeatureCollection fc = (FeatureCollection)i.next();
 				if (fc.getProvider() == null)
 					unsavable.add(FileTableModel.NULL_PROVIDER_NAME);
@@ -631,75 +579,60 @@ public class ShapeFocusPanel extends FocusPanel {
 				// Don't mark a history frame as that frame only contains the touched flag
 				//shapeLayer.getHistory().mark();
 
-				final ShapeLayer.LEDState led;
-				// TODO The LED state is not getting updated, make it work.
+				ShapeLayer.LEDState led;
 				shapeLayer.begin(led = new ShapeLayer.LEDStateFileIO());
-				Runnable saver = new Runnable(){
-					public void run(){
-						for(Iterator i=saveable.iterator(); i.hasNext(); ){
-							currentFc = (SingleFeatureCollection)i.next();
-							boolean produceSaveAs = false;
-							FeatureProvider fp = currentFc.getProvider();
+				try {
+					for(FeatureCollection currentFc: saveable) {
+						boolean produceSaveAs = false;
+						FeatureProvider fp = currentFc.getProvider();
 
-							if (!fp.isRepresentable(currentFc)){
-								int option = JOptionPane.showOptionDialog(
-									ShapeFocusPanel.this,
-									"The save operation on "+currentFc.getFilename() +
-										" will not save all Features.",
-									"Warning!",
-									JOptionPane.YES_NO_CANCEL_OPTION,
-									JOptionPane.QUESTION_MESSAGE,
-									null,
-									new String[]{ "Continue", "Save As", "Cancel"},
-									"Continue");
+						if (!fp.isRepresentable(currentFc)){
+							int option = JOptionPane.showOptionDialog(
+								ShapeFocusPanel.this,
+								"The save operation on "+currentFc.getFilename() +
+									" will not save all Features.",
+								"Warning!",
+								JOptionPane.YES_NO_CANCEL_OPTION,
+								JOptionPane.QUESTION_MESSAGE,
+								null,
+								new String[]{ "Continue", "Save As", "Cancel"},
+								"Continue");
 
-								switch(option){
-									case 0:	produceSaveAs = false; break;
-									case 1:	produceSaveAs = true; break;
-									default: continue;
-								}
-							}
-							
-							try {
-								if (produceSaveAs){
-									(new SaveAsAction(currentFc)).actionPerformed(
-											new ActionEvent(SaveSelectedFilesActionListener.this,
-													ActionEvent.ACTION_PERFORMED, "Save As"));
-								}
-								else {
-									// Save the FeatureCollection
-									currentFc.getProvider().save(currentFc, currentFc.getFilename());
-									// If saved properly, reset the dirty marker
-									ft.setTouched(currentFc,false);
-								}
-							}
-							catch(Exception ex){
-								log.println("While processing "+getFcName(currentFc)+" caught exception: "+ex.getMessage());
-								unsavable.add(getFcName(currentFc));
+							switch(option){
+								case 0:	produceSaveAs = false; break;
+								case 1:	produceSaveAs = true; break;
+								default: continue;
 							}
 						}
+						
+						try {
+							if (produceSaveAs){
+								(new SaveAsAction(currentFc)).actionPerformed(
+										new ActionEvent(SaveSelectedFilesActionListener.this,
+												ActionEvent.ACTION_PERFORMED, "Save As"));
+							}
+							else {
+								// Save the FeatureCollection
+								currentFc.getProvider().save(currentFc, currentFc.getFilename());
+								// If saved properly, reset the dirty marker
+								ft.getFileTableModel().setTouched(currentFc,false);
+							}
+						}
+						catch(Exception ex){
+							log.println("While processing "+getFcName(currentFc)+" caught exception: "+ex.getMessage());
+							unsavable.add(getFcName(currentFc));
+						}
 					}
-				};
-				// TODO There is a chance that user does something between
-				//      the time that the saver thread is submitted and when it
-				//      is scheduled.
-				SwingUtilities.invokeLater(saver);
-				SwingUtilities.invokeLater(new Runnable(){
-					public void run(){
-						shapeLayer.end(led);
-					}
-				});
-			}
-
-			SwingUtilities.invokeLater(new Runnable(){
-				public void run(){
-					if (!unsavable.isEmpty())
+					if (!unsavable.isEmpty()) {
 						JOptionPane.showMessageDialog(ShapeFocusPanel.this,
 								unsavable.toArray(),
 								"Unable to save the following:",
 								JOptionPane.WARNING_MESSAGE);
+					}
+				} finally {
+					shapeLayer.end(led);
 				}
-			});
+			}
 		}
 	}
 	
@@ -709,7 +642,8 @@ public class ShapeFocusPanel extends FocusPanel {
 	}
 
 	/**
-	 * Implements the "Delete Selected Files" action.
+	 * Implements the "Delete Selected Files" action, which lets the user remove
+	 * any file except the untitled one.
 	 * 
 	 * @author saadat
 	 */
@@ -720,22 +654,27 @@ public class ShapeFocusPanel extends FocusPanel {
 			ShapeLayer.LEDState led = null;
 			try {
     			shapeLayer.begin(led = new ShapeLayer.LEDStateProcessing());
-				if (!shapeLayer.getFileTable().removeSelected()){
-					JOptionPane.showMessageDialog(Main.getLManager(),
-							new String[] {
-						"Unable to delete some of the selected FeatureCollections.",
-						"Note that the "+FileTableModel.NULL_PROVIDER_NAME+" feature collection may not be deleted."
-					},
-					"Warning!",
-					JOptionPane.WARNING_MESSAGE
-					);
-				}
+    			List<FeatureCollection> sel = shapeLayer.getFileTable().getSelectedFeatureCollections();
+    			Iterator<FeatureCollection> it = sel.iterator();
+    			while (it.hasNext()) {
+    				FeatureCollection fc = it.next();
+    				if (fc.getProvider() == null) {
+    					JOptionPane.showMessageDialog(Main.getLManager(),
+    							new String[] {
+    						"Cannot remove the "+FileTableModel.NULL_PROVIDER_NAME+" file."
+    					},
+    					"Warning!",
+    					JOptionPane.WARNING_MESSAGE
+    					);
+    					it.remove();
+    				}
+    			}
+				shapeLayer.getFileTable().getFileTableModel().removeAll(sel);
 			}
 			finally {
     			shapeLayer.end(led);
 			}
 		}
-
 	}
 	
 	/**
@@ -754,13 +693,10 @@ public class ShapeFocusPanel extends FocusPanel {
 		public void actionPerformed(ActionEvent e){
 			// Mark a new history frame
 			shapeLayer.getHistory().mark();
-			
-			List fl = FeatureUtil.getSelectedFeatures(fc);
-			fc.removeFeatures(fl);
+			fc.removeFeatures(shapeLayer.selections);
 		}
 	}
 	
-
 	/**
 	 * Implements the "Center on Feature" action.
 	 * 
@@ -775,158 +711,11 @@ public class ShapeFocusPanel extends FocusPanel {
 		}
 		
 		public void actionPerformed(ActionEvent e){
-			List selected = FeatureUtil.getSelectedFeatures(fc);
-			if (selected.isEmpty())
-				return;
-
-			Point2D center = FeatureUtil.getCenterPoint(selected);
-			if (center != null) {
-				shapeLView.viewman2.getLocationManager().setLocation(center, true);
-			}
-		}
-	}
-	
-	/**
-	 * Implements "Add Column" action.
-	 * 
-	 * @author saadat
-	 */
-	private class AddColumnActionListener implements ActionListener {
-		public void actionPerformed(ActionEvent e) {
-			Map editors = new HashMap(featureTable.getDefaultEditorsByColumnClass());
-			editors.remove(Object.class); // Don't show Object type in column creation dialog.
-			
-			ClassAdapter[] supportedTypes = new ClassAdapter[editors.size()];
-			Iterator editorIt = editors.keySet().iterator();
-			ClassAdapter initial = null;
-			for(int i=0; i<supportedTypes.length; i++) {
-				Class type = (Class) editorIt.next();
-				supportedTypes[i] = new ClassAdapter(type);
-
-				if (type == String.class)
-					initial = supportedTypes[i];
-			}
-
-			JComboBox typeSelector = new JComboBox(supportedTypes);
-			// set default selection to String, or first element if String is not supported
-			typeSelector.setSelectedItem (initial == null ? supportedTypes[0] : initial);
-
-			String inputValue = JOptionPane.showInputDialog(
-					ShapeFocusPanel.this,
-					new Object[] {
-							"Select Column Type:",
-							typeSelector,
-							"Type Column Name"
-					},
-					"Create a new column",
-					JOptionPane.QUESTION_MESSAGE);
-			if(inputValue != null  &&  inputValue.trim().length()>0 ){
-				if (typeSelector.getSelectedIndex() < 0)
-					return;
-
-				Class selectedType = ((ClassAdapter)typeSelector.getSelectedItem()).type;
-
-				// Make a new history frame.
-				shapeLayer.getHistory().mark();
-				shapeLayer.getFeatureCollection().addField(new Field (inputValue, selectedType, true));
-			}
-		}
-		class ClassAdapter {
-			public final Class type;
-			public ClassAdapter (Class type) {
-				this.type = type;
-			}
-			public String toString () {
-				return type.getName().replaceAll("^.*\\.", "");
-			}
-		}
-	}
-	
-	/**
-	 * Implements "Delete Column" action.
-	 * 
-	 * @author saadat
-	 */
-	private class DelColumnActionListener implements ActionListener {
-		public void actionPerformed(ActionEvent e){
-			// Get schema.
-			Vector schema = new Vector(shapeLayer.getFeatureCollection().getSchema());
-			
-			// Get rid of the schema elements the user shouldn't have control over.
-			schema.remove(Field.FIELD_FEATURE_TYPE);
-			schema.remove(Field.FIELD_PATH);
-			schema.remove(Field.FIELD_SELECTED);
-			
-			final JList fieldList = new JList(schema);
-			fieldList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-			fieldList.setCellRenderer(new FieldCellRenderer());
-			
-			final JScrollPane fieldListSp = new JScrollPane(fieldList);
-			fieldListSp.setPreferredSize(new Dimension(300,200));
-
-			Container owner = ShapeFocusPanel.this.getTopLevelAncestor();
-			if (!(owner instanceof Frame))
-				owner = null;
-			
-			final JDialog d = new JDialog((Frame)owner,"Select columns to remove", true);
-			d.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-			d.setLocationRelativeTo(ShapeFocusPanel.this);
-			
-			JButton bOk = new JButton("Delete");
-			bOk.addActionListener(new ActionListener(){
-				public void actionPerformed(ActionEvent e){
-					Object[] toRemove = fieldList.getSelectedValues();
-					if (toRemove.length > 0) {
-						// Make a new history frame.
-						shapeLayer.getHistory().mark();
-						for(int i=0; i<toRemove.length; i++)
-							shapeLayer.getFeatureCollection().removeField((Field)toRemove[i]);
-					}
-					d.setVisible(false);
+			if (!shapeLayer.selections.isEmpty()) {
+				Point2D center = FeatureUtil.getCenterPoint(shapeLayer.selections);
+				if (center != null) {
+					shapeLView.viewman2.getLocationManager().setLocation(center, true);
 				}
-			});
-			JButton bCancel = new JButton("Cancel");
-			bCancel.addActionListener(new ActionListener(){
-				public void actionPerformed(ActionEvent e){
-					d.setVisible(false);
-				}
-			});
-
-			JPanel buttonPanel = new JPanel(new FlowLayout());
-			buttonPanel.add(bOk);
-			buttonPanel.add(bCancel);
-			
-			JPanel mainPanel = new JPanel(new BorderLayout());
-			mainPanel.add(fieldListSp, BorderLayout.CENTER);
-			mainPanel.add(buttonPanel, BorderLayout.SOUTH);
-			
-			d.setContentPane(mainPanel);
-			d.pack();
-			registerDialogForAutoCleanup(d);
-			d.setVisible(true);
-		}
-		
-		class FieldCellRenderer extends JLabel implements ListCellRenderer {
-			public FieldCellRenderer(){
-				super();
-				setOpaque(true);
-				setHorizontalAlignment(LEFT);
-				setVerticalAlignment(CENTER);
-			}
-			public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-				if (isSelected) {
-					setBackground(list.getSelectionBackground());
-					setForeground(list.getSelectionForeground());
-				} else {
-					setBackground(list.getBackground());
-					setForeground(list.getForeground());
-				}
-
-				Field f = (Field)value;
-				setFont(list.getFont());
-				setText(f.name+"  --  "+f.type.getName().replaceAll("^.*\\.", ""));
-				
-				return this;
 			}
 		}
 	}
@@ -949,16 +738,16 @@ public class ShapeFocusPanel extends FocusPanel {
 		    shapeLView.getFeatureMouseHandler().setMode(FeatureMouseHandler.SELECT_FEATURE_MODE);
  
 		    final ShapeLayer.LEDState ledState = new ShapeLayer.LEDStateFileIO();
-		    shapeLayer.begin(ledState);
 		    SwingUtilities.invokeLater(new Runnable(){
 		    	public void run(){
+				    shapeLayer.begin(ledState);
 				    try {
 				    	BufferedReader  inStream = new BufferedReader( new FileReader( scriptFile[0].toString() ));
 				    	String line;
 				    	do {
 				    		line = inStream.readLine();
 				    		if (line!=null){
-				    			new FeatureSQL( line, shapeLayer.getFeatureCollection(), null);
+				    			new FeatureSQL( line, shapeLayer.getFeatureCollection(), shapeLayer.selections, null);
 				    		}
 				    	} while (line != null);
 				    	inStream.close();
@@ -978,126 +767,6 @@ public class ShapeFocusPanel extends FocusPanel {
 		}
 	}
 	
-	
-	/**
-	 * ActionListener that handles processing of ColorComponents that result in a 
-	 * Color preset in the ShapeLayer. This handler is linked to one or more
-	 * of the menu options in the ShapeFocusPanel.
-	 * 
-	 * @author saadat
-	 *
-	 */
-	private class ColorComponentActionListener implements ActionListener {
-		private String dialogText;
-		private String presetKey;
-		
-		public ColorComponentActionListener(String dialogText, String presetKey){
-			super();
-			this.dialogText = dialogText;
-			this.presetKey = presetKey;
-		}
-		public void actionPerformed(ActionEvent e){
-			ColorComponent colorButton = (ColorComponent)e.getSource();
-			Color newColor = JColorChooser.showDialog(null, dialogText, colorButton.getColor());
-			if (newColor != null) {
-				colorButton.setColor(newColor);
-				shapeLayer.setPreset(presetKey, newColor);
-			}
-		}
-	}
-	
-	/**
-	 * ActionListener that handles processing of JCheckbox that result in a 
-	 * Boolean preset in the ShapeLayer. This handler is linked to one or more
-	 * of the menu options in the ShapeFocusPanel.
-	 * 
-	 * @author saadat
-	 *
-	 */
-	private class ToggleActionListener implements ActionListener {
-		private String presetKey;
-		
-		public ToggleActionListener(String presetKey){
-			super();
-			this.presetKey = presetKey;
-		}
-		public void actionPerformed(ActionEvent e) {
-			Boolean b = (Boolean)shapeLayer.getPreset(presetKey);
-			shapeLayer.setPreset(presetKey, b.equals(Boolean.TRUE)? Boolean.FALSE: Boolean.TRUE);
-		}
-	}
-	
-	/**
-	 * ActionListener that handles processing of JTextFields that result in a 
-	 * Float preset in the ShapeLayer. This handler is linked to one or more
-	 * of the menu options in the ShapeFocusPanel.
-	 * 
-	 * @author saadat
-	 *
-	 */
-	private class FloatValueActionListener implements ActionListener, FocusListener {
-		private String presetKey;
-		private Float defaultValue;
-		private JTextField f;
-
-		public FloatValueActionListener(JTextField f, String presetKey, Float defaultValue){
-			super();
-			this.f = f;
-			this.presetKey = presetKey;
-			this.defaultValue = defaultValue;
-			f.addActionListener(this);
-			f.addFocusListener(this);
-		}
-		
-		public void actionPerformed(ActionEvent e) {
-			try {
-				shapeLayer.setPreset(presetKey, Float.valueOf(f.getText()));
-			} catch (NumberFormatException nfe) {
-				f.setText(defaultValue.toString());
-				shapeLayer.setPreset(presetKey, defaultValue);
-			}
-		}
-
-		public void focusGained(FocusEvent e) {}
-		public void focusLost(FocusEvent e) {
-			actionPerformed(null);
-		}
-	}
-
-	/**
-	 * ActionListener that handles processing of JTextFields that result in a 
-	 * Float preset in the ShapeLayer. This handler is linked to one or more
-	 * of the menu options in the ShapeFocusPanel.
-	 */
-	private class IntegerValueActionListener implements ActionListener, FocusListener {
-		private String presetKey;
-		private Integer defaultValue;
-		private JTextField f;
-		
-		public IntegerValueActionListener(JTextField f, String presetKey, Integer defaultValue){
-			super();
-			this.f = f;
-			this.presetKey = presetKey;
-			this.defaultValue = defaultValue;
-			f.addActionListener(this);
-			f.addFocusListener(this);
-		}
-
-		public void actionPerformed(ActionEvent e) {
-			try {
-				shapeLayer.setPreset(presetKey, Integer.valueOf(f.getText()));
-			} catch (NumberFormatException nfe) {
-				f.setText(defaultValue.toString());
-				shapeLayer.setPreset(presetKey, defaultValue);
-			}
-		}
-
-		public void focusGained(FocusEvent e) {}
-		public void focusLost(FocusEvent e) {
-			actionPerformed(null);
-		}
-	}
-
 	private class MultiEditAction extends AbstractAction {
 		MouseEvent tableMouseEvent = null;
 		STable dataTable;
@@ -1116,25 +785,22 @@ public class ShapeFocusPanel extends FocusPanel {
 			if (tableMouseEvent == null)
 				return;
 
-			int screenColumn = dataTable.getColumnModel()
-					.getColumnIndexAtX(tableMouseEvent.getX());
-			FeatureTableModel model = (FeatureTableModel)dataTable.getUnsortedTableModel();
-			FeatureCollection fc = model.getFeatureCollection();
+			int screenColumn = dataTable.getColumnModel().getColumnIndexAtX(tableMouseEvent.getX());
 			String columnName = dataTable.getColumnName(screenColumn);
 			TableColumn tableColumn = dataTable.getColumnModel().getColumn(screenColumn);
 			int columnIndex = tableColumn.getModelIndex();
-			if (!((Field)fc.getSchema().get(columnIndex)).editable) {
+			Field field = (Field)tableColumn.getIdentifier();
+			if (!field.editable) {
 				JOptionPane.showMessageDialog(Main.getLManager(),
 						"\""+columnName+"\" is not an editable column", "Error!",
 						JOptionPane.ERROR_MESSAGE);
 			}
 			else {
-				Class columnClass = dataTable.getModel().getColumnClass(columnIndex);
+				Class<?> columnClass = dataTable.getModel().getColumnClass(columnIndex);
 				TableCellEditor editor = dataTable.getDefaultEditor(columnClass);
 				int[] selectedRows = dataTable.getSelectedRows();
 				if (selectedRows.length == 1)
 					return;
-
 				
 				JPanel inputPanel = new JPanel(new BorderLayout());
 				JColorChooser colorChooser = null;
@@ -1155,9 +821,15 @@ public class ShapeFocusPanel extends FocusPanel {
 				if (SimpleDialog.OK_COMMAND.equals(dialog.getActionCommand()))
 					input = (colorChooser == null? editor.getCellEditorValue(): colorChooser.getColor());
 				
-				if (input != null)
-					for (int i = 0; i < selectedRows.length; i++)
-						model.setValueAt(input, selectedRows[i], columnIndex);
+				if (input != null) {
+					Map<Feature,Object> values = new LinkedHashMap<Feature,Object>();
+					List<Feature> features = shapeLayer.getFeatureCollection().getFeatures();
+					for (int sortedIdx: selectedRows) {
+						int unsortedIdx = dataTable.getSorter().unsortRow(sortedIdx);
+						values.put(features.get(unsortedIdx), input);
+					}
+					shapeLayer.getFeatureCollection().setAttributes(field, values);
+				}
 			}
 		}
 	}
@@ -1208,20 +880,12 @@ public class ShapeFocusPanel extends FocusPanel {
 		JMenuBar menuBar = new JMenuBar();
 		menuBar.add(getFileMenu());
 		menuBar.add(getSelectMenu());
-	    menuBar.add(getScriptMenu());
-	    menuBar.add(getPropMenu());
-	    menuBar.setBorder(BorderFactory.createEtchedBorder());
-	    return menuBar;
+		menuBar.add(getScriptMenu());
+		menuBar.add(getPropMenu());
+		menuBar.setBorder(BorderFactory.createEtchedBorder());
+		return menuBar;
 	}
-
-	private JMenuItem getPropMenu() {
-		return createMenu("Settings", null, new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				showPropDialog();
-			}
-		});
-	}
-
+	
 	/** Create a menu with children */
 	private JMenuItem createMenu(String title, Component[] children) {
 		JMenuItem item = new JMenu(title);
@@ -1239,120 +903,30 @@ public class ShapeFocusPanel extends FocusPanel {
 		return item;
 	}
 
-	private Component createPresetComponent(String key) {
-		Object value = shapeLayer.getPreset(key);
-		if (value instanceof Boolean) {
-			JCheckBox cb = new JCheckBox("           ");
-			cb.addActionListener(new ToggleActionListener(key));
-			cb.setSelected(((Boolean)value).booleanValue());
-			return cb;
-		} else if (value instanceof Integer) {
-			JTextField intField = new JTextField(3);
-			intField.setText(((Integer)value).toString());
-			new IntegerValueActionListener(intField, key, new Integer(0));
-			return intField;
-		} else if (value instanceof Float) {
-			JTextField floatField = new JTextField(3);
-			floatField.setText(((Float)value).toString());
-			new FloatValueActionListener(floatField, key, new Float(0));
-			return floatField;
-		} else if (value instanceof Color) {
-		    ColorComponent colorField = new ColorComponent(" ", Color.black);
-		    colorField.setColor((Color)value);
-		    colorField.addActionListener(new ColorComponentActionListener(key,key));
-			return colorField;
-		}
-		throw new IllegalArgumentException("Unable to create item for preset " + key);
-	}
-
-	private void showPropDialog() {
-		Frame top = (Frame)this.getTopLevelAncestor();
-		final JDialog prop = new JDialog(top,"Settings",false);
-		Container pane = prop.getContentPane();
-		pane.setLayout(new BorderLayout());
-		// header
-		Box header = Box.createVerticalBox();
-		header.add(new JSeparator(SwingConstants.HORIZONTAL));
-		pane.add(header, BorderLayout.NORTH);
-		// footer
-		Box footer = Box.createVerticalBox();
-		footer.add(new JSeparator(SwingConstants.HORIZONTAL));
-		JButton close = new JButton("Close");
-		close.addActionListener(new ActionListener() {
+	private JMenu getPropMenu() {
+		JMenuItem name = new JMenuItem("Name...");
+		name.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				prop.dispose();
+				String oldName = shapeLView.getName();
+				String newName = JOptionPane.showInputDialog(ShapeFocusPanel.this, "Shape Layer Name", oldName);
+				if (newName != null && !oldName.equals(newName)) {
+					shapeLView.setName(newName);
+				}
 			}
 		});
-		JPanel buttons = new JPanel(new BorderLayout());
-		buttons.add(close,BorderLayout.EAST);
-		footer.add(buttons);
-		pane.add(footer, BorderLayout.SOUTH);
-		// create settings components
-		JTextField nameField = getLayerNameField();
-		JPanel settings = new JPanel(new GridBagLayout());
-		String[] presets = new String[] {
-			ShapeLayer.PRESET_KEY_SHOW_LABELS,
-			ShapeLayer.PRESET_KEY_FILL_POLYGONS,
-			ShapeLayer.PRESET_KEY_SHOW_VERTICES,
-			ShapeLayer.PRESET_KEY_SHOW_PROGRESS,
-			ShapeLayer.PRESET_KEY_ANTIALIASING,
-			ShapeLayer.PRESET_KEY_LINE_WIDTH,
-			ShapeLayer.PRESET_KEY_POINT_SIZE,
-			ShapeLayer.PRESET_KEY_SELECTED_LINE_WIDTH,
-			ShapeLayer.PRESET_KEY_SELECTED_LINE_COLOR
-		};
-		settings.add(new JLabel("Shape Layer Name"), getGBC(0, 0));
-		settings.add(nameField, getGBC(0, 1));
-		for (int i = 0; i < presets.length; i++) {
-			settings.add(new JLabel(presets[i]), getGBC(i+1,0));
-			settings.add(createPresetComponent(presets[i]), getGBC(i+1,1));
-		}
-		pane.add(settings, BorderLayout.CENTER);
-		prop.pack();
-		prop.setResizable(false);
-		prop.setVisible(true);
-	}
-
-	private JTextField getLayerNameField() {
-		final JTextField nameField = new JTextField(12);
-		nameField.setText(shapeLView.getName());
-		nameField.addActionListener(new ActionListener() {
+		
+		final JMenuItem showProgress = new JCheckBoxMenuItem("Show Progress", shapeLayer.showProgress);
+		showProgress.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				shapeLView.setName(nameField.getText());
+				shapeLayer.showProgress = showProgress.isSelected();
 			}
 		});
-		nameField.addFocusListener(new FocusListener() {
-			public void focusGained(FocusEvent e) {}
-			public void focusLost(FocusEvent e) {
-				shapeLView.setName(nameField.getText());
-			}
-		});
-		return nameField;
+		
+		JMenu props = new JMenu("Settings");
+		props.add(name);
+		props.add(showProgress);
+		return props;
 	}
-
-	/**
-	 * Returns constraints for a gbc cell at row,col. If col < 0,
-	 * the gbc will be for a full row component.
-	 */
-	private GridBagConstraints getGBC(int row, int col) {
-		return new GridBagConstraints(
-			col >= 0 ? col : 0, row,
-			col >= 0 ? 1 : 2, 1,
-			col == 0 ? 0 : 1, 0,
-			col == 0 ? GridBagConstraints.LINE_END : GridBagConstraints.LINE_START,
-			col >= 0 ? GridBagConstraints.NONE : GridBagConstraints.HORIZONTAL,
-			new Insets(2,2,2,2), 2, 2);
-	}
-
-// TODO: make a defaults menu out of the remaining presets:
-// new String[] {
-//	ShapeLayer.PRESET_KEY_DEFAULT_LINE_COLOR),
-//	ShapeLayer.PRESET_KEY_DEFAULT_FILL_COLOR),
-//	ShapeLayer.PRESET_KEY_DEFAULT_LABEL_COLOR),
-//	ShapeLayer.PRESET_KEY_DEFAULT_LINE_DIRECTED),
-//	ShapeLayer.PRESET_KEY_DEFAULT_LINE_TYPE),
-//	ShapeLayer.PRESET_KEY_DEFAULT_LINE_WIDTH),
-// }
 
 	private JMenu getScriptMenu() {
 		JMenu scriptsMenu = new JMenu("Scripts");
@@ -1379,22 +953,345 @@ public class ShapeFocusPanel extends FocusPanel {
 				}
 			}
 		});
-
+		
 		selectMenu.add(saveAllFeaturesToFileAsMenuItem);
-		selectMenu.add(featureAddColumnMenuItem);
-
-		Set fieldSet = new HashSet(ShapeRenderer.getFieldToStyleKeysMap().keySet());
-		fieldSet.remove(Field.FIELD_FONT);
-	    Field[] fields = (Field[])fieldSet.toArray(new Field[0]);
-	    JMenuItem[] styles = new JMenuItem[fields.length];
-	    for (int i = 0; i < fields.length; i++)
-	    	styles[i] = createMenu(fields[i].name, null, new AddStyleHandler(fields[i]));
-		selectMenu.add(createMenu("Add Style Column", styles));
-
-		selectMenu.add(featureDelColumnMenuItem);
+		final JMenuItem editColumnMenu = createMenu("Edit Columns...", null, new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				// take a snapshot of the columns before hand, and then show a column editor to the user
+				FeatureCollection fc = shapeLayer.getFeatureCollection();
+				Set<Field> oldFields = new HashSet<Field>(fc.getSchema());
+				int[] rows = shapeLayer.fileTable.getSelectedRows();
+				if (rows == null || rows.length != 1) {
+					return;
+				}
+				
+				Frame parent = (Frame)SwingUtilities.getAncestorOfClass(Frame.class, ShapeFocusPanel.this);
+				new ColumnEditor(shapeLayer).showColumnEditor(parent, shapeLayer.fileTable.getFileTableModel().get(rows[0]));
+				
+				// get all fields affected by the editor
+				Set<Field> unchangedFields = new HashSet<Field>(fc.getSchema());
+				unchangedFields.retainAll(oldFields);
+				Set<Field> changedFields = new HashSet<Field>(oldFields);
+				changedFields.addAll(fc.getSchema());
+				changedFields.removeAll(unchangedFields);
+				
+				// notify the views of the styles affected by the column edit
+				Set<Style<?>> changed = shapeLayer.getStylesFromFields(changedFields);
+				shapeLayer.broadcast(new ShapeLayer.StylesChange(changed));
+			}
+		});
+		editColumnMenu.setEnabled(shapeLayer.fileTable.getSelectedRowCount() == 1);
+		selectMenu.add(editColumnMenu);
+		
+		// make sure we can only edit columns for one file at a time
+		final FileTable ft = shapeLayer.getFileTable();
+		ft.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+			public void valueChanged(ListSelectionEvent e) {
+				editColumnMenu.setEnabled(ft.getSelectedRowCount() == 1);
+				editColumnMenu.setToolTipText(editColumnMenu.isEnabled() ? null : "Select one file to edit columns");
+			}
+		});
+		
+		selectMenu.addSeparator();
+		
+		new StylesMenu(selectMenu);
+		
 		return selectMenu;
 	}
-
+	
+	/** simple abstract way of getting the styles */
+	interface StylesFactory {
+		ShapeLayerStyles getStyles();
+	}
+	
+	private JRadioButton emptySelection = new JRadioButton("hidden selection");
+	public void clearStyleSelection() {
+		emptySelection.setSelected(true);
+	}
+	
+	private class StylesMenu {
+		private static final String STYLES_DEFAULT_KEY = "shape.styles_default";
+		private JMenu stylesMenu = new JMenu("Styles");
+		private ButtonGroup group = new ButtonGroup();
+		private final Map<String,JMenuItem> choices = new LinkedHashMap<String,JMenuItem>();
+		private final Map<String,StylesFactory> factories = new LinkedHashMap<String,StylesFactory>();
+		
+		public StylesMenu() {
+			this(new JMenu("Styles"));
+		}
+		
+		public StylesMenu(JMenu stylesMenu) {
+			this.stylesMenu = stylesMenu;
+			
+			group.add(emptySelection);
+			
+			stylesMenu.add(createMenu("Edit Styles...", null, new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					// popup dialog, which returns the changed styles
+					ShapeLayerStyles styles = shapeLayer.getStyles();
+					List<Field> fields = shapeLayer.getFeatureCollection().getSchema();
+					Set<Style<?>> changed = new StyleEditor().showStyleEditor(styles, fields);
+					if (!changed.isEmpty()) {
+						shapeLayer.applyStyleChanges(changed);
+						
+						// empty the styles selection since the current styles is not known to be equal to any of them
+						emptySelection.setSelected(true);
+					}
+				}
+			}));
+			
+			stylesMenu.add(createMenu("Save Styles...", null, new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					while (true) {
+						final String input = JOptionPane.showInputDialog(ShapeFocusPanel.this, "Name this styles configuration:");
+						if (input == null) {
+							break;
+						}
+						try {
+							if (choices.keySet().contains(input)) {
+								throw new IllegalArgumentException("That name already exists, must use another");
+							}
+							stylesStore.save(input, shapeLayer.getStyles());
+							addFromStore(input);
+							select(input);
+							break;
+						} catch (Exception ex) {
+							JOptionPane.showMessageDialog(ShapeFocusPanel.this, "Error saving styles: " + ex.getMessage(),
+								"Error Saving Styles", JOptionPane.ERROR_MESSAGE);
+						}
+					}
+				}
+			}));
+			
+			stylesMenu.add(createMenu("Remove Styles...", null, new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					final DefaultListModel model = new DefaultListModel();
+					List<String> userNames = stylesStore.getNames();
+					for (String name: userNames) {
+						model.addElement(name);
+					}
+					
+					final JButton del = new JButton("Remove");
+					del.setEnabled(false);
+					
+					final JButton ok = new JButton("Okay");
+					
+					final JButton cancel = new JButton("Cancel");
+					
+					final JList list = new JList(model);
+					
+					int gap = 4;
+					
+					JPanel pad = new JPanel(new BorderLayout());
+					pad.add(new JScrollPane(list));
+					pad.setBorder(new EmptyBorder(gap,gap,gap,gap));
+					
+					Box buttons = Box.createVerticalBox();
+					buttons.add(Box.createVerticalStrut(gap));
+					buttons.add(del);
+					buttons.add(Box.createVerticalStrut(gap));
+					buttons.add(Box.createVerticalGlue());
+					buttons.add(ok);
+					buttons.add(Box.createVerticalStrut(gap));
+					buttons.add(cancel);
+					buttons.add(Box.createVerticalStrut(gap));
+					
+					final JDialog dlg = new JDialog((Frame)SwingUtilities.getAncestorOfClass(Frame.class, ShapeFocusPanel.this),
+						"Remove Styles", true);
+					dlg.getContentPane().setLayout(new BorderLayout());
+					dlg.getContentPane().add(pad, BorderLayout.CENTER);
+					dlg.getContentPane().add(buttons, BorderLayout.EAST);
+					dlg.pack();
+					
+					final boolean[] okHit = {false};
+					
+					ok.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent e) {
+							okHit[0] = true;
+							dlg.setVisible(false);
+						}
+					});
+					
+					cancel.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent e) {
+							dlg.setVisible(false);
+						}
+					});
+					
+					del.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent e) {
+							int[] indices = list.getSelectedIndices();
+							for (int i = indices.length - 1; i>=0; i--) {
+								model.remove(indices[i]);
+							}
+						}
+					});
+					
+					list.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+						public void valueChanged(ListSelectionEvent e) {
+							del.setEnabled(list.getSelectedIndices().length > 0);
+						}
+					});
+					
+					Util.addEscapeAction(dlg);
+					
+					dlg.setSize(400,400);
+					dlg.setVisible(true);
+					
+					if (okHit[0]) {
+						List<String> names = Collections.list((Enumeration<String>)model.elements());
+						List<String> errors = new ArrayList<String>();
+						for (String name: userNames) {
+							if (!names.contains(name)) {
+								if (!removeFromStore(name)) {
+									errors.add(name);
+								}
+							}
+						}
+						if (!errors.isEmpty()) {
+							JOptionPane.showMessageDialog(ShapeFocusPanel.this,
+								"Unable to remove the following styles:\n\n" + Util.join("\n", errors),
+								"Error removing styles", JOptionPane.ERROR_MESSAGE);
+						}
+					}
+				}
+			}));
+			
+			stylesMenu.addSeparator();
+			
+			// add built-in styles
+			String[] defaultStyles = Config.getAll("shape.styles");
+			final XStream xs = new XStream();
+			for (int i = 0; i < defaultStyles.length; i += 2) {
+				final String name = defaultStyles[i+0];
+				final String location = defaultStyles[i+1];
+				addChoice(name, new StylesFactory() {
+					public ShapeLayerStyles getStyles() {
+						return (ShapeLayerStyles)xs.fromXML(Main.getResourceAsStream(location));
+					}
+				});
+			}
+			
+			// add user-defined styles
+			for (final String name: stylesStore.getNames()) {
+				addFromStore(name);
+			}
+			
+			// set the default
+			select(Config.get(STYLES_DEFAULT_KEY));
+		}
+		
+		public JMenu getMenu() {
+			return stylesMenu;
+		}
+		
+		private void addChoice(final String name, final StylesFactory factory) {
+			JRadioButtonMenuItem item = new JRadioButtonMenuItem(name);
+			stylesMenu.add(item);
+			group.add(item);
+			choices.put(name, item);
+			factories.put(name, factory);
+			item.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					select(name);
+				}
+			});
+		}
+		
+		private boolean removeFromStore(final String name) {
+			boolean result = stylesStore.remove(name);
+			if (result) {
+				JMenuItem item = choices.remove(name);
+				factories.remove(name);
+				if (item != null) {
+					group.remove(item);
+					stylesMenu.remove(item);
+				}
+			}
+			return result;
+		}
+		
+		private void addFromStore(final String name) {
+			addChoice(name, new StylesFactory() {
+				public ShapeLayerStyles getStyles() {
+					return (ShapeLayerStyles) stylesStore.load(name);
+				}
+			});
+		}
+		
+		private void select(String choice) {
+			for (AbstractButton b: Collections.list(group.getElements())) {
+				boolean val = b.getText().equals(choice);
+				if (val) {
+					try {
+						ShapeLayerStyles styles = factories.get(choice).getStyles();
+						if (styles != null) {
+							// replace the shape layer's loaded styles
+							shapeLayer.applyStyleChanges(styles.getStyles());
+						}
+					} catch (Exception ex) {
+						ex.printStackTrace();
+						JOptionPane.showMessageDialog(stylesMenu, Util.foldText(ex.getMessage(), 60, "\n"),
+							"Error loading styles", JOptionPane.ERROR_MESSAGE);
+					}
+					if (!b.getText().equals(Config.get(STYLES_DEFAULT_KEY))) {
+						Config.set(STYLES_DEFAULT_KEY, b.getText());
+					}
+				}
+				group.setSelected(b.getModel(), val);
+			}
+		}
+	}
+	
+	/** persists styles to and from disk */
+	static class StylesStore {
+		private XStream xs = new XStream();
+		private static File base = new File(Main.getJMarsPath() + "styles");
+		private static String ext = ".xml";
+		/** Returns the names of all saved styles */
+		public List<String> getNames() {
+			List<String> names = new ArrayList<String>();
+			if (base.exists() && base.isDirectory()) {
+				for (File f: base.listFiles()) {
+					if (f.getName().endsWith(ext)) {
+						names.add(f.getName().replaceAll(ext + "$", ""));
+					}
+				}
+			}
+			return names;
+		}
+		private File getFile(String name) {
+			return new File(base.getAbsolutePath() + File.separator + name + ext);
+		}
+		/** Removes the styles with the given name, returning true if the removal succeeded */
+		public boolean remove(String name) {
+			File f = getFile(name);
+			return f.exists() ? f.delete() : true;
+		}
+		/** Returns the styles with this name, or throws an exception if an error occurred */
+		public Styles load(String name) {
+			try {
+				return (Styles)xs.fromXML(new FileReader(getFile(name)));
+			} catch (Exception e) {
+				throw new IllegalArgumentException("Error while loading", e);
+			}
+		}
+		/** Saves the styles with the given name, throwing IllegalArgumentException if the save failed */
+		public void save(String name, Styles styles) {
+			File file = getFile(name);
+			if (file.exists()) {
+				throw new IllegalArgumentException("File already exists");
+			} else if (!file.getParentFile().exists() && !file.getParentFile().mkdirs()) {
+				throw new IllegalStateException("Unable to create folder to save styles (" + file.getParentFile().getAbsolutePath() + ")");
+			}
+			try {
+				xs.toXML(styles, new FileWriter(file));
+			} catch (Exception e) {
+				throw new IllegalArgumentException("XML conversion error: " + e.getMessage(), e);
+			}
+		}
+	}
+	
 	private JMenu getFileMenu() {
 		JMenu fileMenu = new JMenu("File");
 
@@ -1411,21 +1308,7 @@ public class ShapeFocusPanel extends FocusPanel {
 		
 		return fileMenu;
 	}
-
-	/**
-	 * Adds a Field to the main shape layer's feature collection
-	 * when some action is performed.
-	 */
-	class AddStyleHandler implements ActionListener {
-		Field f;
-		public AddStyleHandler (Field f) {
-			this.f = f;
-		}
-		public void actionPerformed(ActionEvent e) {
-			shapeLayer.getFeatureCollection().addField(f);
-		}
-	}
-
+	
 	public STable getFeatureTable(){
 		return featureTable;
 	}

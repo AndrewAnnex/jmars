@@ -25,15 +25,13 @@ import java.awt.Frame;
 
 import javax.swing.*;
 import edu.asu.jmars.util.DebugLog;
-	
 
-public class DrawingProgressDialog implements Runnable {
+public class DrawingProgressDialog {
 	private static DebugLog log = DebugLog.instance();
 	private volatile static long count = 1;
 	
 	JProgressBar pm = new JProgressBar();
 	long timeToPopup = 500L;
-	Thread popupThread;
 	boolean hidden = false;
 	JDialog window = null;
 	long myid = count++;
@@ -56,33 +54,6 @@ public class DrawingProgressDialog implements Runnable {
 		pm.setIndeterminate(true);
 		pm.setStringPainted(true);
 		pm.setString("");
-		
-		popupThread = new Thread(this);
-		popupThread.setDaemon(true);
-		popupThread.start();
-	}
-	
-	public void run(){
-		long timeBefore = System.currentTimeMillis();
-		long timeAfter;
-		try {
-	    	log.println(getClass().getName()+"["+myid+"] run() going to sleep @"+timeBefore);
-			Thread.sleep(timeToPopup);
-			timeAfter = System.currentTimeMillis();
-	    	log.println(getClass().getName()+"["+myid+"] run() came out of slumber @"+timeAfter+" "+(timeAfter-timeBefore)+"ms");
-		}
-		catch(InterruptedException ex){
-			timeAfter = System.currentTimeMillis();
-	    	log.println(getClass().getName()+"["+myid+"] run() interrupted @"+timeAfter+" "+(timeAfter-timeBefore)+"ms");
-			return;
-		}
-		
-		synchronized(this){
-			if (!hidden){
-				log.println(getClass().getName()+"["+myid+"] run() showing as dialog is not hidden as yet");
-				show();
-			}
-		}
 	}
 	
 	public void setMinimum(int min){
@@ -115,30 +86,26 @@ public class DrawingProgressDialog implements Runnable {
     }
     
     public void show(){
-    	synchronized(this){
-        	popupThread.interrupt();
-        	if (window == null){
-				window = new JDialog(ownerFrame); // Main.mainFrame
-				window.setUndecorated(true);
-				window.setContentPane(pm);
-				window.pack();
-				window.setLocationRelativeTo(centerOn); // Main.testDriver.mainWindow
-        	}
-        	window.setVisible(true);
+    	if (window == null) {
+    		window = new JDialog(ownerFrame); // Main.mainFrame
+    		window.setUndecorated(true);
+    		window.setContentPane(pm);
+    		window.pack();
+    		window.setLocationRelativeTo(centerOn); // Main.testDriver.mainWindow
+    	}
+    	if (!window.isVisible()) {
+    		window.setVisible(true);
     	}
     }
     public void hide(){
-    	synchronized(this){
-    		log.println(getClass().getName()+"["+myid+"] hide() called");
-    		hidden = true;
-    		popupThread.interrupt();
-    		if (window == null){
-    			log.println(getClass().getName()+"["+myid+"] hide() called with null window");
-    			return;
-    		}
-    		log.println(getClass().getName()+"["+myid+"] hide() actually hiding window");
-    		window.setVisible(false);
+    	log.println(getClass().getName()+"["+myid+"] hide() called");
+    	hidden = true;
+    	if (window == null){
+    		log.println(getClass().getName()+"["+myid+"] hide() called with null window");
+    		return;
     	}
+    	log.println(getClass().getName()+"["+myid+"] hide() actually hiding window");
+    	window.setVisible(false);
     }
 }
     

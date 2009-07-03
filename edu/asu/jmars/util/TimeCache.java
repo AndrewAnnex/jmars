@@ -584,7 +584,6 @@ final public class TimeCache
 		try
 		 {
 			log.aprintln("Retrieving time conversion database...");
-			Util.loadSqlDriver();
 			String sql = "from events where name='DEQUAX' order by orbit";
 			Statement stmt = DriverManager
 				.getConnection(dbUrl)

@@ -79,19 +79,16 @@ public interface MapServer extends Serializable {
 	/** Timeout in milliseconds */
 	public int getTimeout();
 	
-	/** Maximum number of times downloads from this server should be retried */
+	/** Maximum number of requests to make to this host at the same time */
 	public int getMaxRequests();
 	
 	/** Get the Capabilities service URI */
 	public URI getURI();
 	
-	/**
-	 * Get the GetMap service URL. This URL comes from the Capabilities
-	 * document, so the blocking IO required to get this URL is done here
-	 * on the first call, rather than in the constructor.
-	 */
-	public String getMapUrl();
+	/** Get the GetMap service URL. */
+	public URI getMapURI();
 	
+	/** Get the server's displayable title */
 	public String getTitle();
 	
 	/**
